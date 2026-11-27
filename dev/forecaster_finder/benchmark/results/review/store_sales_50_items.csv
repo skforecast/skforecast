@@ -43,3 +43,6 @@ store_sales_50_items,full,1602,ML selected on validation (6),ML,0.69530573131065
 store_sales_50_items,full,1602,Chronos-2,Foundation,0.6618723214324678,8.804021783999815,,0.6586587955002678,50
 store_sales_50_items,full,1602,Chronos-2 base,Foundation,0.6549971013536772,33.37074983299999,,0.6518169560257076,50
 store_sales_50_items,full,1602,Chronos-2 synth,Foundation,0.6571833658231333,34.62492717199984,,0.6539926057325581,50
+store_sales_50_items,182,182,LightGBM snippet v2 [refit],ML,0.7505539252052266,2.0937135100002706,as written by finder_tree.py,0.746909831889855,50
+store_sales_50_items,365,365,LightGBM snippet v2 [refit],ML,0.6509493058406547,2.3963351540005533,as written by finder_tree.py,0.6477888133904807,50
+store_sales_50_items,full,1602,LightGBM snippet v2 [refit],ML,0.7033135130579652,4.2229256959999475,as written by finder_tree.py,0.6998987816369762,50

@@ -25,8 +25,7 @@ LOW_FREQ = ["bicimad_weekly", "h2o_monthly", "fuel_gasoline_monthly",
 pd.set_option("display.width", 250)
 pd.set_option("display.max_columns", 30)
 
-df = pd.concat([pd.read_csv(f) for f in sorted(RES.glob("*.csv")) if not f.name.startswith("extra")],
-               ignore_index=True)
+df = pd.concat([pd.read_csv(RES / f"{case}.csv") for case in DATASET], ignore_index=True)
 df["dataset"] = df["case"].map(DATASET)
 df["full"] = df["history"] == "full"
 wide = df.pivot_table(index=["dataset", "case", "history_obs", "full", "n_series"],
@@ -56,6 +55,7 @@ a = pd.DataFrame({
     "lgbm_refit": col("LightGBM [refit]", "LightGBM (no exog) [refit]"),
     "snippet_frozen": col("LightGBM snippet"),
     "snippet_refit": col("LightGBM snippet [refit]"),
+    "snippet_v2": col("LightGBM snippet v2 [refit]"),
     "strong": col("LightGBM+ [refit]"),
     "strong_diff": col("LightGBM+ (diff) [refit]"),
     # Without a validation period (short history), the default LightGBM is kept
@@ -66,11 +66,15 @@ a = pd.DataFrame({
     "stats": wide[[c for c in ["AutoETS", "AutoARIMA"] if c in wide]].min(axis=1),
     "ets": col("AutoETS"), "arima": col("AutoARIMA"),
 })
+# LightGBM as the finder snippet writes it (the cases with variables known only
+# up to today have no snippet of their own: LightGBM without exog)
+a["ml_page"] = a["snippet_v2"].fillna(a["lgbm_refit"])
 a.round(3).to_csv(RES / "recount_runs.csv", index=False)
 print(a.round(2).to_string(index=False))
 
-ML_COLS = ["lgbm_frozen", "lgbm_refit", "snippet_frozen", "strong", "val4", "val6",
-           "oracle_frozen", "oracle_refit"]
+ML_COLS = ["lgbm_frozen", "lgbm_refit", "snippet_frozen", "snippet_v2", "strong", "val4",
+           "val6", "oracle_frozen", "oracle_refit"]
+FUTURE_EXOG = ["vic_electricity_daily", "bike_sharing_daily", "bike_sharing_hourly"]
 
 
 def count(sel, label):
@@ -92,6 +96,32 @@ out = [count(a.n == 1, "one series, all histories"),
        count(a.n > 1, "several series, all histories"),
        count((a.n > 1) & a.full, "several series, full history"),
        count(a.full, "all cases, full history")]
+
+# By type of data: the cells of the decision rules
+a["cell"] = np.where(a.n > 1, "several series",
+                     np.where(a.case.isin(FUTURE_EXOG), "one series, known in advance",
+                              "one series, nothing known in advance"))
+print("\n--- By type of data (LightGBM refitted against Chronos-2 small)")
+cells = []
+for cell, g in a.groupby("cell"):
+    by_ds = g.groupby("dataset")[["fm", "lgbm_refit"]].mean()
+    by_full = g[g.full].groupby("dataset")[["fm", "lgbm_refit"]].mean()
+    cells.append({
+        "cell": cell, "runs": len(g), "datasets": g.dataset.nunique(),
+        "LightGBM < Chronos-2": int((g.lgbm_refit < g.fm).sum()),
+        "LightGBM+ < Chronos-2": f"{int((g.strong < g.fm).sum())} of {int(g.strong.notna().sum())}",
+        "snippet v2 < Chronos-2": f"{int((g.snippet_v2 < g.fm).sum())} of {int(g.snippet_v2.notna().sum())}",
+        "LightGBM >= naive": int((g.lgbm_refit >= 1).sum()),
+        "snippet v2 >= naive": int((g.snippet_v2 >= 1).sum()),
+        "Chronos-2 >= naive": int((g.fm >= 1).sum()),
+        "datasets Chronos-2 ahead": int((by_ds.fm < by_ds.lgbm_refit).sum()),
+        "datasets Chronos-2 ahead (full history)": int((by_full.fm < by_full.lgbm_refit).sum()),
+        "median Chronos-2": g.fm.median(), "median LightGBM": g.lgbm_refit.median(),
+        "median snippet v2": g.snippet_v2.median(),
+    })
+cells = pd.DataFrame(cells).round(3)
+print(cells.T.to_string())
+cells.to_csv(RES / "recount_cells.csv", index=False)
 
 # By dataset: one vote per dataset (mean of the relative MASE of its runs)
 print("\n--- By dataset (mean over the runs of the dataset; one vote each)")

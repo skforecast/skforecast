@@ -15,7 +15,6 @@ public_transport_madrid,90,90,LightGBM snippet [refit],ML,0.6730180325498729,0.1
 public_transport_madrid,90,90,ML selected on validation (4),ML,1.0724165743413159,0.7622053830000368,LightGBM (diff); n_val=56,1.8591169578488558,1
 public_transport_madrid,90,90,ML selected on validation (6),ML,1.0724165743413159,0.7810432139999648,LightGBM (diff); n_val=56,1.8591169578488558,1
 public_transport_madrid,90,90,Chronos-2,Foundation,0.5537525734710548,0.554568259000007,,0.9599728542285924,1
-public_transport_madrid,90,90,AutoETS,Statistical,0.5907238464774917,0.3323427059999631,,1.0240654113971936,1
 public_transport_madrid,182,182,Seasonal naive,Baseline,0.5768419086350468,0.005100686999981008,,1.0,1
 public_transport_madrid,182,182,LightGBM,ML,0.9426963448579054,0.16394026399996164,,1.6342369213231445,1
 public_transport_madrid,182,182,LightGBM [refit],ML,0.6560434043349747,0.661877560999983,,1.13730190978554,1
@@ -32,7 +31,6 @@ public_transport_madrid,182,182,LightGBM snippet [refit],ML,0.6380730649628598,0
 public_transport_madrid,182,182,ML selected on validation (4),ML,0.6560434043349747,0.9264013749999549,LightGBM; n_val=84,1.13730190978554,1
 public_transport_madrid,182,182,ML selected on validation (6),ML,0.6560434043349747,1.2935515059999716,LightGBM; n_val=84,1.13730190978554,1
 public_transport_madrid,182,182,Chronos-2,Foundation,0.5460536624479244,0.7512917490000746,,0.9466261973579986,1
-public_transport_madrid,182,182,AutoETS,Statistical,0.7238054916309286,0.32367457899999863,,1.2547727215999867,1
 public_transport_madrid,365,365,Seasonal naive,Baseline,0.5768419086350468,0.004714257000046018,,1.0,1
 public_transport_madrid,365,365,LightGBM,ML,0.7775253994217459,0.21689785600005962,,1.3479003307189776,1
 public_transport_madrid,365,365,LightGBM [refit],ML,0.5288771985168044,0.682216331999939,,0.9168494705390962,1
@@ -49,7 +47,6 @@ public_transport_madrid,365,365,LightGBM snippet [refit],ML,0.5391183501410713,0
 public_transport_madrid,365,365,ML selected on validation (4),ML,0.6248381025550204,0.37951112199993986,Ridge (diff); n_val=84,1.0832051090628014,1
 public_transport_madrid,365,365,ML selected on validation (6),ML,0.7292084604436602,2.0831972779999433,LightGBM+ (diff); n_val=84,1.2641391853257524,1
 public_transport_madrid,365,365,Chronos-2,Foundation,0.25437895770892976,0.720921761999989,,0.4409855697046257,1
-public_transport_madrid,365,365,AutoETS,Statistical,0.5829068074728389,0.6323919709999473,,1.0105139705472217,1
 public_transport_madrid,full,547,Seasonal naive,Baseline,0.5768419086350468,0.006582427000012103,,1.0,1
 public_transport_madrid,full,547,LightGBM,ML,0.8017493392240177,0.19588743799999975,,1.3898944012600585,1
 public_transport_madrid,full,547,LightGBM [refit],ML,0.7222636748688558,0.8116012890000093,,1.2520998631633986,1
@@ -68,4 +65,11 @@ public_transport_madrid,full,547,ML selected on validation (6),ML,0.619663104244
 public_transport_madrid,full,547,Chronos-2,Foundation,0.22972254585194818,0.759183222000047,,0.3982417754554789,1
 public_transport_madrid,full,547,Chronos-2 base,Foundation,0.21718586087774114,0.7287696559999404,,0.37650846380364,1
 public_transport_madrid,full,547,Chronos-2 synth,Foundation,0.27171878755366397,0.7445898770000667,,0.47104550395206035,1
-public_transport_madrid,full,547,AutoETS,Statistical,0.5580223969439287,1.0137815329999285,,0.9673749229912061,1
+public_transport_madrid,90,90,AutoETS,Statistical,0.5907238464774917,0.28660133199991833,,1.0240654113971936,1
+public_transport_madrid,182,182,AutoETS,Statistical,0.7238054916309286,0.4071346489999996,,1.2547727215999867,1
+public_transport_madrid,365,365,AutoETS,Statistical,0.5829068407405152,0.6521733690005931,,1.0105140282193081,1
+public_transport_madrid,full,547,AutoETS,Statistical,0.5580223969439287,0.9743938330002493,,0.9673749229912061,1
+public_transport_madrid,90,90,LightGBM snippet v2 [refit],ML,0.6420428181614768,0.33943303799969726,as written by finder_tree.py,1.1130308123428683,1
+public_transport_madrid,182,182,LightGBM snippet v2 [refit],ML,0.6378585682161338,0.4271753789998911,as written by finder_tree.py,1.1057770918993521,1
+public_transport_madrid,365,365,LightGBM snippet v2 [refit],ML,0.6307279737943945,0.4844618139995873,as written by finder_tree.py,1.0934156557502135,1
+public_transport_madrid,full,547,LightGBM snippet v2 [refit],ML,0.7388047909435644,0.5086716810001235,as written by finder_tree.py,1.2807751654032256,1

@@ -23,6 +23,8 @@ Usage:
     python -I review.py vic h2o      # cases whose name contains any of the words
     python -I review.py --extra      # bdg2 sites, m4 subsets, classification
     python -I review.py --horizon    # same test period with a horizon 4 times shorter
+    python -I review.py --stats      # only the statistical models, replaced in the CSV files
+    python -I review.py --snippet    # the ML block of the finder snippets, as written
 """
 
 from __future__ import annotations
@@ -312,6 +314,14 @@ def run_models(case, series, exog, n_train, full):
             metric="mean_absolute_error", show_progress=False)[1]).assign(
                 level=lambda d: d["level"] if multi else target))
 
+    stats_models(case, series, fold_cv(False), multi, full, timed)
+    return results
+
+
+def stats_models(case, series, cv, multi, full, timed):
+    """AutoETS and AutoARIMA of the case (`backtesting_stats` always refits them)."""
+    target = series.columns[0]
+    y = series[target]
     stats = list(case.stats)
     if case.season == 52 and "arima" not in stats and full:
         stats.append("arima")  # Ets drops the seasonality when m > 24
@@ -320,16 +330,148 @@ def run_models(case, series, exog, n_train, full):
                else Arima(order=None, seasonal_order=None, m=case.season))
         label = "AutoETS" if stat == "ets" else "AutoARIMA"
         timed(label, lambda est=est: B.to_long(backtesting_stats(
-            ForecasterStats(estimator=est), y=y, cv=fold_cv(False),
+            ForecasterStats(estimator=est), y=y, cv=cv,
             metric="mean_absolute_error", show_progress=False)[1], target))
     if multi and case.season == 4:
         timed("AutoETS", lambda: pd.concat([
             B.to_long(backtesting_stats(
                 ForecasterStats(estimator=Ets(m=case.season)), y=series[col],
-                cv=fold_cv(False), metric="mean_absolute_error", show_progress=False,
+                cv=cv, metric="mean_absolute_error", show_progress=False,
                 n_jobs=1)[1], col)
             for col in series.columns]), note="one model per series")
-    return results
+
+
+def run_snippet():
+    """
+    Measure the ML block of the finder snippets as finder_tree.py writes it:
+    `LGBMRegressor(min_child_samples=5)`, the lags, rolling mean and calendar
+    features of the frequency, series scaled only in the multi-series
+    forecaster, refitted in every fold. Adds the model 'LightGBM snippet v2
+    [refit]' to the CSV files of the main run.
+    """
+    import ast
+
+    import finder_tree as tree
+    freq_of = {24: "hourly", 7: "daily", 52: "weekly", 12: "monthly", 4: "quarterly"}
+    label = "LightGBM snippet v2 [refit]"
+    for case in B.CASES:
+        if case.exog_mode == "past":
+            continue
+        f = tree.FREQ[freq_of[case.season]]
+        print(f"\n=== snippet {case.name}", flush=True)
+        series, exog = case.loader()
+        test_start = len(series) - case.steps * case.n_folds
+        multi = series.shape[1] > 1
+        target = series.columns[0]
+        levels = list(series.columns)
+        use_exog = case.exog_mode == "future" and exog is not None
+        summary, details = [], []
+        for history in case.histories:
+            start = 0 if history is None else test_start - history
+            n_train = test_start - start
+            s = series.iloc[start:]
+            x = exog.iloc[start:] if use_exog else None
+            cv = TimeSeriesFold(steps=case.steps, initial_train_size=n_train, refit=True,
+                                fixed_train_size=False, verbose=False)
+            kwargs = dict(
+                estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),
+                lags=ast.literal_eval(f["lags"]),
+                window_features=RollingFeatures("mean", f["window"]) if f["window"] else None,
+                # m4_hourly has artificial dates: no calendar, as in the main run
+                calendar_features=(CalendarFeatures(features=ast.literal_eval(f["calendar"]))
+                                   if case.calendar else None),
+            )
+            forecaster = (ForecasterRecursiveMultiSeries(transformer_series=StandardScaler(), **kwargs)
+                          if multi else ForecasterRecursive(**kwargs))
+            res = {}
+            t0 = time.perf_counter()
+            res["Seasonal naive"] = (pd.concat([
+                B.to_long(backtesting_forecaster(
+                    ForecasterEquivalentDate(offset=case.season), y=s[col],
+                    cv=TimeSeriesFold(steps=case.steps, initial_train_size=n_train,
+                                      refit=False, verbose=False),
+                    metric="mean_absolute_error", show_progress=False)[1], col)
+                for col in s.columns]), 0.0, "")
+            t0 = time.perf_counter()
+            pred = backtest_ml(forecaster, s if multi else s[target], x, cv, multi, target)
+            res[label] = (pred, time.perf_counter() - t0, "as written by finder_tree.py")
+            t, d = tables(res, series, test_start, levels, case.steps)
+            for frame in (t, d):
+                frame.insert(0, "history_obs", n_train)
+                frame.insert(0, "history", "full" if history is None else str(history))
+                frame.insert(0, "case", case.name)
+            t["rel"] = t["MASE"] / t.loc[t.model == "Seasonal naive", "MASE"].iloc[0]
+            if multi:
+                d = d.groupby(["case", "history", "history_obs", "model", "level"],
+                              as_index=False).agg(mae=("mae", "mean"), scale=("scale", "first"))
+            summary.append(t[t.model == label])
+            details.append(d[d.model == label])
+            print(f"  history {n_train}: rel {t.loc[t.model == label, 'rel'].iloc[0]:.3f}", flush=True)
+        new = pd.concat(summary).assign(n_series=len(levels))
+        for path, rows in [(OUT / f"{case.name}.csv", new),
+                           (OUT / "detail" / f"{case.name}.csv", pd.concat(details).round(6))]:
+            old = pd.read_csv(path)
+            pd.concat([old[old["model"] != label], rows[old.columns]]).to_csv(path, index=False)
+
+
+def run_stats():
+    """
+    Run again only the statistical models and replace their rows in the CSV
+    files of the main run (the rest of the models are not affected by a change
+    in `skforecast.stats`). The previous values are kept in
+    `stats_previous.csv` the first time.
+    """
+    previous = []
+    for case in B.CASES:
+        multi_ets = case.season == 4 and case.exog_mode != "past"
+        if not case.stats and case.season != 52 and not multi_ets:
+            continue
+        print(f"\n=== stats {case.name}", flush=True)
+        series, exog = case.loader()
+        test_start = len(series) - case.steps * case.n_folds
+        multi = series.shape[1] > 1
+        levels = list(series.columns)
+        summary, details = [], []
+        for history in case.histories:
+            start = 0 if history is None else test_start - history
+            n_train = test_start - start
+            s = series.iloc[start:]
+            cv = TimeSeriesFold(steps=case.steps, initial_train_size=n_train, refit=False,
+                                fixed_train_size=False, verbose=False)
+            res = {}
+
+            def timed(name, fn, note=""):
+                t0 = time.perf_counter()
+                res[name] = (fn(), time.perf_counter() - t0, note)
+                print(f"    {name:<40} {res[name][1]:7.1f} s", flush=True)
+            timed("Seasonal naive", lambda: pd.concat([
+                B.to_long(backtesting_forecaster(
+                    ForecasterEquivalentDate(offset=case.season), y=s[col], cv=cv,
+                    metric="mean_absolute_error", show_progress=False)[1], col)
+                for col in s.columns]))
+            stats_models(case, s, cv, multi, history is None, timed)
+            t, d = tables(res, series, test_start, levels, case.steps)
+            for frame in (t, d):
+                frame.insert(0, "history_obs", n_train)
+                frame.insert(0, "history", "full" if history is None else str(history))
+                frame.insert(0, "case", case.name)
+            t["rel"] = t["MASE"] / t.loc[t.model == "Seasonal naive", "MASE"].iloc[0]
+            if multi:
+                d = d.groupby(["case", "history", "history_obs", "model", "level"],
+                              as_index=False).agg(mae=("mae", "mean"), scale=("scale", "first"))
+            summary.append(t[t.family == "Statistical"])
+            details.append(d[d.model.str.startswith("Auto")])
+        new = pd.concat(summary).assign(n_series=len(levels))
+        for path, rows in [(OUT / f"{case.name}.csv", new),
+                           (OUT / "detail" / f"{case.name}.csv", pd.concat(details).round(6))]:
+            old = pd.read_csv(path)
+            is_stat = old["model"].str.startswith("Auto")
+            if path.parent == OUT:
+                previous.append(old[is_stat])
+            pd.concat([old[~is_stat], rows[old.columns]]).to_csv(path, index=False)
+        print(new[["history_obs", "model", "rel", "seconds"]].round(3).to_string(index=False), flush=True)
+    if not (OUT / "stats_previous.csv").exists():
+        pd.concat(previous).to_csv(OUT / "stats_previous.csv", index=False)
 
 
 def tables(results, series_full, test_start, levels, steps):
@@ -533,12 +675,20 @@ if __name__ == "__main__":
     env["chronos-forecasting"] = md.version("chronos-forecasting")
     env["python"] = sys.version.split()[0]
     env["chronos_models"] = CHRONOS
-    (OUT / "environment.json").write_text(json.dumps(env, indent=2))
+    env["git_commit"] = os.popen("git rev-parse --short HEAD 2>/dev/null").read().strip()
+    name = "environment_stats.json" if "--stats" in sys.argv else "environment.json"
+    partial = any(flag in sys.argv for flag in ("--extra", "--horizon", "--snippet"))
+    if name == "environment_stats.json" or not partial:
+        (OUT / name).write_text(json.dumps(env, indent=2))
     print(env, flush=True)
     if "--extra" in sys.argv:
         run_extra()
     elif "--horizon" in sys.argv:
         run_horizon()
+    elif "--stats" in sys.argv:
+        run_stats()
+    elif "--snippet" in sys.argv:
+        run_snippet()
     else:
         for case in B.CASES:
             if not args or any(w in case.name for w in args):

@@ -95,12 +95,6 @@ vic_electricity_daily,90,90,Chronos-2,demand,2,4854.646223,15342.529925
 vic_electricity_daily,90,90,Chronos-2,demand,3,10171.173694,15342.529925
 vic_electricity_daily,90,90,Chronos-2,demand,4,8945.414005,15342.529925
 vic_electricity_daily,90,90,Chronos-2,demand,5,13043.101085,15342.529925
-vic_electricity_daily,90,90,AutoETS,demand,0,16349.246105,15342.529925
-vic_electricity_daily,90,90,AutoETS,demand,1,28308.141874,15342.529925
-vic_electricity_daily,90,90,AutoETS,demand,2,7953.201033,15342.529925
-vic_electricity_daily,90,90,AutoETS,demand,3,5548.933101,15342.529925
-vic_electricity_daily,90,90,AutoETS,demand,4,22362.555869,15342.529925
-vic_electricity_daily,90,90,AutoETS,demand,5,23406.503148,15342.529925
 vic_electricity_daily,182,182,Seasonal naive,demand,0,8483.416443,15342.529925
 vic_electricity_daily,182,182,Seasonal naive,demand,1,16383.826291,15342.529925
 vic_electricity_daily,182,182,Seasonal naive,demand,2,9438.296573,15342.529925
@@ -197,12 +191,6 @@ vic_electricity_daily,182,182,Chronos-2,demand,2,7294.890917,15342.529925
 vic_electricity_daily,182,182,Chronos-2,demand,3,6914.535379,15342.529925
 vic_electricity_daily,182,182,Chronos-2,demand,4,6898.034211,15342.529925
 vic_electricity_daily,182,182,Chronos-2,demand,5,12051.608952,15342.529925
-vic_electricity_daily,182,182,AutoETS,demand,0,7889.34942,15342.529925
-vic_electricity_daily,182,182,AutoETS,demand,1,17717.666057,15342.529925
-vic_electricity_daily,182,182,AutoETS,demand,2,7033.928901,15342.529925
-vic_electricity_daily,182,182,AutoETS,demand,3,7652.356401,15342.529925
-vic_electricity_daily,182,182,AutoETS,demand,4,30677.297653,15342.529925
-vic_electricity_daily,182,182,AutoETS,demand,5,17823.573693,15342.529925
 vic_electricity_daily,365,365,Seasonal naive,demand,0,8483.416443,15342.529925
 vic_electricity_daily,365,365,Seasonal naive,demand,1,16383.826291,15342.529925
 vic_electricity_daily,365,365,Seasonal naive,demand,2,9438.296573,15342.529925
@@ -299,12 +287,6 @@ vic_electricity_daily,365,365,Chronos-2,demand,2,6898.993665,15342.529925
 vic_electricity_daily,365,365,Chronos-2,demand,3,4752.129713,15342.529925
 vic_electricity_daily,365,365,Chronos-2,demand,4,5444.812346,15342.529925
 vic_electricity_daily,365,365,Chronos-2,demand,5,7168.940388,15342.529925
-vic_electricity_daily,365,365,AutoETS,demand,0,8324.204999,15342.529925
-vic_electricity_daily,365,365,AutoETS,demand,1,18721.922047,15342.529925
-vic_electricity_daily,365,365,AutoETS,demand,2,6736.222099,15342.529925
-vic_electricity_daily,365,365,AutoETS,demand,3,5930.66886,15342.529925
-vic_electricity_daily,365,365,AutoETS,demand,4,26989.931803,15342.529925
-vic_electricity_daily,365,365,AutoETS,demand,5,18337.461447,15342.529925
 vic_electricity_daily,730,730,Seasonal naive,demand,0,8483.416443,15342.529925
 vic_electricity_daily,730,730,Seasonal naive,demand,1,16383.826291,15342.529925
 vic_electricity_daily,730,730,Seasonal naive,demand,2,9438.296573,15342.529925
@@ -401,12 +383,6 @@ vic_electricity_daily,730,730,Chronos-2,demand,2,6473.432037,15342.529925
 vic_electricity_daily,730,730,Chronos-2,demand,3,4928.571895,15342.529925
 vic_electricity_daily,730,730,Chronos-2,demand,4,4897.555213,15342.529925
 vic_electricity_daily,730,730,Chronos-2,demand,5,6322.706848,15342.529925
-vic_electricity_daily,730,730,AutoETS,demand,0,9435.83527,15342.529925
-vic_electricity_daily,730,730,AutoETS,demand,1,20934.875361,15342.529925
-vic_electricity_daily,730,730,AutoETS,demand,2,6968.297949,15342.529925
-vic_electricity_daily,730,730,AutoETS,demand,3,5408.001749,15342.529925
-vic_electricity_daily,730,730,AutoETS,demand,4,25498.749124,15342.529925
-vic_electricity_daily,730,730,AutoETS,demand,5,19189.413657,15342.529925
 vic_electricity_daily,full,927,Seasonal naive,demand,0,8483.416443,15342.529925
 vic_electricity_daily,full,927,Seasonal naive,demand,1,16383.826291,15342.529925
 vic_electricity_daily,full,927,Seasonal naive,demand,2,9438.296573,15342.529925
@@ -515,9 +491,63 @@ vic_electricity_daily,full,927,Chronos-2 synth,demand,2,4058.733864,15342.529925
 vic_electricity_daily,full,927,Chronos-2 synth,demand,3,8274.142588,15342.529925
 vic_electricity_daily,full,927,Chronos-2 synth,demand,4,6444.090783,15342.529925
 vic_electricity_daily,full,927,Chronos-2 synth,demand,5,6952.15095,15342.529925
+vic_electricity_daily,90,90,AutoETS,demand,0,16349.246105,15342.529925
+vic_electricity_daily,90,90,AutoETS,demand,1,28308.141874,15342.529925
+vic_electricity_daily,90,90,AutoETS,demand,2,7953.201033,15342.529925
+vic_electricity_daily,90,90,AutoETS,demand,3,5548.933101,15342.529925
+vic_electricity_daily,90,90,AutoETS,demand,4,22362.555869,15342.529925
+vic_electricity_daily,90,90,AutoETS,demand,5,23406.503148,15342.529925
+vic_electricity_daily,182,182,AutoETS,demand,0,7889.34942,15342.529925
+vic_electricity_daily,182,182,AutoETS,demand,1,17717.666057,15342.529925
+vic_electricity_daily,182,182,AutoETS,demand,2,7033.928901,15342.529925
+vic_electricity_daily,182,182,AutoETS,demand,3,7652.356401,15342.529925
+vic_electricity_daily,182,182,AutoETS,demand,4,30677.297653,15342.529925
+vic_electricity_daily,182,182,AutoETS,demand,5,17823.573693,15342.529925
+vic_electricity_daily,365,365,AutoETS,demand,0,8324.204999,15342.529925
+vic_electricity_daily,365,365,AutoETS,demand,1,18721.922047,15342.529925
+vic_electricity_daily,365,365,AutoETS,demand,2,6736.222099,15342.529925
+vic_electricity_daily,365,365,AutoETS,demand,3,5930.66886,15342.529925
+vic_electricity_daily,365,365,AutoETS,demand,4,26989.931803,15342.529925
+vic_electricity_daily,365,365,AutoETS,demand,5,18337.461447,15342.529925
+vic_electricity_daily,730,730,AutoETS,demand,0,9435.83527,15342.529925
+vic_electricity_daily,730,730,AutoETS,demand,1,20934.875361,15342.529925
+vic_electricity_daily,730,730,AutoETS,demand,2,6968.297949,15342.529925
+vic_electricity_daily,730,730,AutoETS,demand,3,5408.001749,15342.529925
+vic_electricity_daily,730,730,AutoETS,demand,4,25498.749124,15342.529925
+vic_electricity_daily,730,730,AutoETS,demand,5,19189.413657,15342.529925
 vic_electricity_daily,full,927,AutoETS,demand,0,9026.380328,15342.529925
 vic_electricity_daily,full,927,AutoETS,demand,1,20416.013763,15342.529925
 vic_electricity_daily,full,927,AutoETS,demand,2,6983.610946,15342.529925
 vic_electricity_daily,full,927,AutoETS,demand,3,5435.77008,15342.529925
 vic_electricity_daily,full,927,AutoETS,demand,4,25830.410244,15342.529925
 vic_electricity_daily,full,927,AutoETS,demand,5,18883.845928,15342.529925
+vic_electricity_daily,90,90,LightGBM snippet v2 [refit],demand,0,5248.600062,15342.529925
+vic_electricity_daily,90,90,LightGBM snippet v2 [refit],demand,1,10365.65745,15342.529925
+vic_electricity_daily,90,90,LightGBM snippet v2 [refit],demand,2,8835.069519,15342.529925
+vic_electricity_daily,90,90,LightGBM snippet v2 [refit],demand,3,7285.080393,15342.529925
+vic_electricity_daily,90,90,LightGBM snippet v2 [refit],demand,4,15057.460126,15342.529925
+vic_electricity_daily,90,90,LightGBM snippet v2 [refit],demand,5,13731.579222,15342.529925
+vic_electricity_daily,182,182,LightGBM snippet v2 [refit],demand,0,9383.390309,15342.529925
+vic_electricity_daily,182,182,LightGBM snippet v2 [refit],demand,1,12355.616658,15342.529925
+vic_electricity_daily,182,182,LightGBM snippet v2 [refit],demand,2,8139.384808,15342.529925
+vic_electricity_daily,182,182,LightGBM snippet v2 [refit],demand,3,5366.281396,15342.529925
+vic_electricity_daily,182,182,LightGBM snippet v2 [refit],demand,4,7116.295288,15342.529925
+vic_electricity_daily,182,182,LightGBM snippet v2 [refit],demand,5,9832.806859,15342.529925
+vic_electricity_daily,365,365,LightGBM snippet v2 [refit],demand,0,6804.874708,15342.529925
+vic_electricity_daily,365,365,LightGBM snippet v2 [refit],demand,1,4068.403386,15342.529925
+vic_electricity_daily,365,365,LightGBM snippet v2 [refit],demand,2,3452.797084,15342.529925
+vic_electricity_daily,365,365,LightGBM snippet v2 [refit],demand,3,3167.624763,15342.529925
+vic_electricity_daily,365,365,LightGBM snippet v2 [refit],demand,4,6604.011863,15342.529925
+vic_electricity_daily,365,365,LightGBM snippet v2 [refit],demand,5,7898.705172,15342.529925
+vic_electricity_daily,730,730,LightGBM snippet v2 [refit],demand,0,4679.642412,15342.529925
+vic_electricity_daily,730,730,LightGBM snippet v2 [refit],demand,1,4887.025602,15342.529925
+vic_electricity_daily,730,730,LightGBM snippet v2 [refit],demand,2,5274.112778,15342.529925
+vic_electricity_daily,730,730,LightGBM snippet v2 [refit],demand,3,2991.842638,15342.529925
+vic_electricity_daily,730,730,LightGBM snippet v2 [refit],demand,4,4948.6233,15342.529925
+vic_electricity_daily,730,730,LightGBM snippet v2 [refit],demand,5,6291.066251,15342.529925
+vic_electricity_daily,full,927,LightGBM snippet v2 [refit],demand,0,4254.925593,15342.529925
+vic_electricity_daily,full,927,LightGBM snippet v2 [refit],demand,1,5326.729417,15342.529925
+vic_electricity_daily,full,927,LightGBM snippet v2 [refit],demand,2,4132.500414,15342.529925
+vic_electricity_daily,full,927,LightGBM snippet v2 [refit],demand,3,4177.306678,15342.529925
+vic_electricity_daily,full,927,LightGBM snippet v2 [refit],demand,4,4838.789111,15342.529925
+vic_electricity_daily,full,927,LightGBM snippet v2 [refit],demand,5,6399.541592,15342.529925

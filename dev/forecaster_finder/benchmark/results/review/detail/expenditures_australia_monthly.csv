@@ -69,16 +69,6 @@ expenditures_australia_monthly,36,36,Chronos-2,turnover,1,19.628814,19.675
 expenditures_australia_monthly,36,36,Chronos-2,turnover,2,16.463526,19.675
 expenditures_australia_monthly,36,36,Chronos-2,turnover,3,15.797028,19.675
 expenditures_australia_monthly,36,36,Chronos-2,turnover,4,26.082684,19.675
-expenditures_australia_monthly,36,36,AutoETS,turnover,0,29.387674,19.675
-expenditures_australia_monthly,36,36,AutoETS,turnover,1,33.036254,19.675
-expenditures_australia_monthly,36,36,AutoETS,turnover,2,14.75706,19.675
-expenditures_australia_monthly,36,36,AutoETS,turnover,3,23.446687,19.675
-expenditures_australia_monthly,36,36,AutoETS,turnover,4,17.711519,19.675
-expenditures_australia_monthly,36,36,AutoARIMA,turnover,0,21.541667,19.675
-expenditures_australia_monthly,36,36,AutoARIMA,turnover,1,17.075,19.675
-expenditures_australia_monthly,36,36,AutoARIMA,turnover,2,28.358333,19.675
-expenditures_australia_monthly,36,36,AutoARIMA,turnover,3,12.233333,19.675
-expenditures_australia_monthly,36,36,AutoARIMA,turnover,4,41.266667,19.675
 expenditures_australia_monthly,60,60,Seasonal naive,turnover,0,33.075,19.675
 expenditures_australia_monthly,60,60,Seasonal naive,turnover,1,54.591667,19.675
 expenditures_australia_monthly,60,60,Seasonal naive,turnover,2,40.308333,19.675
@@ -159,16 +149,6 @@ expenditures_australia_monthly,60,60,Chronos-2,turnover,1,24.248942,19.675
 expenditures_australia_monthly,60,60,Chronos-2,turnover,2,14.986628,19.675
 expenditures_australia_monthly,60,60,Chronos-2,turnover,3,10.660545,19.675
 expenditures_australia_monthly,60,60,Chronos-2,turnover,4,15.402544,19.675
-expenditures_australia_monthly,60,60,AutoETS,turnover,0,31.750949,19.675
-expenditures_australia_monthly,60,60,AutoETS,turnover,1,33.776232,19.675
-expenditures_australia_monthly,60,60,AutoETS,turnover,2,17.776694,19.675
-expenditures_australia_monthly,60,60,AutoETS,turnover,3,25.676502,19.675
-expenditures_australia_monthly,60,60,AutoETS,turnover,4,14.879296,19.675
-expenditures_australia_monthly,60,60,AutoARIMA,turnover,0,15.667206,19.675
-expenditures_australia_monthly,60,60,AutoARIMA,turnover,1,14.78783,19.675
-expenditures_australia_monthly,60,60,AutoARIMA,turnover,2,26.13001,19.675
-expenditures_australia_monthly,60,60,AutoARIMA,turnover,3,15.38317,19.675
-expenditures_australia_monthly,60,60,AutoARIMA,turnover,4,49.228704,19.675
 expenditures_australia_monthly,120,120,Seasonal naive,turnover,0,33.075,19.675
 expenditures_australia_monthly,120,120,Seasonal naive,turnover,1,54.591667,19.675
 expenditures_australia_monthly,120,120,Seasonal naive,turnover,2,40.308333,19.675
@@ -249,16 +229,6 @@ expenditures_australia_monthly,120,120,Chronos-2,turnover,1,26.562538,19.675
 expenditures_australia_monthly,120,120,Chronos-2,turnover,2,18.67466,19.675
 expenditures_australia_monthly,120,120,Chronos-2,turnover,3,29.493127,19.675
 expenditures_australia_monthly,120,120,Chronos-2,turnover,4,19.122113,19.675
-expenditures_australia_monthly,120,120,AutoETS,turnover,0,20.019502,19.675
-expenditures_australia_monthly,120,120,AutoETS,turnover,1,22.28246,19.675
-expenditures_australia_monthly,120,120,AutoETS,turnover,2,15.441998,19.675
-expenditures_australia_monthly,120,120,AutoETS,turnover,3,14.180363,19.675
-expenditures_australia_monthly,120,120,AutoETS,turnover,4,38.539491,19.675
-expenditures_australia_monthly,120,120,AutoARIMA,turnover,0,19.732113,19.675
-expenditures_australia_monthly,120,120,AutoARIMA,turnover,1,24.862104,19.675
-expenditures_australia_monthly,120,120,AutoARIMA,turnover,2,17.022053,19.675
-expenditures_australia_monthly,120,120,AutoARIMA,turnover,3,17.728556,19.675
-expenditures_australia_monthly,120,120,AutoARIMA,turnover,4,29.209011,19.675
 expenditures_australia_monthly,full,393,Seasonal naive,turnover,0,33.075,19.675
 expenditures_australia_monthly,full,393,Seasonal naive,turnover,1,54.591667,19.675
 expenditures_australia_monthly,full,393,Seasonal naive,turnover,2,40.308333,19.675
@@ -349,6 +319,36 @@ expenditures_australia_monthly,full,393,Chronos-2 synth,turnover,1,28.549737,19.
 expenditures_australia_monthly,full,393,Chronos-2 synth,turnover,2,14.830524,19.675
 expenditures_australia_monthly,full,393,Chronos-2 synth,turnover,3,22.892232,19.675
 expenditures_australia_monthly,full,393,Chronos-2 synth,turnover,4,26.778938,19.675
+expenditures_australia_monthly,36,36,AutoETS,turnover,0,29.387674,19.675
+expenditures_australia_monthly,36,36,AutoETS,turnover,1,33.036254,19.675
+expenditures_australia_monthly,36,36,AutoETS,turnover,2,14.75706,19.675
+expenditures_australia_monthly,36,36,AutoETS,turnover,3,23.446687,19.675
+expenditures_australia_monthly,36,36,AutoETS,turnover,4,17.711519,19.675
+expenditures_australia_monthly,36,36,AutoARIMA,turnover,0,21.541667,19.675
+expenditures_australia_monthly,36,36,AutoARIMA,turnover,1,17.075,19.675
+expenditures_australia_monthly,36,36,AutoARIMA,turnover,2,28.358333,19.675
+expenditures_australia_monthly,36,36,AutoARIMA,turnover,3,12.233333,19.675
+expenditures_australia_monthly,36,36,AutoARIMA,turnover,4,41.266667,19.675
+expenditures_australia_monthly,60,60,AutoETS,turnover,0,31.750949,19.675
+expenditures_australia_monthly,60,60,AutoETS,turnover,1,33.776232,19.675
+expenditures_australia_monthly,60,60,AutoETS,turnover,2,17.776694,19.675
+expenditures_australia_monthly,60,60,AutoETS,turnover,3,25.676502,19.675
+expenditures_australia_monthly,60,60,AutoETS,turnover,4,14.879296,19.675
+expenditures_australia_monthly,60,60,AutoARIMA,turnover,0,15.667206,19.675
+expenditures_australia_monthly,60,60,AutoARIMA,turnover,1,14.78783,19.675
+expenditures_australia_monthly,60,60,AutoARIMA,turnover,2,26.13001,19.675
+expenditures_australia_monthly,60,60,AutoARIMA,turnover,3,15.38317,19.675
+expenditures_australia_monthly,60,60,AutoARIMA,turnover,4,49.228704,19.675
+expenditures_australia_monthly,120,120,AutoETS,turnover,0,20.019502,19.675
+expenditures_australia_monthly,120,120,AutoETS,turnover,1,22.28246,19.675
+expenditures_australia_monthly,120,120,AutoETS,turnover,2,15.441998,19.675
+expenditures_australia_monthly,120,120,AutoETS,turnover,3,14.180363,19.675
+expenditures_australia_monthly,120,120,AutoETS,turnover,4,38.539491,19.675
+expenditures_australia_monthly,120,120,AutoARIMA,turnover,0,19.732113,19.675
+expenditures_australia_monthly,120,120,AutoARIMA,turnover,1,24.862104,19.675
+expenditures_australia_monthly,120,120,AutoARIMA,turnover,2,17.022053,19.675
+expenditures_australia_monthly,120,120,AutoARIMA,turnover,3,17.728556,19.675
+expenditures_australia_monthly,120,120,AutoARIMA,turnover,4,29.209011,19.675
 expenditures_australia_monthly,full,393,AutoETS,turnover,0,27.768736,19.675
 expenditures_australia_monthly,full,393,AutoETS,turnover,1,35.531105,19.675
 expenditures_australia_monthly,full,393,AutoETS,turnover,2,19.111172,19.675
@@ -359,3 +359,23 @@ expenditures_australia_monthly,full,393,AutoARIMA,turnover,1,19.428376,19.675
 expenditures_australia_monthly,full,393,AutoARIMA,turnover,2,23.618919,19.675
 expenditures_australia_monthly,full,393,AutoARIMA,turnover,3,13.974638,19.675
 expenditures_australia_monthly,full,393,AutoARIMA,turnover,4,45.355402,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet v2 [refit],turnover,0,50.906602,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet v2 [refit],turnover,1,35.082987,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet v2 [refit],turnover,2,41.054098,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet v2 [refit],turnover,3,24.467204,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet v2 [refit],turnover,4,62.828865,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet v2 [refit],turnover,0,27.320411,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet v2 [refit],turnover,1,39.099071,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet v2 [refit],turnover,2,33.343921,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet v2 [refit],turnover,3,28.986441,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet v2 [refit],turnover,4,69.468497,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet v2 [refit],turnover,0,31.929258,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet v2 [refit],turnover,1,32.62691,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet v2 [refit],turnover,2,40.765405,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet v2 [refit],turnover,3,25.739033,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet v2 [refit],turnover,4,51.246013,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet v2 [refit],turnover,0,40.616969,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet v2 [refit],turnover,1,51.026677,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet v2 [refit],turnover,2,34.862649,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet v2 [refit],turnover,3,29.921928,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet v2 [refit],turnover,4,63.55798,19.675

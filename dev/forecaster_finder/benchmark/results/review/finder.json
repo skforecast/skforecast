@@ -1,0 +1,1500 @@
+{
+ "rows": [
+  {
+   "id": "target",
+   "text": "What do you want to forecast?",
+   "options": [
+    [
+     "number",
+     "A number",
+     "Sales, energy demand, website visits"
+    ],
+    [
+     "category",
+     "A category",
+     "Low, medium or high demand; failure or no failure"
+    ]
+   ]
+  },
+  {
+   "id": "series",
+   "text": "How many time series?",
+   "hint": "A time series is one column of values recorded over time, such as the daily sales of one store.",
+   "options": [
+    [
+     "one",
+     "One",
+     "The total sales of a company"
+    ],
+    [
+     "several",
+     "Several",
+     "The sales of each store or each product"
+    ]
+   ],
+   "show_if": {
+    "target": "number"
+   }
+  },
+  {
+   "id": "freq",
+   "text": "How often are the values recorded?",
+   "options": [
+    [
+     "hourly",
+     "Every hour",
+     ""
+    ],
+    [
+     "daily",
+     "Every day",
+     ""
+    ],
+    [
+     "weekly",
+     "Every week",
+     ""
+    ],
+    [
+     "monthly",
+     "Every month",
+     ""
+    ],
+    [
+     "quarterly",
+     "Every quarter",
+     ""
+    ],
+    [
+     "other",
+     "Something else",
+     "Every 15 minutes, every year..."
+    ]
+   ]
+  },
+  {
+   "id": "extra",
+   "text": "Will you know anything else in advance?",
+   "hint": "Things that affect the values and that you know for future dates. skforecast calls them exogenous variables.",
+   "options": [
+    [
+     "yes",
+     "Yes",
+     "Holidays, planned promotions, prices, weather forecasts"
+    ],
+    [
+     "no",
+     "No",
+     "Also if you only know them up to today, like sensor readings"
+    ]
+   ]
+  }
+ ],
+ "default": {
+  "target": "number",
+  "series": "one",
+  "freq": "daily",
+  "extra": "no"
+ },
+ "notes": [
+  "Need to explain the forecast? LightGBM gives feature importances (`forecaster.get_feature_importances()`); foundation models do not.",
+  "Forecasting many series often? Chronos-2 needs PyTorch and, at scale, a GPU.",
+  "Chronos-2 is Apache-2.0. Other foundation models in skforecast have licenses that restrict commercial use."
+ ],
+ "min_history": {
+  "hourly": 336,
+  "daily": 90,
+  "weekly": 104,
+  "monthly": 36,
+  "quarterly": 24,
+  "other": 90
+ },
+ "combos": [
+  {
+   "answers": {
+    "target": "category",
+    "freq": "hourly",
+    "extra": "yes"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same hour the day before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (hourly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s0"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "hourly",
+    "extra": "yes"
+   },
+   "leaf": "one-known",
+   "headline": "Race LightGBM against Chronos-2",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same hour the day before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: with variables known in advance, LightGBM had a lower error than Chronos-2 in 1 of 2 datasets, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (hourly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM, then Chronos-2, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s1"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "hourly",
+    "extra": "yes"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same hour the day before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (hourly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s2"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "hourly",
+    "extra": "no"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same hour the day before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (hourly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s3"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "hourly",
+    "extra": "no"
+   },
+   "leaf": "one-none",
+   "headline": "Start with Chronos-2, then try to beat it with LightGBM",
+   "lineup": [
+    [
+     "First",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Challenger",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same hour the day before"
+    ]
+   ],
+   "why": [
+    "In our tests, Chronos-2 had a lower error than LightGBM in 7 of 8 datasets of this kind, and LightGBM did worse than the seasonal baseline in 14 of 22 runs."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (hourly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s4"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "hourly",
+    "extra": "no"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same hour the day before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (hourly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s5"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "daily",
+    "extra": "yes"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same day the week before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (daily data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s6"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "daily",
+    "extra": "yes"
+   },
+   "leaf": "one-known",
+   "headline": "Race LightGBM against Chronos-2",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same day the week before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: with variables known in advance, LightGBM had a lower error than Chronos-2 in 1 of 2 datasets, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (daily data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM, then Chronos-2, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s7"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "daily",
+    "extra": "yes"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same day the week before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (daily data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s8"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "daily",
+    "extra": "no"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same day the week before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (daily data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s9"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "daily",
+    "extra": "no"
+   },
+   "leaf": "one-none",
+   "headline": "Start with Chronos-2, then try to beat it with LightGBM",
+   "lineup": [
+    [
+     "First",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Challenger",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same day the week before"
+    ]
+   ],
+   "why": [
+    "In our tests, Chronos-2 had a lower error than LightGBM in 7 of 8 datasets of this kind, and LightGBM did worse than the seasonal baseline in 14 of 22 runs."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (daily data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s10"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "daily",
+    "extra": "no"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same day the week before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (daily data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s11"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "weekly",
+    "extra": "yes"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same week the year before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (weekly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s12"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "weekly",
+    "extra": "yes"
+   },
+   "leaf": "one-known",
+   "headline": "Race LightGBM against Chronos-2",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same week the year before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: with variables known in advance, LightGBM had a lower error than Chronos-2 in 1 of 2 datasets, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (weekly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM, then Chronos-2, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s13"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "weekly",
+    "extra": "yes"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same week the year before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (weekly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s14"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "weekly",
+    "extra": "no"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same week the year before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (weekly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s15"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "weekly",
+    "extra": "no"
+   },
+   "leaf": "one-none",
+   "headline": "Start with Chronos-2, then try to beat it with LightGBM",
+   "lineup": [
+    [
+     "First",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Challenger",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same week the year before"
+    ]
+   ],
+   "why": [
+    "In our tests, Chronos-2 had a lower error than LightGBM in 7 of 8 datasets of this kind, and LightGBM did worse than the seasonal baseline in 14 of 22 runs."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (weekly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s16"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "weekly",
+    "extra": "no"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same week the year before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (weekly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s17"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "monthly",
+    "extra": "yes"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same month the year before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (monthly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s18"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "monthly",
+    "extra": "yes"
+   },
+   "leaf": "one-known",
+   "headline": "Race LightGBM against Chronos-2, and keep AutoETS as a statistical reference",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Reference",
+     "AutoETS",
+     "ForecasterStats",
+     "Statistical reference"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same month the year before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: with variables known in advance, LightGBM had a lower error than Chronos-2 in 1 of 2 datasets, and both always beat the seasonal baseline.",
+    "On monthly data AutoETS matched Chronos-2 (lower error in 5 of 12 runs) and never did worse than the seasonal baseline."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (monthly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM, then Chronos-2, then AutoETS, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s19"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "monthly",
+    "extra": "yes"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same month the year before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (monthly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s20"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "monthly",
+    "extra": "no"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same month the year before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (monthly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s21"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "monthly",
+    "extra": "no"
+   },
+   "leaf": "one-none",
+   "headline": "Start with Chronos-2, then try to beat it with LightGBM, and keep AutoETS as a statistical reference",
+   "lineup": [
+    [
+     "First",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Challenger",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Reference",
+     "AutoETS",
+     "ForecasterStats",
+     "Statistical reference"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same month the year before"
+    ]
+   ],
+   "why": [
+    "In our tests, Chronos-2 had a lower error than LightGBM in 7 of 8 datasets of this kind, and LightGBM did worse than the seasonal baseline in 14 of 22 runs.",
+    "On monthly data AutoETS matched Chronos-2 (lower error in 5 of 12 runs) and never did worse than the seasonal baseline."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (monthly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then AutoETS, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s22"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "monthly",
+    "extra": "no"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same month the year before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (monthly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s23"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "quarterly",
+    "extra": "yes"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same quarter the year before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (quarterly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s24"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "quarterly",
+    "extra": "yes"
+   },
+   "leaf": "one-known",
+   "headline": "Race LightGBM against Chronos-2, and keep AutoETS as a statistical reference",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Reference",
+     "AutoETS",
+     "ForecasterStats",
+     "Statistical reference"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same quarter the year before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: with variables known in advance, LightGBM had a lower error than Chronos-2 in 1 of 2 datasets, and both always beat the seasonal baseline.",
+    "On monthly data AutoETS matched Chronos-2 (lower error in 5 of 12 runs) and never did worse than the seasonal baseline."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (quarterly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM, then Chronos-2, then AutoETS, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s25"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "quarterly",
+    "extra": "yes"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same quarter the year before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (quarterly data). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s26"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "quarterly",
+    "extra": "no"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same quarter the year before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (quarterly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s27"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "quarterly",
+    "extra": "no"
+   },
+   "leaf": "one-none",
+   "headline": "Start with Chronos-2, then try to beat it with LightGBM, and keep AutoETS as a statistical reference",
+   "lineup": [
+    [
+     "First",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Challenger",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Reference",
+     "AutoETS",
+     "ForecasterStats",
+     "Statistical reference"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same quarter the year before"
+    ]
+   ],
+   "why": [
+    "In our tests, Chronos-2 had a lower error than LightGBM in 7 of 8 datasets of this kind, and LightGBM did worse than the seasonal baseline in 14 of 22 runs.",
+    "On monthly data AutoETS matched Chronos-2 (lower error in 5 of 12 runs) and never did worse than the seasonal baseline."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (quarterly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then AutoETS, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s28"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "quarterly",
+    "extra": "no"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same quarter the year before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (quarterly data). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s29"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "other",
+    "extra": "yes"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same step one season before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (an uncommon frequency). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s30"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "other",
+    "extra": "yes"
+   },
+   "leaf": "one-known",
+   "headline": "Race LightGBM against Chronos-2",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same step one season before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: with variables known in advance, LightGBM had a lower error than Chronos-2 in 1 of 2 datasets, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (an uncommon frequency). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM, then Chronos-2, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s31"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "other",
+    "extra": "yes"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same step one season before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (an uncommon frequency). I also have variables whose future values I know.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s32"
+  },
+  {
+   "answers": {
+    "target": "category",
+    "freq": "other",
+    "extra": "no"
+   },
+   "leaf": "category",
+   "headline": "Start with a machine learning classifier and compare it with a simple rule",
+   "lineup": [
+    [
+     "Candidate",
+     "LightGBM classifier",
+     "ForecasterRecursiveClassifier",
+     "Machine learning classifier"
+    ],
+    [
+     "Baseline",
+     "Seasonal rule",
+     "y.shift(season)",
+     "The category of the same step one season before"
+    ]
+   ],
+   "why": [
+    "On one dataset the classifier was right more often than the rule (90% against 84%), but not on balanced accuracy (0.74 against 0.75): keep the rule as your baseline."
+   ],
+   "prompt": "I want to forecast a category (classification) with skforecast (an uncommon frequency). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: LightGBM classifier, then Seasonal rule. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s33"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "one",
+    "freq": "other",
+    "extra": "no"
+   },
+   "leaf": "one-none",
+   "headline": "Start with Chronos-2, then try to beat it with LightGBM",
+   "lineup": [
+    [
+     "First",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Challenger",
+     "LightGBM",
+     "ForecasterRecursive",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same step one season before"
+    ]
+   ],
+   "why": [
+    "In our tests, Chronos-2 had a lower error than LightGBM in 7 of 8 datasets of this kind, and LightGBM did worse than the seasonal baseline in 14 of 22 runs."
+   ],
+   "prompt": "I want to forecast one time series with skforecast (an uncommon frequency). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s34"
+  },
+  {
+   "answers": {
+    "target": "number",
+    "series": "several",
+    "freq": "other",
+    "extra": "no"
+   },
+   "leaf": "several",
+   "headline": "Race Chronos-2 against LightGBM",
+   "lineup": [
+    [
+     "Candidate",
+     "Chronos-2",
+     "ForecasterFoundation",
+     "Foundation model, no training"
+    ],
+    [
+     "Candidate",
+     "LightGBM",
+     "ForecasterRecursiveMultiSeries",
+     "Machine learning model you can improve and explain"
+    ],
+    [
+     "Baseline",
+     "Seasonal baseline",
+     "ForecasterEquivalentDate",
+     "same step one season before"
+    ]
+   ],
+   "why": [
+    "No clear winner in our tests: Chronos-2 had a lower error than LightGBM in 3 of 4 datasets, by small margins, and both always beat the seasonal baseline."
+   ],
+   "prompt": "I want to forecast several time series with skforecast (an uncommon frequency). I have no variables known in advance.\nPlan: compare these models with the same backtesting folds, in this order: Chronos-2, then LightGBM, then Seasonal baseline. Keep a model only if it beats the baseline.\nBefore writing any code, ask me for a sample of my data and how far ahead I need to forecast. Use the skforecast API reference at https://skforecast.org/latest/llms-full.txt and do not tune anything until the comparison runs.",
+   "snippet": "s35"
+  }
+ ],
+ "snippets": {
+  "s0": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"h\"\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 24   # hours ahead of each forecast (no more than one season)\nseason = 24  # the rule repeats the category of the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same hour the day before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 1.5
+  },
+  "s1": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"h\",\n#    e.g. y = data[\"sales\"].asfreq(\"h\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 24    # hours ahead of each forecast\nseason = 24  # the baseline repeats the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=24),\n    calendar_features=CalendarFeatures(features=[\"hour\", \"day_of_week\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 2. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 3. Baseline: same hour the day before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 4.5
+  },
+  "s2": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"h\",\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 24    # hours ahead of each forecast\nseason = 24  # the baseline repeats the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=24),\n    calendar_features=CalendarFeatures(features=[\"hour\", \"day_of_week\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same hour the day before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 1.6
+  },
+  "s3": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"h\"\nsteps = 24   # hours ahead of each forecast (no more than one season)\nseason = 24  # the rule repeats the category of the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same hour the day before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.6
+  },
+  "s4": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"h\",\n#    e.g. y = data[\"sales\"].asfreq(\"h\")\nsteps = 24    # hours ahead of each forecast\nseason = 24  # the baseline repeats the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=24),\n    calendar_features=CalendarFeatures(features=[\"hour\", \"day_of_week\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same hour the day before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.7
+  },
+  "s5": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"h\",\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 24    # hours ahead of each forecast\nseason = 24  # the baseline repeats the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=24),\n    calendar_features=CalendarFeatures(features=[\"hour\", \"day_of_week\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same hour the day before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 1.1
+  },
+  "s6": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"D\"\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 7    # days ahead of each forecast (no more than one season)\nseason = 7   # the rule repeats the category of the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same day the week before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.7
+  },
+  "s7": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"D\",\n#    e.g. y = data[\"sales\"].asfreq(\"D\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 14    # days ahead of each forecast\nseason = 7   # the baseline repeats the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 2. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 3. Baseline: same day the week before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.9
+  },
+  "s8": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"D\",\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 14    # days ahead of each forecast\nseason = 7   # the baseline repeats the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same day the week before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 1.2
+  },
+  "s9": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"D\"\nsteps = 7    # days ahead of each forecast (no more than one season)\nseason = 7   # the rule repeats the category of the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same day the week before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.5
+  },
+  "s10": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"D\",\n#    e.g. y = data[\"sales\"].asfreq(\"D\")\nsteps = 14    # days ahead of each forecast\nseason = 7   # the baseline repeats the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same day the week before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.6
+  },
+  "s11": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"D\",\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 14    # days ahead of each forecast\nseason = 7   # the baseline repeats the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same day the week before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.9
+  },
+  "s12": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"W\"\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 8    # weeks ahead of each forecast (no more than one season)\nseason = 52  # the rule repeats the category of the same week the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 4, 52],\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same week the year before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.4
+  },
+  "s13": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"W\",\n#    e.g. y = data[\"sales\"].asfreq(\"W\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 8    # weeks ahead of each forecast\nseason = 52  # the baseline repeats the same week the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 4, 52],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=4),\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 2. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 3. Baseline: same week the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.6
+  },
+  "s14": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"W\",\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 8    # weeks ahead of each forecast\nseason = 52  # the baseline repeats the same week the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 4, 52],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=4),\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same week the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.8
+  },
+  "s15": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"W\"\nsteps = 8    # weeks ahead of each forecast (no more than one season)\nseason = 52  # the rule repeats the category of the same week the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 4, 52],\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same week the year before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.2
+  },
+  "s16": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"W\",\n#    e.g. y = data[\"sales\"].asfreq(\"W\")\nsteps = 8    # weeks ahead of each forecast\nseason = 52  # the baseline repeats the same week the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 4, 52],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=4),\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same week the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.5
+  },
+  "s17": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"W\",\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 8    # weeks ahead of each forecast\nseason = 52  # the baseline repeats the same week the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 4, 52],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=4),\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same week the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.8
+  },
+  "s18": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"MS\"\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 6    # months ahead of each forecast (no more than one season)\nseason = 12  # the rule repeats the category of the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same month the year before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.3
+  },
+  "s19": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n    backtesting_stats,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursive,\n    ForecasterStats,\n)\nfrom skforecast.stats import Ets\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"MS\",\n#    e.g. y = data[\"sales\"].asfreq(\"MS\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 6    # months ahead of each forecast\nseason = 12  # the baseline repeats the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Machine learning: LightGBM with lags, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 2. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 3. Statistical reference: AutoETS\nets = ForecasterStats(estimator=Ets(m=season))\nmetric_ets, _ = backtesting_stats(ets, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# 4. Baseline: same month the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"AutoETS\": metric_ets[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 1.8
+  },
+  "s20": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"MS\",\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 6    # months ahead of each forecast\nseason = 12  # the baseline repeats the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same month the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.7
+  },
+  "s21": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"MS\"\nsteps = 6    # months ahead of each forecast (no more than one season)\nseason = 12  # the rule repeats the category of the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same month the year before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.2
+  },
+  "s22": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n    backtesting_stats,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursive,\n    ForecasterStats,\n)\nfrom skforecast.stats import Ets\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"MS\",\n#    e.g. y = data[\"sales\"].asfreq(\"MS\")\nsteps = 6    # months ahead of each forecast\nseason = 12  # the baseline repeats the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Statistical reference: AutoETS\nets = ForecasterStats(estimator=Ets(m=season))\nmetric_ets, _ = backtesting_stats(ets, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# 4. Baseline: same month the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"AutoETS\": metric_ets[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 1.2
+  },
+  "s23": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"MS\",\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 6    # months ahead of each forecast\nseason = 12  # the baseline repeats the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same month the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.6
+  },
+  "s24": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"QS\"\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 4    # quarters ahead of each forecast (no more than one season)\nseason = 4   # the rule repeats the category of the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same quarter the year before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.1
+  },
+  "s25": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n    backtesting_stats,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursive,\n    ForecasterStats,\n)\nfrom skforecast.stats import Ets\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"QS\",\n#    e.g. y = data[\"sales\"].asfreq(\"QS\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 4    # quarters ahead of each forecast\nseason = 4   # the baseline repeats the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Machine learning: LightGBM with lags, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n    calendar_features=CalendarFeatures(features=[\"quarter\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 2. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 3. Statistical reference: AutoETS\nets = ForecasterStats(estimator=Ets(m=season))\nmetric_ets, _ = backtesting_stats(ets, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# 4. Baseline: same quarter the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"AutoETS\": metric_ets[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.6
+  },
+  "s26": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"QS\",\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 4    # quarters ahead of each forecast\nseason = 4   # the baseline repeats the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n    calendar_features=CalendarFeatures(features=[\"quarter\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same quarter the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.6
+  },
+  "s27": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"QS\"\nsteps = 4    # quarters ahead of each forecast (no more than one season)\nseason = 4   # the rule repeats the category of the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same quarter the year before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.1
+  },
+  "s28": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n    backtesting_stats,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursive,\n    ForecasterStats,\n)\nfrom skforecast.stats import Ets\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"QS\",\n#    e.g. y = data[\"sales\"].asfreq(\"QS\")\nsteps = 4    # quarters ahead of each forecast\nseason = 4   # the baseline repeats the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n    calendar_features=CalendarFeatures(features=[\"quarter\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Statistical reference: AutoETS\nets = ForecasterStats(estimator=Ets(m=season))\nmetric_ets, _ = backtesting_stats(ets, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# 4. Baseline: same quarter the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"AutoETS\": metric_ets[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.5
+  },
+  "s29": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"QS\",\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 4    # quarters ahead of each forecast\nseason = 4   # the baseline repeats the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n    calendar_features=CalendarFeatures(features=[\"quarter\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same quarter the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.5
+  },
+  "s30": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex with a frequency\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 7    # steps ahead of each forecast (no more than one season)  # <- edit\nseason = 7   # the rule repeats the category of the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same step one season before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.5
+  },
+  "s31": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex with a frequency,\n#    e.g. y = data[\"sales\"].asfreq(\"D\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 14    # steps ahead of each forecast  # <- edit\nseason = 7   # the baseline repeats the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 2. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 3. Baseline: same step one season before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.7
+  },
+  "s32": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex with a frequency,\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 14    # steps ahead of each forecast  # <- edit\nseason = 7   # the baseline repeats the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same step one season before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 1.1
+  },
+  "s33": {
+   "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex with a frequency\nsteps = 7    # steps ahead of each forecast (no more than one season)  # <- edit\nseason = 7   # the rule repeats the category of the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same step one season before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
+   "status": "ok",
+   "seconds": 0.4
+  },
+  "s34": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex with a frequency,\n#    e.g. y = data[\"sales\"].asfreq(\"D\")\nsteps = 14    # steps ahead of each forecast  # <- edit\nseason = 7   # the baseline repeats the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same step one season before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 0.6
+  },
+  "s35": {
+   "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex with a frequency,\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 14    # steps ahead of each forecast  # <- edit\nseason = 7   # the baseline repeats the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same step one season before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
+   "status": "ok",
+   "seconds": 1.1
+  }
+ }
+}

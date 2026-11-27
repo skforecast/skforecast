@@ -2,14 +2,19 @@
 
 ## 1. Estado
 
-- Versión 2, del 2026-11-27. Sustituye a la versión 1 (commit `407746d`) después de la
-  revisión independiente de `REVISION.md`. Base: skforecast 0.28.0.
-- No hay nada implementado en `skforecast/`, `docs/` ni `skills/`.
+- Versión 2, del 2026-11-27, con la segunda pasada del mismo día. Sustituye a la versión 1
+  (commit `407746d`) después de la revisión independiente de `REVISION.md`. Base:
+  skforecast 0.28.0.
+- Del selector no hay nada implementado en `docs/` ni `skills/`. En esta rama sí están
+  arreglados los dos fallos de `Ets` que encontró la revisión (commit `5f020a0`, con tests,
+  notas de versión y la skill `statistical-models`), y el prototipo de la fuente única
+  (`benchmark/finder_tree.py`) ya sigue el diseño de la sección 6.
 - Las cifras de este documento salen de `benchmark/review.py` (protocolo justo, sección 4).
   Las de la versión 1 (ML congelado) no se citan en ninguna página: ver `REVISION.md` H1.
 - Filas del roadmap: `DOC-choosing-forecaster-evidence` (fase 0), `FEAT-forecaster-finder`
-  (fases 1 a 3), `FEAT-finder-probabilistic` (fase 4), y dos fallos de `Ets` que salieron de
-  la revisión: `BUG-ets-freeze-params` y `QW-ets-m-over-24-silent`.
+  (fases 1 a 3), `FEAT-finder-probabilistic` (fase 4); `BUG-ets-freeze-params` y
+  `QW-ets-m-over-24-silent` (arregladas en esta rama, sin fusionar) y
+  `QW-shared-cv-refit-warnings` (nueva).
 - Informe visual de la versión 1 (no actualizado):
   https://claude.ai/artifact/LdLnbpz9LXdJ4rqPaocysX.
 
@@ -20,14 +25,14 @@ Contenido de la carpeta:
 | `PLAN.md` | Este documento |
 | `REVISION.md` | Revisión independiente: hallazgos por gravedad, con evidencia y propuesta |
 | `benchmark/benchmark.py` | Estudio original (ML congelado). Define los casos; se conserva porque reproduce las cifras de la versión 1 |
-| `benchmark/review.py` | **Estudio de referencia**: mismos casos y bloques, ML reentrenado, `LightGBM+`, el LightGBM del fragmento, selección en validación, Chronos-2 small, base y synth; `--extra` y `--horizon` para los controles |
+| `benchmark/review.py` | **Estudio de referencia**: mismos casos y bloques, ML reentrenado, `LightGBM+`, el LightGBM del fragmento, selección en validación, Chronos-2 small, base y synth; `--extra` y `--horizon` para los controles, `--stats` para volver a medir solo los estadísticos y `--snippet` para medir el LightGBM tal como lo escribe el fragmento |
 | `benchmark/recount.py` | Recuentos por ejecución, por dataset y por tipo de datos |
-| `benchmark/finder_tree.py`, `build.py` | Prototipo de la versión 1 de la fuente única (5 preguntas, 100 fragmentos). No refleja todavía la sección 6 |
-| `benchmark/check_snippets.py` | Avisos e historia mínima de los fragmentos |
+| `benchmark/finder_tree.py`, `build.py` | Prototipo de la fuente única con el diseño de la sección 6: 4 filas, reglas por tipo de datos, 36 fragmentos. `build.py` los ejecuta con los avisos como errores, calcula las cifras del respaldo y escribe `results/review/finder.json` (los datos de la página) |
+| `benchmark/check_snippets.py` | Comprueba que cada tipo de fragmento se ejecuta con su historia mínima |
 | `benchmark/repro_ets_freeze_params.py` | Reproducción de `BUG-ets-freeze-params` |
 | `benchmark/summarize.py`, `evidence.py`, `report_data.py` | Resúmenes de la versión 1 (leen `results/*.csv`) |
 | `benchmark/results/` | CSV del estudio original |
-| `benchmark/results/review/` | CSV del estudio de referencia, controles (`extra_*`), recuentos, fragmentos y `environment.json`; el error por serie y por bloque, en `detail/` |
+| `benchmark/results/review/` | CSV del estudio de referencia, controles (`extra_*`), recuentos (`recount_*`), fragmentos (`finder.json`, `snippet_*`), `environment.json` y, de la medición de los estadísticos tras el arreglo, `environment_stats.json` y `stats_previous.csv`; el error por serie y por bloque, en `detail/` |
 
 Reproducir (desde `benchmark/`, con `uv pip install chronos-forecasting`):
 
@@ -35,9 +40,11 @@ Reproducir (desde `benchmark/`, con `uv pip install chronos-forecasting`):
 python -I review.py              # unos 35 minutos en 4 núcleos sin GPU
 python -I review.py --extra      # otros sitios de bdg2, otras series de M4, clasificación (15 min)
 python -I review.py --horizon    # horizonte cuatro veces más corto (7 min)
+python -I review.py --stats      # solo AutoETS y AutoARIMA, sustituidos en los CSV (3 min)
+python -I review.py --snippet    # el LightGBM del fragmento, tal como se escribe (3 min)
 python -I recount.py             # cifras de las secciones 4 y 6
-python -I build.py               # 105 combinaciones, 100 fragmentos (versión 1)
-python -I check_snippets.py      # avisos e historia mínima de los fragmentos
+python -I build.py               # 36 combinaciones, 36 fragmentos, medio minuto
+python -I check_snippets.py      # historia mínima de cada tipo de fragmento
 ```
 
 Entorno: Python 3.12.3, skforecast 0.28.0, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1,
@@ -142,8 +149,12 @@ Clasificación (`vic_electricity_classification`): clasificador LightGBM reentre
 - Por dataset: Chronos-2 por delante de LightGBM en 8 de 12 (10 de 12 con toda la
   historia); mejora al naive en 12 de 12, y LightGBM, en 9.
 - Estadísticos en mensual (12 ejecuciones, 3 datasets): menos error que Chronos-2 en 6 y que
-  LightGBM en 12; AutoETS nunca quedó peor que el naive. En diario (13 ejecuciones), AutoETS
-  no ganó nunca a Chronos-2. En semanal, `Ets(m=52)` no es estacional.
+  LightGBM en 12; AutoETS nunca quedó peor que el naive. En trimestral (304 series de
+  `australia_tourism`, un AutoETS por serie, medido con el arreglo de `Ets`): 0,859 frente a
+  0,866 de Chronos-2 y 0,925 de LightGBM. En diario (13 ejecuciones), AutoETS no ganó nunca
+  a Chronos-2. En semanal, `Ets(m=52)` no es estacional (ahora avisa).
+- El LightGBM tal como lo escribe el fragmento del selector (`review.py --snippet`): peor
+  que el naive en 14 de 38 ejecuciones, las 14 con una serie y nada conocido a futuro.
 - Controles (detalle en `REVISION.md`): Chronos-2 synth mejora al naive en 15 de 15 y a
   LightGBM en 10 de 15; el modelo base no mejora al small de forma consistente (8 de 15);
   un horizonte 4 veces más corto no cambia el orden (9 de 12 en los dos); `LightGBM+` no
@@ -171,7 +182,8 @@ Clasificación (`vic_electricity_classification`): clasificador LightGBM reentre
   débil, y sus variables son valores observados, no pronósticos.
 - Una configuración por modelo, sin ajuste: no dice cuánto se acerca un LightGBM trabajado.
 - Chronos-2 en CPU; el coste de producción no está medido.
-- AutoETS y AutoARIMA medidos con `freeze_params=True` (`BUG-ets-freeze-params`).
+- AutoETS y AutoARIMA medidos con `freeze_params=True` (valor por defecto): modelo y
+  parámetros de suavizado del primer ajuste, estados reestimados en cada bloque.
 - Diferencias de pocas centésimas no son significativas: en varios casos Chronos-2 gana la
   mitad de los bloques.
 
@@ -220,10 +232,10 @@ Selección por defecto: un número, una serie, cada día, no.
 | Respuestas | Titular | Candidatos | Respaldo que se muestra |
 |:--|:--|:--|:--|
 | Una categoría | "Start with a machine learning classifier and compare it with a simple rule" | `ForecasterRecursiveClassifier` con LightGBM; baseline: la categoría del mismo periodo una estación antes | "On one dataset the classifier was right more often (90% vs 84%) but did not beat the rule on balanced accuracy" |
-| Un número, una serie, No | "Start with Chronos-2, then try to beat it with LightGBM" (decisión D2) | 1. Chronos-2, 2. LightGBM, baseline | "Lower error than LightGBM in 7 of 8 datasets; LightGBM did worse than the baseline in 11 of 22 runs" |
+| Un número, una serie, No | "Start with Chronos-2, then try to beat it with LightGBM" (decisión D2) | 1. Chronos-2, 2. LightGBM, baseline | "Chronos-2 had a lower error than LightGBM in 7 of 8 datasets of this kind, and LightGBM did worse than the seasonal baseline in 14 of 22 runs" (con el LightGBM del fragmento) |
 | Un número, una serie, Sí | "Race LightGBM against Chronos-2" | Los dos con `exog`, baseline | "No clear winner: LightGBM ahead in one dataset, level in the other" |
 | Un número, varias series | "Race Chronos-2 against LightGBM" | `ForecasterRecursiveMultiSeries` y Chronos-2; baseline por serie | "Chronos-2 ahead in 3 of 4 datasets with the full history (2 of 4 over all histories), by small margins" |
-| Además: una serie, mensual o trimestral | "...and keep AutoETS as a statistical reference" | `ForecasterStats(Ets(m=...))` | "On monthly data AutoETS matched Chronos-2 (3 datasets)" |
+| Además: una serie, mensual o trimestral | "...and keep AutoETS as a statistical reference" | `ForecasterStats(Ets(m=...))` | "On monthly data AutoETS matched Chronos-2 (lower error in 5 of 12 runs) and never did worse than the seasonal baseline" |
 | Something else (frecuencia) | Los mismos candidatos | Código con `SEASON` y `STEPS` por editar | Enlace a la guía |
 
 Notas fijas en el resultado (sustituyen a la pregunta de prioridad): "Need to explain the
@@ -231,30 +243,27 @@ forecast? LightGBM gives feature importances; foundation models do not" y "Forec
 series often? Chronos-2 needs PyTorch and, at scale, a GPU". Nota de licencias: Chronos-2 es
 Apache-2.0; otros modelos fundacionales de skforecast restringen el uso comercial.
 
-Las cifras del respaldo se generan de los CSV del estudio, no se escriben a mano.
+Las cifras del respaldo se generan de los CSV del estudio, no se escriben a mano: en el
+prototipo lo hace `build.evidence()`, y las frases de la tabla son las que genera hoy.
 
 ### 6.3 Requisitos del fragmento
 
-1. **Es lo que se midió**: el bloque de ML del fragmento y el del estudio salen de la misma
-   función. Hoy no es así (`REVISION.md` H3).
-2. `TimeSeriesFold(..., refit=True, fixed_train_size=False)`: todos los modelos usan lo
-   anterior a cada bloque.
-3. **Sin avisos**: CI ejecuta cada fragmento con los avisos como errores (hoy avisan 72 de
-   100).
-4. **Historia mínima razonable y escrita en la página**: debe ejecutarse con 2 semanas de
-   datos horarios, 3 meses de diarios, 2 años de semanales, 3 años de mensuales y 4 años de
-   trimestrales (hoy: 21 días, 150 días, 2 años, 5 años y 5 años).
-5. Constantes por frecuencia (estación, horizonte, lags), con una línea de cabecera: "Example
-   settings so the script runs; they are not tuned" y el enlace a la guía. Sin consejos de
-   configuración en el resultado.
-6. Sin AutoETS en semanal. AutoETS en mensual y trimestral solo cuando esté cerrado
-   `BUG-ets-freeze-params`.
-7. Línea de instalación (`pip install skforecast lightgbm chronos-forecasting`) y aviso de
-   que la primera ejecución descarga los pesos.
-8. Todo lo que se calcula se imprime (hoy `get_feature_importances()` es una expresión
-   suelta).
-9. Con 4 filas quedan 30 fragmentos distintos como mucho (20 de número y 10 de categoría),
-   más los de "Something else".
+El prototipo (`finder_tree.py`) ya los cumple; cada uno tiene su comprobación.
+
+| # | Requisito | Cómo se cumple en el prototipo | Comprobación |
+|--:|:--|:--|:--|
+| 1 | Es lo que se midió | El bloque de ML es `LGBMRegressor(min_child_samples=5)` con los lags, la media móvil y el calendario de la frecuencia; `transformer_series=StandardScaler()` solo con varias series | `review.py --snippet` lo mide tal como se escribe: peor que el naive en 14 de 38 ejecuciones (antes 17 de 38), nunca con varias series |
+| 2 | Todos los modelos usan lo anterior a cada bloque | `TimeSeriesFold(..., refit=True, fixed_train_size=False)` | Lectura del fragmento |
+| 3 | Sin avisos | La llamada de Chronos-2 lleva `suppress_warnings=True` (H21 de `REVISION.md`); `series` es un dict | `build.py` falla con cualquier aviso: 0 de 36 |
+| 4 | Historia mínima razonable y escrita en la página | 2 semanas de datos horarios, 3 meses de diarios, 2 años de semanales, 3 años de mensuales y 6 años de trimestrales | `check_snippets.py`: los 18 tipos de fragmento pasan |
+| 5 | Valores de ejemplo, no una recomendación | Cabecera "Example settings so that the script runs: they are not tuned" y `steps` y `season` como variables; sin consejos de configuración | Lectura |
+| 6 | AutoETS solo en mensual y trimestral de una serie | `Ets(m=season)`; el fallo de `Ets` que lo bloqueaba está arreglado en esta rama | `build.py` |
+| 7 | Instalación y pesos | Línea `pip install skforecast lightgbm chronos-forecasting` y aviso de que la primera ejecución descarga los pesos | Lectura |
+| 8 | Todo lo que se calcula se imprime | Tabla final ordenada por error | `build.py` |
+| 9 | Pocos fragmentos | 36 combinaciones, 36 fragmentos (24 de número y 12 de categoría, con "Something else") | `build.py`, 30 s |
+
+Pendiente para la fase 1: el horizonte y el número de bloques del fragmento no son los del
+estudio (medido: el horizonte no cambia el orden entre familias).
 
 ### 6.4 Pantalla de resultado
 
@@ -347,6 +356,7 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
    0; esta carpeta de `dev/` se borra al cerrar la última fila.
 9. Analítica: GA4 con el consentimiento que ya existe. Sin migración.
 10. Fase probabilística: una fila opcional, no una extensión con tres preguntas (sección 8).
+11. Los fallos de `Ets` se arreglan en esta misma rama (hecho: `5f020a0`).
 
 ### 7.2 Decisiones que necesitan respuesta
 
@@ -356,7 +366,7 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
 | D2 | Titular con una serie y nada conocido a futuro | (a) "Start with Chronos-2, then try to beat it with LightGBM"; (b) "Race Chronos-2 against LightGBM", como en el resto | (a). Es la única regla fuerte (7 de 8 datasets, y el control sintético descarta la contaminación). (b) es más cómodo para el posicionamiento "machine learning-first", pero esconde lo que más ayuda a quien empieza |
 | D3 | Pregunta "What matters most to you?" | (a) quitarla y dejar dos notas fijas; (b) mantenerla como quinta fila que reordena y añade importancias | (a). No cambia ninguna recomendación medida |
 | D4 | Ampliar el estudio antes de publicar cifras | (a) añadir datasets hasta 6 o más por tipo de datos, con variables a futuro como pronósticos donde se pueda (`h2o_exog`, `m5`, `ashrae_daily`, `bdg2_hourly`, `m4_daily`, `items_sales`, `website_visits`, `uk_daily_flights`, `air_quality_valencia`); (b) publicar con los 12 datasets y los avisos | (a), dentro de la fase 0: de 1 a 2 días más |
-| D5 | Nivel de `BUG-ets-freeze-params` | P1 (resultado erróneo sin aviso con la configuración por defecto de `backtesting_stats` y AutoETS) u otro | P1. Bloquea el fragmento con AutoETS, no el resto |
+| D5 | Cómo llega a `0.28.x` el arreglo de `Ets`, que está en esta rama de documentación | (a) una PR de esta rama con el arreglo y `dev/`; (b) una PR solo con el commit `5f020a0` y otra con `dev/` | (b): el arreglo cambia `skforecast/` y merece su PR y su enlace en las notas de versión |
 
 ### 7.3 Fases
 
@@ -375,7 +385,7 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
   tools/ai/generate_ai_context_files.py --check` y `verify` en verde; nota en
   `docs/releases/releases.md`.
 - Esfuerzo: M (3 a 4 días; 5 con D4 (a)).
-- No requiere los fallos de Ets: la skill puede citar AutoETS en mensual con el aviso.
+- Los fallos de `Ets` ya están arreglados en esta rama.
 
 **Fase 1. Fuente única y página estática** (`FEAT-forecaster-finder`, P3, parte 1)
 
@@ -388,7 +398,8 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
   comprueba; todos los fragmentos pasan con avisos como errores y con la historia mínima de
   6.3; la página se lee completa sin JavaScript; `verify` en verde y nota de versión.
 - Esfuerzo: M (4 a 5 días).
-- Requiere: fase 0. Para el fragmento con AutoETS, `BUG-ets-freeze-params`.
+- Requiere: fase 0. Parte hecha en el prototipo: reglas, plantillas, cifras generadas y las
+  dos comprobaciones de los fragmentos.
 
 **Fase 2. Bloque interactivo** (`FEAT-forecaster-finder`, parte 2; según D1)
 
@@ -413,7 +424,7 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
 - Sección 8. Requiere la fase 3 con decisión de mantener.
 - Esfuerzo: M (estudio, 2 a 3 días; fila y fragmentos, 2 días).
 
-Orden y dependencias: fallos de Ets (aparte, P1 y P2) → fase 0 → fase 1 → fase 2 → fase 3 →
+Orden y dependencias: fusionar el arreglo de `Ets` (D5) → fase 0 → fase 1 → fase 2 → fase 3 →
 fase 4. La fase 0 tiene valor aunque no se haga nada más: hoy la skill dice a los asistentes
 que empiecen por `ForecasterRecursive` con LightGBM y reserva los fundacionales para "sin
 datos".

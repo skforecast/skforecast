@@ -6,6 +6,10 @@
 - Entorno de todas las cifras: Python 3.12.3, skforecast 0.28.0, numpy 2.5.5, pandas 3.1.1,
   scikit-learn 1.9.1, scipy 1.18.1, numba 0.68.1, LightGBM 4.7.0, PyTorch 2.15.0 (CPU),
   chronos-forecasting 2.3.2, transformers 5.24.1. Máquina de 4 núcleos, sin GPU.
+- **Segunda pasada (mismo día): los dos fallos de `Ets` están arreglados en esta rama
+  (`5f020a0`), el estudio se volvió a medir con el arreglo y el prototipo del selector está
+  reescrito con el diseño propuesto. Lo que cambia respecto al texto de abajo está en la
+  sección 6 y en las líneas "Estado" de H3, H4 y H7.**
 - Etiquetas: **[Medido]** ejecutado en esta revisión, **[Código]** verificado leyendo el código
   de skforecast 0.28.0, **[Plausible]** razonado, sin prueba concluyente.
 
@@ -187,6 +191,10 @@ paquete público `skforecast-ai` 0.5.0 de PyPI (leído, no ejecutado). Ver H12.
   Con menos, `ValueError` de `initial_train_size`.
 - `forecaster.get_feature_importances()` va como expresión suelta: en un script no muestra
   nada.
+- **Estado (segunda pasada)**: hecho en el prototipo. Los 36 fragmentos nuevos se ejecutan
+  sin avisos, reentrenan cada modelo y funcionan con la historia mínima; su LightGBM, medido
+  tal como se escribe, queda peor que el naive en 14 de 38 ejecuciones (todas con una serie
+  y nada conocido a futuro) y nunca con varias series. Detalle en 6.3.
 - Propuesta: (a) el bloque de ML del fragmento y el del estudio salen de la misma función,
   de modo que lo que se copia es lo que se midió; (b) `refit=True` y ventana creciente; (c)
   CI con los avisos como errores; (d) bloques de test que quepan en 3 años mensuales, 2 años
@@ -209,6 +217,9 @@ paquete público `skforecast-ai` 0.5.0 de PyPI (leído, no ejecutado). Ver H12.
   `freeze_params` los fija en los reajustes. Reproducción: `repro_ets_freeze_params.py`.
 - Todas las cifras de AutoETS y AutoARIMA de la versión 1 y de esta revisión están medidas
   con `freeze_params=True`: modelo y parámetros elegidos en el primer ajuste.
+- **Estado (segunda pasada)**: arreglados los dos (6.1). La causa no era `freeze_params`,
+  sino que la verosimilitud aceptaba, y premiaba, modelos multiplicativos con nivel o
+  predicciones no positivos.
 - Propuesta: quitar AutoETS del caso semanal; filas `BUG-ets-freeze-params` (P1) y
   `QW-ets-m-over-24-silent` (P2) en el roadmap; el fragmento con AutoETS no se publica hasta
   cerrar la primera.
@@ -248,6 +259,10 @@ paquete público `skforecast-ai` 0.5.0 de PyPI (leído, no ejecutado). Ver H12.
   serie: mediana del error relativo 0,85 frente a 0,88 de Chronos-2, mejor que Chronos-2 en
   el 51 % de las series, 45 s frente a 2,4 s, y el fallo de H4 en 8 series.
 - Diario (13 ejecuciones): AutoETS no ganó nunca a Chronos-2 y quedó peor que el naive en 9.
+- **Estado (segunda pasada)**: con el arreglo, AutoETS por serie en `australia_tourism`
+  queda en 0,859 frente al naive (Chronos-2, 0,866; LightGBM, 0,925), mejor que el naive en
+  el 74 % de las series y que Chronos-2 en el 52 %. El trimestral ya tiene respaldo medido
+  (un dataset, 304 series): empate con Chronos-2, como en mensual.
 - Propuesta: AutoETS como referencia en mensual y, por extensión declarada, en trimestral.
   No en semanal.
 
@@ -466,6 +481,15 @@ PyPI, leído por un subagente y comprobado en tres puntos]
 - `environment.json` del original no guardaba la versión de `chronos-forecasting`.
 - `build.py` escribe `finder.json` en la carpeta del código y no está en `.gitignore`.
 
+**H21. No hay un `TimeSeriesFold` común a las tres familias sin avisos.** [Medido]
+
+- Con `refit=False`, `backtesting_stats` avisa de que lo cambia a `True`; con `refit=True`,
+  `backtesting_foundation` avisa de que lo ignora. La documentación recomienda comparar
+  familias con el mismo `cv`. Encontrado en la segunda pasada, al ejecutar los fragmentos
+  con los avisos como errores.
+- Propuesta: fila `QW-shared-cv-refit-warnings` del roadmap. Entretanto, el fragmento usa
+  `suppress_warnings=True` en la llamada de Chronos-2.
+
 ## 5. Lo que no se pudo comprobar
 
 - El repositorio `skforecast-ai` (acceso denegado): se usó el paquete publicado, que puede
@@ -474,3 +498,92 @@ PyPI, leído por un subagente y comprobado en tres puntos]
 - Datos privados o posteriores a la publicación de Chronos-2.
 - Los otros diez modelos fundacionales.
 - El tráfico actual de la documentación, necesario para fijar umbrales de uso.
+
+## 6. Segunda pasada: arreglo de Ets, estudio medido de nuevo y prototipo
+
+Mismo entorno que el resto del documento. Commit del arreglo: `5f020a0`.
+
+### 6.1 Los dos fallos de `Ets`, arreglados
+
+**Causa del primero** [Código] [Medido]. La verosimilitud de un modelo con error
+multiplicativo es `n log(sum(e^2) / n) + 2 sum(log|yhat|)`, con `e = (y - yhat) / yhat`.
+Nada impedía que el nivel cruzara el cero: cerca de cero el segundo término se hace muy
+negativo, de modo que un ajuste sin sentido puede tener una verosimilitud finita, incluso
+buena. Al reajustar con los parámetros de suavizado fijos (lo que hace `freeze_params=True`),
+la única salida del optimizador era la tendencia de las primeras observaciones; con alpha y
+beta en 1e-4 esa tendencia se extrapola a toda la serie, el nivel cruza el cero y la
+búsqueda se queda ahí. En "The Murray | Visiting": estados iniciales de nivel 102,7 y
+tendencia -3,3 por trimestre para una serie de 72 trimestres entre 45 y 125.
+
+**Arreglo** (`skforecast/stats/exponential_smoothing/_ets_base.py`):
+
+1. Un modelo con error o estacionalidad multiplicativos no es válido si su nivel, su estado
+   estacional o su predicción a un paso no son positivos (igual que ya pasaba con la
+   tendencia multiplicativa). Se aplica al ajustar, no al simular trayectorias.
+2. Con alpha fijo, los estados iniciales se buscan también desde la tendencia de toda la
+   serie y desde "sin tendencia", y se elige el mejor.
+3. `ets()` da `ValueError` si el optimizador no encuentra ningún punto válido (en la
+   selección automática, ese candidato se descarta).
+
+**Segundo fallo**: la selección automática con `m > 24` da un `IgnoredArgumentWarning` que
+dice que solo se consideran modelos sin estacionalidad (no aparece con `seasonal=False`).
+Lo recogen el docstring de `Ets` y `skills/statistical-models/SKILL.md`.
+
+**Medido**:
+
+| Comprobación | Antes | Después |
+|:--|:--|:--|
+| 912 reajustes con los parámetros congelados (304 series de `australia_tourism`, 3 tamaños): MAE medio a 4 pasos | 4,0e8 | 14,7 |
+| Verosimilitud de esos 912 reajustes | | Mejor en 34, igual en 873, peor en ninguno (5 con diferencias menores de 2e-6) |
+| Modelo elegido por la selección automática en las 304 series | | El mismo en las 304 |
+| 60 series sintéticas (tendencia suave, estacionalidad multiplicativa, ruido del 15 %) por `backtesting_stats` | 3 con predicciones negativas o del orden de -1e10 | 0 |
+| Tiempo de los 912 reajustes | 3,1 s | 4,3 s |
+| Las 42 cifras de AutoETS y AutoARIMA del estudio | | 41 idénticas; cambia la de `australia_tourism` |
+
+Tests: 8 nuevos (verosimilitud no válida, reajuste con parámetros fijos, estados iniciales,
+`ValueError` sin punto válido, aviso con `m > 24` en la función, en la clase y sin él con
+`seasonal=False`, y `backtesting_stats` con las tres semillas que fallaban). `verify`: lint
+sin hallazgos nuevos y 457 tests de `stats`, `ForecasterStats`, `backtesting_stats` y la
+búsqueda de stats, en verde. Notas de versión añadidas (corrección destacada, línea en
+"Before upgrading", una entrada en Changed y otra en Fixed), sin enlace a PR porque no hay.
+
+Existe desde la 0.27.0, cuando `freeze_params=True` empezó a congelar de verdad: es un fallo
+de una versión publicada, no de la 0.28.x.
+
+### 6.2 El estudio, medido de nuevo
+
+Solo cambian los modelos estadísticos, así que solo ellos se volvieron a ejecutar
+(`review.py --stats`; los valores anteriores quedan en `results/review/stats_previous.csv`).
+
+- `australia_tourism` (304 series trimestrales), AutoETS por serie: 0,859 frente al naive
+  (antes, 12,7 millones). Chronos-2, 0,866; LightGBM, 0,925. Mejor que el naive en el 74 %
+  de las series, que Chronos-2 en el 52 % y que LightGBM en el 60 %. 39 s frente a 2,4 s de
+  Chronos-2.
+- Baja frecuencia con un modelo estadístico (16 ejecuciones): menos error que Chronos-2 en
+  8 (AutoETS solo, en 7), que LightGBM en 14. Mensual, sin cambios: 6 de 12.
+- El resto de cifras del documento no cambia.
+
+### 6.3 El prototipo del selector, reescrito
+
+`finder_tree.py` y `build.py` siguen ahora la sección 6 de `PLAN.md`: 4 filas, reglas por
+tipo de datos, 36 combinaciones y 36 fragmentos.
+
+| Requisito de `PLAN.md` 6.3 | Antes (versión 1) | Ahora |
+|:--|:--|:--|
+| Sin avisos | 72 de 100 fragmentos avisaban | 0 de 36 (`build.py` falla con cualquier aviso; solo se admite uno de scikit-learn que depende de los datos) |
+| Todos los modelos usan lo anterior a cada bloque | ML congelado | `refit=True` y ventana creciente |
+| Historia mínima | 21 días, 150 días, 2 años, 5 años, 5 años | 2 semanas, 3 meses, 2 años, 3 años, 6 años (horario, diario, semanal, mensual, trimestral); `check_snippets.py` lo comprueba |
+| El LightGBM del fragmento, medido | Peor que el naive en 17 de 38; hasta 4,1 veces su error; 66 veces en un sitio de `bdg2` sin escalar | Peor que el naive en 14 de 38 (`review.py --snippet`); hasta 1,6 veces; con varias series, nunca (máximo 0,94) |
+| Las cifras del respaldo se generan | Escritas a mano en la maqueta | `build.py` las calcula de `recount_runs.csv` |
+| AutoETS | También en semanal | Solo mensual y trimestral de una serie |
+
+El LightGBM del fragmento (valores por defecto más `min_child_samples=5`, series escaladas
+solo en el multiserie) es algo más flojo que el del estudio (14 frente a 11 ejecuciones peor
+que el naive, todas en "una serie, nada conocido a futuro"). El respaldo que enseña la
+página se calcula con el del fragmento: "LightGBM did worse than the seasonal baseline in 14
+of 22 runs". Si se quiere el del estudio (300 árboles, `learning_rate=0.05`, 15 hojas,
+`StandardScaler`), el fragmento crece cuatro argumentos; no compensa.
+
+Lo que el prototipo no resuelve: el horizonte y el número de bloques del fragmento no son
+los del estudio (H13 mide que el horizonte no cambia el orden), y la clasificación solo
+tiene un dataset.

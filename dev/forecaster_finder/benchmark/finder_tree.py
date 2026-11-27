@@ -1,26 +1,33 @@
 """
-Forecaster finder: questions, decision rules and code templates.
+Forecaster finder: rows of options, decision rules and code templates.
 
-Single source for the interactive page and the skill. The rules encode the
-results of benchmark.py (see the EVIDENCE notes); build.py renders every
-distinct snippet, runs it on synthetic data and writes finder.json.
+Prototype of the single source for the page and the skill (PLAN.md, section
+6). Version 2: four rows on one screen, rules by type of data and snippets
+that refit every model in each fold, raise no warnings and run with a short
+history. build.py renders every distinct snippet, runs it on synthetic data
+with the warnings as errors and writes results/review/finder.json;
+check_snippets.py finds the shortest history each snippet runs with.
+
+The ML block of the snippets is measured as it is written here by
+`review.py --snippet`.
 """
 
 from __future__ import annotations
 
-QUESTIONS = [
+ROWS = [
     {
         "id": "target",
         "text": "What do you want to forecast?",
         "options": [
-            ("number", "A number", "Sales, energy demand, website visits, temperature"),
+            ("number", "A number", "Sales, energy demand, website visits"),
             ("category", "A category", "Low, medium or high demand; failure or no failure"),
         ],
     },
     {
         "id": "series",
-        "text": "How many time series do you want to forecast?",
-        "hint": "A time series is one column of values recorded over time, such as the daily sales of one store.",
+        "text": "How many time series?",
+        "hint": "A time series is one column of values recorded over time, such as the "
+                "daily sales of one store.",
         "options": [
             ("one", "One", "The total sales of a company"),
             ("several", "Several", "The sales of each store or each product"),
@@ -31,90 +38,152 @@ QUESTIONS = [
         "id": "freq",
         "text": "How often are the values recorded?",
         "options": [
-            ("hourly", "Every hour", "Or more often: every 15 or 30 minutes"),
+            ("hourly", "Every hour", ""),
             ("daily", "Every day", ""),
             ("weekly", "Every week", ""),
             ("monthly", "Every month", ""),
-            ("quarterly", "Every quarter", "Or every year"),
+            ("quarterly", "Every quarter", ""),
+            ("other", "Something else", "Every 15 minutes, every year..."),
         ],
     },
     {
         "id": "extra",
-        "text": "Do you know other things that affect the values?",
-        "hint": "In skforecast these are called exogenous variables.",
+        "text": "Will you know anything else in advance?",
+        "hint": "Things that affect the values and that you know for future dates. "
+                "skforecast calls them exogenous variables.",
         "options": [
-            ("future", "Yes, and I know their future values",
-             "Holidays, planned promotions, prices, weather forecasts"),
-            ("past", "Yes, but only up to today",
-             "Sensor readings, measured weather, sales of other products"),
-            ("none", "No, only the dates", ""),
+            ("yes", "Yes", "Holidays, planned promotions, prices, weather forecasts"),
+            ("no", "No", "Also if you only know them up to today, like sensor readings"),
         ],
-    },
-    {
-        "id": "priority",
-        "text": "What matters most to you?",
-        "options": [
-            ("accuracy", "The most accurate forecast", ""),
-            ("cost", "Speed and low cost", "Many series, frequent forecasts, no GPU"),
-            ("explain", "Understanding what drives the forecast", "Which variables matter and how much"),
-        ],
-        "show_if": {"target": "number"},
     },
 ]
+DEFAULT = {"target": "number", "series": "one", "freq": "daily", "extra": "no"}
 
-# Settings per frequency: forecast horizon, lags, window and calendar features
-# of the snippets (the same as benchmark.py), seasonal offset of the baseline
-# and the history threshold of the question.
+# Example settings per frequency, so that the snippet runs as it is. They are
+# not tuned: season (offset of the baseline), horizon and number of test
+# periods, lags, rolling mean and calendar features. `min_history` is the
+# shortest history the snippets of the frequency must run with (checked by
+# check_snippets.py).
 FREQ = {
-    "hourly": dict(alias="h", unit="hours", steps=24, folds=8, lags="[1, 2, 3, 24, 48, 168]",
-                   window=24, calendar='["hour", "day_of_week"]', offset=24,
-                   offset_text="same hour the day before", ets_m=24),
-    "daily": dict(alias="D", unit="days", steps=14, folds=8, lags="14", window=7,
-                  calendar='["day_of_week", "month"]', offset=7,
-                  offset_text="same day the week before", ets_m=7),
-    "weekly": dict(alias="W", unit="weeks", steps=8, folds=6, lags="[1, 2, 3, 4, 52]", window=4,
-                   calendar='["month"]', offset=52, offset_text="same week the year before",
-                   ets_m=52),
-    "monthly": dict(alias="MS", unit="months", steps=12, folds=3, lags="12", window=None,
-                    calendar='["month"]', offset=12, offset_text="same month the year before",
-                    ets_m=12),
-    "quarterly": dict(alias="QS", unit="quarters", steps=4, folds=3, lags="4", window=None,
-                      calendar='["quarter"]', offset=4,
-                      offset_text="same quarter the year before", ets_m=4),
+    "hourly": dict(alias="h", unit="hours", season=24, steps=24, folds=3,
+                   lags="[1, 2, 3, 24, 48, 168]", window=24,
+                   calendar='["hour", "day_of_week"]',
+                   season_text="same hour the day before", min_history=24 * 14),
+    "daily": dict(alias="D", unit="days", season=7, steps=14, folds=3, lags="14", window=7,
+                  calendar='["day_of_week", "month"]',
+                  season_text="same day the week before", min_history=90),
+    "weekly": dict(alias="W", unit="weeks", season=52, steps=8, folds=3,
+                   lags="[1, 2, 3, 4, 52]", window=4, calendar='["month"]',
+                   season_text="same week the year before", min_history=104),
+    "monthly": dict(alias="MS", unit="months", season=12, steps=6, folds=2, lags="12",
+                    window=None, calendar='["month"]',
+                    season_text="same month the year before", min_history=36),
+    "quarterly": dict(alias="QS", unit="quarters", season=4, steps=4, folds=2, lags="4",
+                      window=None, calendar='["quarter"]',
+                      season_text="same quarter the year before", min_history=24),
 }
+# "Something else": the daily settings, marked as values to edit
+FREQ["other"] = dict(FREQ["daily"], season_text="same step one season before", edit=True)
 
 ML = "ml"
 FM = "foundation"
 
+LINEUP = {
+    FM: ("Chronos-2", "ForecasterFoundation", "Foundation model, no training"),
+    ML: ("LightGBM", "{ml_class}", "Machine learning model you can improve and explain"),
+    "stats": ("AutoETS", "ForecasterStats", "Statistical reference"),
+    "baseline": ("Seasonal baseline", "ForecasterEquivalentDate", "{season_text}"),
+    "classifier": ("LightGBM classifier", "ForecasterRecursiveClassifier",
+                   "Machine learning classifier"),
+    "rule": ("Seasonal rule", "y.shift(season)", "The category of the {season_text}"),
+}
+
+NOTES = [
+    "Need to explain the forecast? LightGBM gives feature importances "
+    "(`forecaster.get_feature_importances()`); foundation models do not.",
+    "Forecasting many series often? Chronos-2 needs PyTorch and, at scale, a GPU.",
+    "Chronos-2 is Apache-2.0. Other foundation models in skforecast have licenses that "
+    "restrict commercial use.",
+]
+
 
 def decide(a: dict) -> dict:
     """
-    Return the leaf for the answers `a`. Both candidates are always shown,
-    with the baseline; the answers decide their order and the code.
+    Leaf for the answers `a`: candidates in order, statistical reference,
+    headline and the key of the evidence shown with it (build.py turns it
+    into figures from the results of the study).
 
-    EVIDENCE (benchmark.py, 16 cases on 13 datasets, see evidence.py):
-    - Chronos-2 had a lower MASE than LightGBM in 26 of 33 single-series runs
-      and in 7 of 8 multi-series runs, and beat the seasonal naive in 40 of 41.
-    - LightGBM was 5 to 10 times faster and wins with strong known-in-advance
-      variables and a year or more of history (vic_electricity).
-    - The amount of history did not change the order of the candidates, so
-      there is no question about it.
-    - Weekly, monthly and quarterly single series: AutoETS or AutoARIMA beat
-      Chronos-2 in 8 of 15 runs, so they are added as a benchmark.
-    - Variables known only up to today did not improve any model (3 cases).
+    RULES (PLAN.md 6.2; evidence in REVISION.md):
+    - A category: classifier and the seasonal rule, by capability.
+    - A number: Chronos-2, LightGBM and the seasonal baseline, always.
+      - One series and nothing known in advance: Chronos-2 first.
+      - One series with variables known in advance, or several series: no
+        favorite.
+    - One monthly or quarterly series: AutoETS as a statistical reference.
     """
     if a["target"] == "category":
-        return {"leaf": "classification", "order": ["classifier"], "stats": False,
-                "past_only": False}
+        return {
+            "leaf": "category", "order": ["classifier"], "stats": False,
+            "headline": "Start with a machine learning classifier and compare it with "
+                        "a simple rule",
+            "evidence": "category",
+        }
     several = a["series"] == "several"
-    low_freq = a["freq"] in ("weekly", "monthly", "quarterly")
-    order = [FM, ML] if a["priority"] == "accuracy" else [ML, FM]
-    return {
-        "leaf": f"{'several' if several else 'one'}-{a['priority']}",
-        "order": order,
-        "stats": (not several) and low_freq,
-        "past_only": a["extra"] == "past",
-    }
+    stats = (not several) and a["freq"] in ("monthly", "quarterly")
+    if several:
+        leaf, order = "several", [FM, ML]
+        headline = "Race Chronos-2 against LightGBM"
+    elif a["extra"] == "yes":
+        leaf, order = "one-known", [ML, FM]
+        headline = "Race LightGBM against Chronos-2"
+    else:
+        leaf, order = "one-none", [FM, ML]
+        headline = "Start with Chronos-2, then try to beat it with LightGBM"
+    if stats:
+        headline += ", and keep AutoETS as a statistical reference"
+    return {"leaf": leaf, "order": order, "stats": stats, "headline": headline,
+            "evidence": leaf}
+
+
+def lineup(a: dict, leaf: dict) -> list:
+    """Cards of the result: (role, name, skforecast class, description)."""
+    f = FREQ[a["freq"]]
+    fmt = dict(season_text=f["season_text"],
+               ml_class="ForecasterRecursiveMultiSeries" if a.get("series") == "several"
+               else "ForecasterRecursive")
+    cards = []
+    if leaf["leaf"] == "category":
+        keys = [("Candidate", "classifier"), ("Baseline", "rule")]
+    else:
+        keys = [("Candidate", k) for k in leaf["order"]]
+        if leaf["leaf"] == "one-none":
+            keys = [("First", leaf["order"][0]), ("Challenger", leaf["order"][1])]
+        if leaf["stats"]:
+            keys.append(("Reference", "stats"))
+        keys.append(("Baseline", "baseline"))
+    for role, key in keys:
+        name, cls, text = LINEUP[key]
+        cards.append((role, name, cls.format(**fmt), text.format(**fmt)))
+    return cards
+
+
+def prompt(a: dict, leaf: dict) -> str:
+    """Prompt for an AI assistant with the answers and the plan."""
+    data = ("a category (classification)" if a["target"] == "category" else
+            "several time series" if a["series"] == "several" else "one time series")
+    freq = "an uncommon frequency" if a["freq"] == "other" else f"{a['freq']} data"
+    extra = ("I also have variables whose future values I know." if a["extra"] == "yes"
+             else "I have no variables known in advance.")
+    names = ", then ".join(c[1] for c in lineup(a, leaf))
+    return (
+        f"I want to forecast {data} with skforecast ({freq}). {extra}\n"
+        f"Plan: compare these models with the same backtesting folds, in this order: "
+        f"{names}. Keep a model only if it beats the baseline.\n"
+        f"Before writing any code, ask me for a sample of my data and how far ahead I "
+        f"need to forecast. Use the skforecast API reference at "
+        f"https://skforecast.org/latest/llms-full.txt and do not tune anything until "
+        f"the comparison runs."
+    )
 
 
 # ==============================================================================
@@ -131,31 +200,55 @@ def _imports(names: dict) -> str:
     return "\n".join(lines)
 
 
+def _edit(f: dict, text: str = "edit for your data") -> str:
+    return f"  # <- {text}" if f.get("edit") else ""
+
+
+HEADER = (
+    "# Example settings so that the script runs: they are not tuned.\n"
+    "# pip install skforecast {packages}"
+)
+
+
 def render(a: dict, leaf: dict) -> str:
     """Python snippet with the candidates of the leaf, ready to copy."""
     f = FREQ[a["freq"]]
-    if leaf["leaf"] == "classification":
+    if leaf["leaf"] == "category":
         return render_classification(a, f)
 
     several = a["series"] == "several"
-    use_exog = a["extra"] == "future"
-    imp = {"skforecast.model_selection": {"TimeSeriesFold"}, "skforecast.recursive": {"ForecasterEquivalentDate"},
-           "pandas": set()}
+    use_exog = a["extra"] == "yes"
+    imp = {"skforecast.model_selection": {"TimeSeriesFold", "backtesting_forecaster"},
+           "skforecast.recursive": {"ForecasterEquivalentDate"}}
     blocks = []
-    data = ("series", "series") if several else ("y", "y")
+    data = "series" if several else "y"
     exog_arg = ", exog=exog" if use_exog else ""
-    cv_note = f"last {f['folds']} x {f['steps']} {f['unit']}"
-    head = []
+    metric = '"mean_absolute_scaled_error"'
+    freq_note = ("a DatetimeIndex with a frequency" if f.get("edit")
+                 else f'a DatetimeIndex, freq="{f["alias"]}"')
+
+    head = [HEADER.format(packages="lightgbm chronos-forecasting"), ""]
     if several:
-        head.append(f'# series: DataFrame, one column per series, DatetimeIndex with freq="{f["alias"]}"')
+        head.append(f"# series: dict with one pandas Series per series, each with {freq_note},")
+        head.append("#         e.g. series = {name: data[name] for name in data.columns}")
+        length = "len(next(iter(series.values())))"
     else:
-        head.append(f'# y: pandas Series with a DatetimeIndex, e.g. y = data["sales"].asfreq("{f["alias"]}")')
+        head.append(f"# y: pandas Series with {freq_note},")
+        head.append(f'#    e.g. y = data["sales"].asfreq("{f["alias"]}")')
+        length = "len(y)"
     if use_exog:
-        head.append("# exog: DataFrame with the same index, values known in advance")
-    if a["extra"] == "past":
-        head.append("# Variables known only up to today did not improve any model in our tests,")
-        head.append("# so the candidates start without them.")
-    head.append(f"cv = TimeSeriesFold(steps={f['steps']}, initial_train_size=len({data[0]}) - {f['folds']} * {f['steps']})  # {cv_note}")
+        head.append("# exog: DataFrame with the same index and the values you know in advance")
+    head.append(f"steps = {f['steps']}    # {f['unit'] if not f.get('edit') else 'steps'} "
+                f"ahead of each forecast{_edit(f, 'edit')}")
+    head.append(f"season = {f['season']}{' ' * (4 - len(str(f['season'])))}"
+                f"# the baseline repeats the {f['season_text']}{_edit(f, 'edit')}")
+    head.append(
+        f"cv = TimeSeriesFold(\n"
+        f"    steps=steps, initial_train_size={length} - {f['folds']} * steps,  "
+        f"# last {f['folds']} periods\n"
+        f"    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n"
+        f")"
+    )
     blocks.append("\n".join(head))
 
     results = []
@@ -172,38 +265,41 @@ def render(a: dict, leaf: dict) -> str:
             if f["window"]:
                 imp["skforecast.preprocessing"].add("RollingFeatures")
                 win = f'    window_features=RollingFeatures(stats="mean", window_sizes={f["window"]}),\n'
-            parts = ["lags"] + (["rolling mean"] if f["window"] else []) + ["calendar features"]
+            scaler = ""
+            if several:
+                imp.setdefault("sklearn.preprocessing", set()).add("StandardScaler")
+                scaler = "    transformer_series=StandardScaler(),  # series on different scales\n"
+            parts = ["lags"] + (["a rolling mean"] if f["window"] else []) + ["calendar features"]
             parts += ["exog"] if use_exog else []
             what = ", ".join(parts[:-1]) + " and " + parts[-1]
             code = (
                 f"# {n}. Machine learning: LightGBM with {what}\n"
                 f"forecaster = {cls}(\n"
-                f"    estimator=LGBMRegressor(random_state=123, verbose=-1),\n"
-                f"    lags={f['lags']},\n{win}"
-                f"    calendar_features=CalendarFeatures(features={f['calendar']}),\n"
+                f"    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n"
+                f"    lags={f['lags']},{_edit(f)}\n{win}"
+                f"    calendar_features=CalendarFeatures(features={f['calendar']}),\n{scaler}"
                 f")\n"
-                f"mase_ml, _ = {bt}(\n"
-                f"    forecaster, {data[0]}={data[1]}{exog_arg}, cv=cv, metric=\"mean_absolute_scaled_error\"\n"
+                f"metric_ml, _ = {bt}(\n"
+                f"    forecaster, {data}={data}{exog_arg}, cv=cv, metric={metric}\n"
                 f")"
             )
-            if a.get("priority") == "explain":
-                fit = f"forecaster.fit(series=series{exog_arg})" if several else f"forecaster.fit(y=y{exog_arg})"
-                code += f"\n{fit}\nforecaster.get_feature_importances()  # Which lags and variables matter"
             blocks.append(code)
-            results.append(("LightGBM", "mase_ml"))
+            results.append(("LightGBM", "metric_ml"))
         else:
             imp["skforecast.foundation"] = {"FoundationModel", "ForecasterFoundation"}
             imp["skforecast.model_selection"].add("backtesting_foundation")
             what = " with the same exog" if use_exog else ""
             code = (
-                f"# {n}. Foundation model: Chronos-2{what}, no training needed\n"
+                f"# {n}. Foundation model: Chronos-2{what}, no training "
+                f"(the first run downloads its weights)\n"
                 f'chronos = ForecasterFoundation(estimator=FoundationModel("autogluon/chronos-2-small"))\n'
-                f"mase_fm, _ = backtesting_foundation(\n"
-                f"    chronos, series={data[1]}{exog_arg}, cv=cv, metric=\"mean_absolute_scaled_error\"\n"
+                f"metric_fm, _ = backtesting_foundation(\n"
+                f"    chronos, series={data}{exog_arg}, cv=cv, metric={metric},\n"
+                f"    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n"
                 f")"
             )
             blocks.append(code)
-            results.append(("Chronos-2", "mase_fm"))
+            results.append(("Chronos-2", "metric_fm"))
         n += 1
 
     if leaf["stats"]:
@@ -211,87 +307,100 @@ def render(a: dict, leaf: dict) -> str:
         imp["skforecast.stats"] = {"Ets"}
         imp["skforecast.model_selection"].add("backtesting_stats")
         blocks.append(
-            f"# {n}. Statistical benchmark: AutoETS\n"
-            f"ets = ForecasterStats(estimator=Ets(m={f['ets_m']}))\n"
-            f'mase_ets, _ = backtesting_stats(ets, y=y, cv=cv, metric="mean_absolute_scaled_error")'
+            f"# {n}. Statistical reference: AutoETS\n"
+            f"ets = ForecasterStats(estimator=Ets(m=season))\n"
+            f"metric_ets, _ = backtesting_stats(ets, y=y, cv=cv, metric={metric})"
         )
-        results.append(("AutoETS", "mase_ets"))
+        results.append(("AutoETS", "metric_ets"))
         n += 1
 
-    imp["skforecast.model_selection"].add("backtesting_forecaster")
     if several:
         blocks.append(
-            f"# {n}. Baseline: {f['offset_text']}, one per series\n"
-            f"mase_base = pd.concat([\n"
+            f"# {n}. Baseline: {f['season_text']}, one per series\n"
+            f"metric_base = pd.concat([\n"
             f"    backtesting_forecaster(\n"
-            f"        ForecasterEquivalentDate(offset={f['offset']}), y=series[name], cv=cv,\n"
-            f"        metric=\"mean_absolute_scaled_error\", show_progress=False\n"
+            f"        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric={metric},\n"
+            f"        show_progress=False,\n"
             f"    )[0]\n"
-            f"    for name in series.columns\n"
+            f"    for y in series.values()\n"
             f"]).mean().to_frame().T"
         )
     else:
         blocks.append(
-            f"# {n}. Baseline: {f['offset_text']}\n"
-            f"baseline = ForecasterEquivalentDate(offset={f['offset']})\n"
-            f'mase_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric="mean_absolute_scaled_error")'
+            f"# {n}. Baseline: {f['season_text']}\n"
+            f"baseline = ForecasterEquivalentDate(offset=season)\n"
+            f"metric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric={metric})"
         )
-    results.append(("Baseline", "mase_base"))
+    results.append(("Baseline", "metric_base"))
 
     get = (lambda v: f'{v}.query("levels == \'average\'")') if several else (lambda v: v)
     rows = ",\n    ".join(
-        f'"{label}": {get(var) if var in ("mase_ml", "mase_fm") else var}["mean_absolute_scaled_error"].item()'
+        f'"{label}": {get(var) if var in ("metric_ml", "metric_fm") else var}'
+        f'["mean_absolute_scaled_error"].item()'
         for label, var in results
     )
-    blocks.append(f"# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({{\n    {rows}\n}}).sort_values())")
-    header = "import pandas as pd\n" + _imports({k: v for k, v in imp.items() if k != "pandas"})
+    blocks.append("# Lower is better: keep a model only if it beats the baseline\n"
+                  f"print(pd.Series({{\n    {rows}\n}}).sort_values())")
+    header = "import pandas as pd\n" + _imports(imp)
     return header + "\n\n" + "\n\n".join(blocks) + "\n"
 
 
 def render_classification(a, f):
-    steps = f["offset"]  # One season ahead, so the seasonal baseline only uses known values
-    folds = 2 if steps >= 52 else f["folds"]
-    exog = a["extra"] == "future"
+    # No more than one season ahead, so that the seasonal rule only uses known values
+    steps = min(f["steps"], f["season"])
+    folds = f["folds"]
+    exog = a["extra"] == "yes"
     exog_arg = ", exog=exog" if exog else ""
-    head = 'y: pandas Series of categories, e.g. "low", "medium", "high"'
+    freq_note = ("a DatetimeIndex with a frequency" if f.get("edit")
+                 else f'a DatetimeIndex, freq="{f["alias"]}"')
     lines = [
         "from lightgbm import LGBMClassifier",
         "from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster",
         "from skforecast.recursive import ForecasterRecursiveClassifier",
         "from sklearn.metrics import balanced_accuracy_score",
         "",
-        f'# {head}, with freq="{f["alias"]}"',
+        HEADER.format(packages="lightgbm"),
+        "",
+        f'# y: pandas Series of categories ("low", "medium", "high") with {freq_note}',
     ]
     if exog:
-        lines.append("# exog: DataFrame with the same index, values known in advance")
+        lines.append("# exog: DataFrame with the same index and the values you know in advance")
     lines += [
-        f"cv = TimeSeriesFold(steps={steps}, initial_train_size=len(y) - {folds} * {steps})",
+        f"steps = {steps}{' ' * (5 - len(str(steps)))}# {f['unit'] if not f.get('edit') else 'steps'} "
+        f"ahead of each forecast (no more than one season){_edit(f, 'edit')}",
+        f"season = {f['season']}{' ' * (4 - len(str(f['season'])))}# the rule repeats the category of the "
+        f"{f['season_text']}{_edit(f, 'edit')}",
+        "cv = TimeSeriesFold(",
+        f"    steps=steps, initial_train_size=len(y) - {folds} * steps,  # last {folds} periods",
+        "    refit=True, fixed_train_size=False,",
+        ")",
         "",
         "# 1. Machine learning classifier",
         "forecaster = ForecasterRecursiveClassifier(",
-        "    estimator=LGBMClassifier(random_state=123, verbose=-1),",
-        f"    lags={f['lags']},",
+        "    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),",
+        f"    lags={f['lags']},{_edit(f)}",
         ")",
         "metric, pred = backtesting_forecaster(",
-        f'    forecaster, y=y{exog_arg}, cv=cv, metric=["accuracy_score", "balanced_accuracy_score"]',
+        f'    forecaster, y=y{exog_arg}, cv=cv, metric="balanced_accuracy_score"',
         ")",
         "",
-        f"# 2. Baseline: the category of the {f['offset_text']}",
-        f"baseline = y.shift({f['offset']}).loc[pred.index]",
-        "print(metric)",
-        'print("Baseline:", balanced_accuracy_score(y.loc[pred.index], baseline))',
+        f"# 2. Baseline: the category of the {f['season_text']}",
+        "rule = y.shift(season).loc[pred.index]",
+        "",
+        "# Higher is better: keep the classifier only if it beats the rule",
+        'print("Classifier:", metric["balanced_accuracy_score"].item())',
+        'print("Rule:      ", balanced_accuracy_score(y.loc[pred.index], rule))',
     ]
     return "\n".join(lines) + "\n"
 
 
 def all_answers():
-    """Every combination of answers that the questions can produce."""
+    """Every combination of answers that the rows can produce."""
     combos = []
     for freq in FREQ:
-        for extra in ("future", "past", "none"):
+        for extra in ("yes", "no"):
             combos.append({"target": "category", "freq": freq, "extra": extra})
             for series in ("one", "several"):
-                for priority in ("accuracy", "cost", "explain"):
-                    combos.append({"target": "number", "series": series, "freq": freq,
-                                   "extra": extra, "priority": priority})
+                combos.append({"target": "number", "series": series, "freq": freq,
+                               "extra": extra})
     return combos

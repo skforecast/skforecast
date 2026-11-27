@@ -1,0 +1,4 @@
+cell,runs,datasets,LightGBM < Chronos-2,LightGBM+ < Chronos-2,snippet v2 < Chronos-2,LightGBM >= naive,snippet v2 >= naive,Chronos-2 >= naive,datasets Chronos-2 ahead,datasets Chronos-2 ahead (full history),median Chronos-2,median LightGBM,median snippet v2
+"one series, known in advance",11,2,9,6 of 11,6 of 11,0,0,0,1,1,0.671,0.662,0.71
+"one series, nothing known in advance",22,8,3,1 of 19,1 of 19,11,14,1,7,7,0.694,1.002,1.093
+several series,8,4,3,4 of 8,3 of 8,0,0,0,2,3,0.792,0.817,0.825

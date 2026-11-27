@@ -1,308 +1,4 @@
 case,history,history_obs,model,level,mae,scale
-australia_tourism_quarterly,full,68,AutoETS,Adelaide Hills | Business,3.501764,2.911222
-australia_tourism_quarterly,full,68,AutoETS,Adelaide Hills | Holiday,3.57769,6.297901
-australia_tourism_quarterly,full,68,AutoETS,Adelaide Hills | Other,1.998565,1.299552
-australia_tourism_quarterly,full,68,AutoETS,Adelaide Hills | Visiting,10.365756,6.584068
-australia_tourism_quarterly,full,68,AutoETS,Adelaide | Business,19.096282,40.769237
-australia_tourism_quarterly,full,68,AutoETS,Adelaide | Holiday,29.279811,26.949111
-australia_tourism_quarterly,full,68,AutoETS,Adelaide | Other,14.636667,11.961508
-australia_tourism_quarterly,full,68,AutoETS,Adelaide | Visiting,29.881235,39.230396
-australia_tourism_quarterly,full,68,AutoETS,Alice Springs | Business,9.840068,6.404097
-australia_tourism_quarterly,full,68,AutoETS,Alice Springs | Holiday,8.767382,21.08746
-australia_tourism_quarterly,full,68,AutoETS,Alice Springs | Other,4.535496,3.241928
-australia_tourism_quarterly,full,68,AutoETS,Alice Springs | Visiting,3.031856,4.808121
-australia_tourism_quarterly,full,68,AutoETS,Australia's Coral Coast | Business,22.661803,15.190484
-australia_tourism_quarterly,full,68,AutoETS,Australia's Coral Coast | Holiday,30.429397,22.101146
-australia_tourism_quarterly,full,68,AutoETS,Australia's Coral Coast | Other,7.262814,4.270417
-australia_tourism_quarterly,full,68,AutoETS,Australia's Coral Coast | Visiting,17.318263,10.881101
-australia_tourism_quarterly,full,68,AutoETS,Australia's Golden Outback | Business,27.445085,18.34099
-australia_tourism_quarterly,full,68,AutoETS,Australia's Golden Outback | Holiday,18.492894,16.102546
-australia_tourism_quarterly,full,68,AutoETS,Australia's Golden Outback | Other,2.925937,4.919158
-australia_tourism_quarterly,full,68,AutoETS,Australia's Golden Outback | Visiting,13.931976,13.423349
-australia_tourism_quarterly,full,68,AutoETS,Australia's North West | Business,38.1526,22.867491
-australia_tourism_quarterly,full,68,AutoETS,Australia's North West | Holiday,14.313074,29.443609
-australia_tourism_quarterly,full,68,AutoETS,Australia's North West | Other,2.525675,3.008453
-australia_tourism_quarterly,full,68,AutoETS,Australia's North West | Visiting,8.748109,9.503763
-australia_tourism_quarterly,full,68,AutoETS,Australia's South West | Business,27.751692,17.335301
-australia_tourism_quarterly,full,68,AutoETS,Australia's South West | Holiday,37.438729,87.316519
-australia_tourism_quarterly,full,68,AutoETS,Australia's South West | Other,13.343162,6.607009
-australia_tourism_quarterly,full,68,AutoETS,Australia's South West | Visiting,30.344274,27.723984
-australia_tourism_quarterly,full,68,AutoETS,Ballarat | Business,10.512007,12.062278
-australia_tourism_quarterly,full,68,AutoETS,Ballarat | Holiday,10.411572,14.843572
-australia_tourism_quarterly,full,68,AutoETS,Ballarat | Other,7.079917,7.050868
-australia_tourism_quarterly,full,68,AutoETS,Ballarat | Visiting,15.127587,19.138326
-australia_tourism_quarterly,full,68,AutoETS,Barkly | Business,5.628558,4.328659
-australia_tourism_quarterly,full,68,AutoETS,Barkly | Holiday,3.854947,8.205824
-australia_tourism_quarterly,full,68,AutoETS,Barkly | Other,0.636693,1.000847
-australia_tourism_quarterly,full,68,AutoETS,Barkly | Visiting,3.313941,1.828452
-australia_tourism_quarterly,full,68,AutoETS,Barossa | Business,3.03362,4.772985
-australia_tourism_quarterly,full,68,AutoETS,Barossa | Holiday,6.459228,12.741725
-australia_tourism_quarterly,full,68,AutoETS,Barossa | Other,1.358563,1.609014
-australia_tourism_quarterly,full,68,AutoETS,Barossa | Visiting,5.089679,7.256757
-australia_tourism_quarterly,full,68,AutoETS,Bendigo Loddon | Business,12.746307,13.401433
-australia_tourism_quarterly,full,68,AutoETS,Bendigo Loddon | Holiday,20.582563,17.834257
-australia_tourism_quarterly,full,68,AutoETS,Bendigo Loddon | Other,7.773749,7.233904
-australia_tourism_quarterly,full,68,AutoETS,Bendigo Loddon | Visiting,18.993249,28.96079
-australia_tourism_quarterly,full,68,AutoETS,Blue Mountains | Business,8.759621,13.302844
-australia_tourism_quarterly,full,68,AutoETS,Blue Mountains | Holiday,22.085445,26.057901
-australia_tourism_quarterly,full,68,AutoETS,Blue Mountains | Other,5.832125,3.845509
-australia_tourism_quarterly,full,68,AutoETS,Blue Mountains | Visiting,12.59857,16.19176
-australia_tourism_quarterly,full,68,AutoETS,Brisbane | Business,64.524921,76.204749
-australia_tourism_quarterly,full,68,AutoETS,Brisbane | Holiday,46.479531,59.380907
-australia_tourism_quarterly,full,68,AutoETS,Brisbane | Other,29.615834,31.37997
-australia_tourism_quarterly,full,68,AutoETS,Brisbane | Visiting,42.187727,60.497276
-australia_tourism_quarterly,full,68,AutoETS,Bundaberg | Business,10.995185,15.773886
-australia_tourism_quarterly,full,68,AutoETS,Bundaberg | Holiday,8.504527,18.619926
-australia_tourism_quarterly,full,68,AutoETS,Bundaberg | Other,4.525362,6.773803
-australia_tourism_quarterly,full,68,AutoETS,Bundaberg | Visiting,15.255888,18.968311
-australia_tourism_quarterly,full,68,AutoETS,Canberra | Business,48.320784,42.16986
-australia_tourism_quarterly,full,68,AutoETS,Canberra | Holiday,33.930951,40.780764
-australia_tourism_quarterly,full,68,AutoETS,Canberra | Other,13.587042,13.219864
-australia_tourism_quarterly,full,68,AutoETS,Canberra | Visiting,35.645073,26.930602
-australia_tourism_quarterly,full,68,AutoETS,Capital Country | Business,10.33097,15.302514
-australia_tourism_quarterly,full,68,AutoETS,Capital Country | Holiday,17.721308,21.6348
-australia_tourism_quarterly,full,68,AutoETS,Capital Country | Other,6.589882,6.687232
-australia_tourism_quarterly,full,68,AutoETS,Capital Country | Visiting,25.046993,24.312515
-australia_tourism_quarterly,full,68,AutoETS,Central Coast | Business,10.321032,11.406407
-australia_tourism_quarterly,full,68,AutoETS,Central Coast | Holiday,15.404423,64.458119
-australia_tourism_quarterly,full,68,AutoETS,Central Coast | Other,4.139401,5.547739
-australia_tourism_quarterly,full,68,AutoETS,Central Coast | Visiting,174.866885,31.856213
-australia_tourism_quarterly,full,68,AutoETS,Central Highlands | Business,7.570045,6.473906
-australia_tourism_quarterly,full,68,AutoETS,Central Highlands | Holiday,15.475215,18.320451
-australia_tourism_quarterly,full,68,AutoETS,Central Highlands | Other,1.932806,2.960617
-australia_tourism_quarterly,full,68,AutoETS,Central Highlands | Visiting,7.771735,10.220552
-australia_tourism_quarterly,full,68,AutoETS,Central Murray | Business,7.118005,9.634888
-australia_tourism_quarterly,full,68,AutoETS,Central Murray | Holiday,21.667788,36.763379
-australia_tourism_quarterly,full,68,AutoETS,Central Murray | Other,2.524259,3.767156
-australia_tourism_quarterly,full,68,AutoETS,Central Murray | Visiting,15.76439,15.807131
-australia_tourism_quarterly,full,68,AutoETS,Central NSW | Business,31.093737,28.218438
-australia_tourism_quarterly,full,68,AutoETS,Central NSW | Holiday,27.006229,35.331138
-australia_tourism_quarterly,full,68,AutoETS,Central NSW | Other,15.631962,12.854166
-australia_tourism_quarterly,full,68,AutoETS,Central NSW | Visiting,34.227945,32.653367
-australia_tourism_quarterly,full,68,AutoETS,Central Queensland | Business,32.970276,23.765034
-australia_tourism_quarterly,full,68,AutoETS,Central Queensland | Holiday,19.877016,38.86512
-australia_tourism_quarterly,full,68,AutoETS,Central Queensland | Other,7.601794,10.906437
-australia_tourism_quarterly,full,68,AutoETS,Central Queensland | Visiting,19.668889,26.410052
-australia_tourism_quarterly,full,68,AutoETS,Clare Valley | Business,3.916659,4.412815
-australia_tourism_quarterly,full,68,AutoETS,Clare Valley | Holiday,8.292442,7.602591
-australia_tourism_quarterly,full,68,AutoETS,Clare Valley | Other,1.064611,1.378552
-australia_tourism_quarterly,full,68,AutoETS,Clare Valley | Visiting,4.801343,5.939278
-australia_tourism_quarterly,full,68,AutoETS,Darling Downs | Business,25.386222,27.442716
-australia_tourism_quarterly,full,68,AutoETS,Darling Downs | Holiday,23.059601,33.785827
-australia_tourism_quarterly,full,68,AutoETS,Darling Downs | Other,7.669573,11.367656
-australia_tourism_quarterly,full,68,AutoETS,Darling Downs | Visiting,32.008013,34.106379
-australia_tourism_quarterly,full,68,AutoETS,Darwin | Business,13.941339,15.516656
-australia_tourism_quarterly,full,68,AutoETS,Darwin | Holiday,7.48545,37.169477
-australia_tourism_quarterly,full,68,AutoETS,Darwin | Other,4.318294,4.244971
-australia_tourism_quarterly,full,68,AutoETS,Darwin | Visiting,12.520802,11.77468
-australia_tourism_quarterly,full,68,AutoETS,East Coast | Business,2.965993,3.762823
-australia_tourism_quarterly,full,68,AutoETS,East Coast | Holiday,19.205107,41.142371
-australia_tourism_quarterly,full,68,AutoETS,East Coast | Other,1.321433,1.868168
-australia_tourism_quarterly,full,68,AutoETS,East Coast | Visiting,4.66226,4.491463
-australia_tourism_quarterly,full,68,AutoETS,Experience Perth | Business,35.722612,41.139351
-australia_tourism_quarterly,full,68,AutoETS,Experience Perth | Holiday,33.57054,44.238539
-australia_tourism_quarterly,full,68,AutoETS,Experience Perth | Other,12.9142,14.918345
-australia_tourism_quarterly,full,68,AutoETS,Experience Perth | Visiting,63.092739,36.813738
-australia_tourism_quarterly,full,68,AutoETS,Eyre Peninsula | Business,8.457843,10.931281
-australia_tourism_quarterly,full,68,AutoETS,Eyre Peninsula | Holiday,3.867035,13.863333
-australia_tourism_quarterly,full,68,AutoETS,Eyre Peninsula | Other,3.67483,2.242638
-australia_tourism_quarterly,full,68,AutoETS,Eyre Peninsula | Visiting,7.143374,9.260778
-australia_tourism_quarterly,full,68,AutoETS,Fleurieu Peninsula | Business,6.137813,6.086604
-australia_tourism_quarterly,full,68,AutoETS,Fleurieu Peninsula | Holiday,17.958869,42.684526
-australia_tourism_quarterly,full,68,AutoETS,Fleurieu Peninsula | Other,3.080422,2.597899
-australia_tourism_quarterly,full,68,AutoETS,Fleurieu Peninsula | Visiting,14.533592,12.378086
-australia_tourism_quarterly,full,68,AutoETS,Flinders Ranges and Outback | Business,16.281647,12.245878
-australia_tourism_quarterly,full,68,AutoETS,Flinders Ranges and Outback | Holiday,8.435701,28.442023
-australia_tourism_quarterly,full,68,AutoETS,Flinders Ranges and Outback | Other,3.019318,4.146928
-australia_tourism_quarterly,full,68,AutoETS,Flinders Ranges and Outback | Visiting,8.781513,10.768581
-australia_tourism_quarterly,full,68,AutoETS,Fraser Coast | Business,8.220418,11.85635
-australia_tourism_quarterly,full,68,AutoETS,Fraser Coast | Holiday,14.311548,26.495447
-australia_tourism_quarterly,full,68,AutoETS,Fraser Coast | Other,2.884373,4.079381
-australia_tourism_quarterly,full,68,AutoETS,Fraser Coast | Visiting,9.955959,13.888593
-australia_tourism_quarterly,full,68,AutoETS,Geelong and the Bellarine | Business,11.175331,13.668667
-australia_tourism_quarterly,full,68,AutoETS,Geelong and the Bellarine | Holiday,33.670261,57.527236
-australia_tourism_quarterly,full,68,AutoETS,Geelong and the Bellarine | Other,8.961356,9.198652
-australia_tourism_quarterly,full,68,AutoETS,Geelong and the Bellarine | Visiting,40.240233,26.751539
-australia_tourism_quarterly,full,68,AutoETS,Gippsland | Business,11.364962,13.13597
-australia_tourism_quarterly,full,68,AutoETS,Gippsland | Holiday,200.81285,46.730159
-australia_tourism_quarterly,full,68,AutoETS,Gippsland | Other,6.305986,7.199869
-australia_tourism_quarterly,full,68,AutoETS,Gippsland | Visiting,80.465312,28.291037
-australia_tourism_quarterly,full,68,AutoETS,Gold Coast | Business,22.723743,23.524436
-australia_tourism_quarterly,full,68,AutoETS,Gold Coast | Holiday,39.473418,75.954106
-australia_tourism_quarterly,full,68,AutoETS,Gold Coast | Other,7.463625,10.791715
-australia_tourism_quarterly,full,68,AutoETS,Gold Coast | Visiting,41.617399,43.742935
-australia_tourism_quarterly,full,68,AutoETS,Goulburn | Business,12.046154,10.38062
-australia_tourism_quarterly,full,68,AutoETS,Goulburn | Holiday,12.414325,12.152907
-australia_tourism_quarterly,full,68,AutoETS,Goulburn | Other,6.693254,4.990214
-australia_tourism_quarterly,full,68,AutoETS,Goulburn | Visiting,14.5807,16.979256
-australia_tourism_quarterly,full,68,AutoETS,Great Ocean Road | Business,21.156832,15.340649
-australia_tourism_quarterly,full,68,AutoETS,Great Ocean Road | Holiday,31.671351,141.134496
-australia_tourism_quarterly,full,68,AutoETS,Great Ocean Road | Other,4.809177,5.726712
-australia_tourism_quarterly,full,68,AutoETS,Great Ocean Road | Visiting,30.385244,29.936551
-australia_tourism_quarterly,full,68,AutoETS,High Country | Business,6.846941,13.93256
-australia_tourism_quarterly,full,68,AutoETS,High Country | Holiday,46.030229,64.503366
-australia_tourism_quarterly,full,68,AutoETS,High Country | Other,3.566067,7.153902
-australia_tourism_quarterly,full,68,AutoETS,High Country | Visiting,26.473885,17.950011
-australia_tourism_quarterly,full,68,AutoETS,Hobart and the South | Business,13.407216,14.607143
-australia_tourism_quarterly,full,68,AutoETS,Hobart and the South | Holiday,29.624594,65.523764
-australia_tourism_quarterly,full,68,AutoETS,Hobart and the South | Other,4.428665,5.597749
-australia_tourism_quarterly,full,68,AutoETS,Hobart and the South | Visiting,13.773641,18.267475
-australia_tourism_quarterly,full,68,AutoETS,Hunter | Business,34.714475,28.016794
-australia_tourism_quarterly,full,68,AutoETS,Hunter | Holiday,52.534994,58.193113
-australia_tourism_quarterly,full,68,AutoETS,Hunter | Other,10.371902,12.035448
-australia_tourism_quarterly,full,68,AutoETS,Hunter | Visiting,55.671307,40.521927
-australia_tourism_quarterly,full,68,AutoETS,Kakadu Arnhem | Business,9.458767,7.200537
-australia_tourism_quarterly,full,68,AutoETS,Kakadu Arnhem | Holiday,7.77926,20.361176
-australia_tourism_quarterly,full,68,AutoETS,Kakadu Arnhem | Other,1.067627,1.677344
-australia_tourism_quarterly,full,68,AutoETS,Kakadu Arnhem | Visiting,6.889091,3.861309
-australia_tourism_quarterly,full,68,AutoETS,Kangaroo Island | Business,3.326314,2.273677
-australia_tourism_quarterly,full,68,AutoETS,Kangaroo Island | Holiday,5.717468,9.845476
-australia_tourism_quarterly,full,68,AutoETS,Kangaroo Island | Other,0.228745,0.611544
-australia_tourism_quarterly,full,68,AutoETS,Kangaroo Island | Visiting,2.197068,2.866699
-australia_tourism_quarterly,full,68,AutoETS,Katherine Daly | Business,14.293106,8.027162
-australia_tourism_quarterly,full,68,AutoETS,Katherine Daly | Holiday,5.481983,22.858751
-australia_tourism_quarterly,full,68,AutoETS,Katherine Daly | Other,2.37961,2.410908
-australia_tourism_quarterly,full,68,AutoETS,Katherine Daly | Visiting,7.202426,5.254213
-australia_tourism_quarterly,full,68,AutoETS,Lakes | Business,5.77904,9.430884
-australia_tourism_quarterly,full,68,AutoETS,Lakes | Holiday,15.251529,49.264841
-australia_tourism_quarterly,full,68,AutoETS,Lakes | Other,6.495632,4.020351
-australia_tourism_quarterly,full,68,AutoETS,Lakes | Visiting,11.942911,13.568536
-australia_tourism_quarterly,full,68,AutoETS,Lasseter | Business,5.462369,5.367844
-australia_tourism_quarterly,full,68,AutoETS,Lasseter | Holiday,14.753888,15.237184
-australia_tourism_quarterly,full,68,AutoETS,Lasseter | Other,1.39447,1.408878
-australia_tourism_quarterly,full,68,AutoETS,Lasseter | Visiting,1.517917,1.723671
-australia_tourism_quarterly,full,68,AutoETS,"Launceston, Tamar and the North | Business",10.91775,11.815504
-australia_tourism_quarterly,full,68,AutoETS,"Launceston, Tamar and the North | Holiday",15.622676,41.784392
-australia_tourism_quarterly,full,68,AutoETS,"Launceston, Tamar and the North | Other",3.201711,3.871544
-australia_tourism_quarterly,full,68,AutoETS,"Launceston, Tamar and the North | Visiting",12.535198,15.735455
-australia_tourism_quarterly,full,68,AutoETS,Limestone Coast | Business,10.640717,10.915661
-australia_tourism_quarterly,full,68,AutoETS,Limestone Coast | Holiday,11.118362,24.096631
-australia_tourism_quarterly,full,68,AutoETS,Limestone Coast | Other,3.302322,2.624565
-australia_tourism_quarterly,full,68,AutoETS,Limestone Coast | Visiting,9.667027,12.374663
-australia_tourism_quarterly,full,68,AutoETS,MacDonnell | Business,5.530915,4.41816
-australia_tourism_quarterly,full,68,AutoETS,MacDonnell | Holiday,4.406809,6.53668
-australia_tourism_quarterly,full,68,AutoETS,MacDonnell | Other,0.389117,0.722587
-australia_tourism_quarterly,full,68,AutoETS,MacDonnell | Visiting,1.896308,1.50449
-australia_tourism_quarterly,full,68,AutoETS,Macedon | Business,6.996917,6.16868
-australia_tourism_quarterly,full,68,AutoETS,Macedon | Holiday,9.032335,8.652825
-australia_tourism_quarterly,full,68,AutoETS,Macedon | Other,2.161489,2.282773
-australia_tourism_quarterly,full,68,AutoETS,Macedon | Visiting,11.32431,12.399605
-australia_tourism_quarterly,full,68,AutoETS,Mackay | Business,53.422064,22.989428
-australia_tourism_quarterly,full,68,AutoETS,Mackay | Holiday,10.47088,24.795271
-australia_tourism_quarterly,full,68,AutoETS,Mackay | Other,8.069912,7.787144
-australia_tourism_quarterly,full,68,AutoETS,Mackay | Visiting,9922268581.59777,16.04309
-australia_tourism_quarterly,full,68,AutoETS,Mallee | Business,11.210664,15.106431
-australia_tourism_quarterly,full,68,AutoETS,Mallee | Holiday,53.554511,18.958684
-australia_tourism_quarterly,full,68,AutoETS,Mallee | Other,6.691431,6.165801
-australia_tourism_quarterly,full,68,AutoETS,Mallee | Visiting,13.718141,16.199948
-australia_tourism_quarterly,full,68,AutoETS,Melbourne East | Business,7.985832,5.644874
-australia_tourism_quarterly,full,68,AutoETS,Melbourne East | Holiday,42.917597,13.098081
-australia_tourism_quarterly,full,68,AutoETS,Melbourne East | Other,3.779587,4.234405
-australia_tourism_quarterly,full,68,AutoETS,Melbourne East | Visiting,16.106974,13.612412
-australia_tourism_quarterly,full,68,AutoETS,Melbourne | Business,90.873061,72.730166
-australia_tourism_quarterly,full,68,AutoETS,Melbourne | Holiday,57.118012,55.955316
-australia_tourism_quarterly,full,68,AutoETS,Melbourne | Other,13.43752,19.765724
-australia_tourism_quarterly,full,68,AutoETS,Melbourne | Visiting,81.437783,77.223247
-australia_tourism_quarterly,full,68,AutoETS,Murray East | Business,4.066902,5.940831
-australia_tourism_quarterly,full,68,AutoETS,Murray East | Holiday,4.81133,6.030895
-australia_tourism_quarterly,full,68,AutoETS,Murray East | Other,1.132922,2.314952
-australia_tourism_quarterly,full,68,AutoETS,Murray East | Visiting,9.520792,7.761988
-australia_tourism_quarterly,full,68,AutoETS,Murraylands | Business,4.552528,7.386005
-australia_tourism_quarterly,full,68,AutoETS,Murraylands | Holiday,8.31947,15.004092
-australia_tourism_quarterly,full,68,AutoETS,Murraylands | Other,1.535551,2.149538
-australia_tourism_quarterly,full,68,AutoETS,Murraylands | Visiting,3.945273,7.161333
-australia_tourism_quarterly,full,68,AutoETS,New England North West | Business,21.586314,20.151315
-australia_tourism_quarterly,full,68,AutoETS,New England North West | Holiday,16.756346,25.772956
-australia_tourism_quarterly,full,68,AutoETS,New England North West | Other,7.223178,10.402799
-australia_tourism_quarterly,full,68,AutoETS,New England North West | Visiting,146.324554,20.92596
-australia_tourism_quarterly,full,68,AutoETS,North Coast NSW | Business,20.536158,29.508721
-australia_tourism_quarterly,full,68,AutoETS,North Coast NSW | Holiday,81.266277,137.940201
-australia_tourism_quarterly,full,68,AutoETS,North Coast NSW | Other,18.140824,15.052831
-australia_tourism_quarterly,full,68,AutoETS,North Coast NSW | Visiting,45.167455,53.503245
-australia_tourism_quarterly,full,68,AutoETS,North West | Business,8.338893,7.583869
-australia_tourism_quarterly,full,68,AutoETS,North West | Holiday,12.465403,32.839324
-australia_tourism_quarterly,full,68,AutoETS,North West | Other,2.861293,2.906738
-australia_tourism_quarterly,full,68,AutoETS,North West | Visiting,13.119762,10.407824
-australia_tourism_quarterly,full,68,AutoETS,Northern | Business,21.932343,27.171553
-australia_tourism_quarterly,full,68,AutoETS,Northern | Holiday,12.572325,30.931146
-australia_tourism_quarterly,full,68,AutoETS,Northern | Other,7.236749,10.176683
-australia_tourism_quarterly,full,68,AutoETS,Northern | Visiting,19.494814,24.217475
-australia_tourism_quarterly,full,68,AutoETS,Outback NSW | Business,18.198532,14.412733
-australia_tourism_quarterly,full,68,AutoETS,Outback NSW | Holiday,9.686965,24.662998
-australia_tourism_quarterly,full,68,AutoETS,Outback NSW | Other,3.876655,3.86737
-australia_tourism_quarterly,full,68,AutoETS,Outback NSW | Visiting,17.097885,8.182635
-australia_tourism_quarterly,full,68,AutoETS,Outback | Business,21.065259,33.103289
-australia_tourism_quarterly,full,68,AutoETS,Outback | Holiday,17.844305,31.267305
-australia_tourism_quarterly,full,68,AutoETS,Outback | Other,4.745185,5.197256
-australia_tourism_quarterly,full,68,AutoETS,Outback | Visiting,9.066455,15.368946
-australia_tourism_quarterly,full,68,AutoETS,Peninsula | Business,5.150945,8.959355
-australia_tourism_quarterly,full,68,AutoETS,Peninsula | Holiday,50.39792,108.487879
-australia_tourism_quarterly,full,68,AutoETS,Peninsula | Other,3.775632,4.870756
-australia_tourism_quarterly,full,68,AutoETS,Peninsula | Visiting,16.848294,40.522223
-australia_tourism_quarterly,full,68,AutoETS,Phillip Island | Business,4.33294,7.044912
-australia_tourism_quarterly,full,68,AutoETS,Phillip Island | Holiday,21.939582,78.760646
-australia_tourism_quarterly,full,68,AutoETS,Phillip Island | Other,2.354154,3.953023
-australia_tourism_quarterly,full,68,AutoETS,Phillip Island | Visiting,14.684804,16.077857
-australia_tourism_quarterly,full,68,AutoETS,Riverina | Business,20.583194,21.785561
-australia_tourism_quarterly,full,68,AutoETS,Riverina | Holiday,16.498639,18.34497
-australia_tourism_quarterly,full,68,AutoETS,Riverina | Other,7.604706,8.414345
-australia_tourism_quarterly,full,68,AutoETS,Riverina | Visiting,9.857888,24.82794
-australia_tourism_quarterly,full,68,AutoETS,Riverland | Business,6.13141,5.652989
-australia_tourism_quarterly,full,68,AutoETS,Riverland | Holiday,13.140677,13.236366
-australia_tourism_quarterly,full,68,AutoETS,Riverland | Other,2.787354,1.916449
-australia_tourism_quarterly,full,68,AutoETS,Riverland | Visiting,7.567622,9.52415
-australia_tourism_quarterly,full,68,AutoETS,Snowy Mountains | Business,308296566.415639,10.407427
-australia_tourism_quarterly,full,68,AutoETS,Snowy Mountains | Holiday,28.016899,106.644918
-australia_tourism_quarterly,full,68,AutoETS,Snowy Mountains | Other,5.776956,5.442533
-australia_tourism_quarterly,full,68,AutoETS,Snowy Mountains | Visiting,8.200877,11.932425
-australia_tourism_quarterly,full,68,AutoETS,South Coast | Business,11.946096,26.063025
-australia_tourism_quarterly,full,68,AutoETS,South Coast | Holiday,51.851828,214.235053
-australia_tourism_quarterly,full,68,AutoETS,South Coast | Other,14.404493,9.41583
-australia_tourism_quarterly,full,68,AutoETS,South Coast | Visiting,30.328532,52.957375
-australia_tourism_quarterly,full,68,AutoETS,Spa Country | Business,2.497312,3.35225
-australia_tourism_quarterly,full,68,AutoETS,Spa Country | Holiday,17.644797,14.665885
-australia_tourism_quarterly,full,68,AutoETS,Spa Country | Other,2.791873,2.949727
-australia_tourism_quarterly,full,68,AutoETS,Spa Country | Visiting,6.964319,8.321788
-australia_tourism_quarterly,full,68,AutoETS,Sunshine Coast | Business,13.171695,17.748866
-australia_tourism_quarterly,full,68,AutoETS,Sunshine Coast | Holiday,46.420528,77.521176
-australia_tourism_quarterly,full,68,AutoETS,Sunshine Coast | Other,7.869187,11.558592
-australia_tourism_quarterly,full,68,AutoETS,Sunshine Coast | Visiting,27.921788,33.927156
-australia_tourism_quarterly,full,68,AutoETS,Sydney | Business,78.153182,106.025001
-australia_tourism_quarterly,full,68,AutoETS,Sydney | Holiday,39.593805,84.933658
-australia_tourism_quarterly,full,68,AutoETS,Sydney | Other,31.763195,22.71733
-australia_tourism_quarterly,full,68,AutoETS,Sydney | Visiting,50.122729,78.224184
-australia_tourism_quarterly,full,68,AutoETS,The Murray | Business,36.784302,17.855704
-australia_tourism_quarterly,full,68,AutoETS,The Murray | Holiday,23.069447,27.46231
-australia_tourism_quarterly,full,68,AutoETS,The Murray | Other,4.64051,6.374817
-australia_tourism_quarterly,full,68,AutoETS,The Murray | Visiting,73251087781.8076,23.100716
-australia_tourism_quarterly,full,68,AutoETS,Tropical North Queensland | Business,31.48139,33.795784
-australia_tourism_quarterly,full,68,AutoETS,Tropical North Queensland | Holiday,31.484779,69.254401
-australia_tourism_quarterly,full,68,AutoETS,Tropical North Queensland | Other,7.036771,10.238167
-australia_tourism_quarterly,full,68,AutoETS,Tropical North Queensland | Visiting,18.91769,28.81686
-australia_tourism_quarterly,full,68,AutoETS,Upper Yarra | Business,4.106222,4.09382
-australia_tourism_quarterly,full,68,AutoETS,Upper Yarra | Holiday,26.779222,18.217677
-australia_tourism_quarterly,full,68,AutoETS,Upper Yarra | Other,1.625794,3.30121
-australia_tourism_quarterly,full,68,AutoETS,Upper Yarra | Visiting,5.146208,8.144212
-australia_tourism_quarterly,full,68,AutoETS,Western Grampians | Business,5.620131,9.748117
-australia_tourism_quarterly,full,68,AutoETS,Western Grampians | Holiday,14.415287,11.899332
-australia_tourism_quarterly,full,68,AutoETS,Western Grampians | Other,3.264337,2.886733
-australia_tourism_quarterly,full,68,AutoETS,Western Grampians | Visiting,8.689745,12.181979
-australia_tourism_quarterly,full,68,AutoETS,Whitsundays | Business,11.021441,11.545429
-australia_tourism_quarterly,full,68,AutoETS,Whitsundays | Holiday,17.1182,25.627696
-australia_tourism_quarterly,full,68,AutoETS,Whitsundays | Other,2.003356,3.54676
-australia_tourism_quarterly,full,68,AutoETS,Whitsundays | Visiting,1441548415.101923,10.072934
-australia_tourism_quarterly,full,68,AutoETS,Wilderness West | Business,4.413584,3.649205
-australia_tourism_quarterly,full,68,AutoETS,Wilderness West | Holiday,7.628038,20.426528
-australia_tourism_quarterly,full,68,AutoETS,Wilderness West | Other,0.681661,0.869424
-australia_tourism_quarterly,full,68,AutoETS,Wilderness West | Visiting,3.665816,2.70047
-australia_tourism_quarterly,full,68,AutoETS,Wimmera | Business,5.027777,6.216777
-australia_tourism_quarterly,full,68,AutoETS,Wimmera | Holiday,6.511297,6.856851
-australia_tourism_quarterly,full,68,AutoETS,Wimmera | Other,2.490593,1.439502
-australia_tourism_quarterly,full,68,AutoETS,Wimmera | Visiting,6.932572,7.92651
-australia_tourism_quarterly,full,68,AutoETS,Yorke Peninsula | Business,4.618994,5.408629
-australia_tourism_quarterly,full,68,AutoETS,Yorke Peninsula | Holiday,19.205896,32.311607
-australia_tourism_quarterly,full,68,AutoETS,Yorke Peninsula | Other,3.049456,1.744932
-australia_tourism_quarterly,full,68,AutoETS,Yorke Peninsula | Visiting,10.300253,10.754905
 australia_tourism_quarterly,full,68,Chronos-2,Adelaide Hills | Business,3.521986,2.911222
 australia_tourism_quarterly,full,68,Chronos-2,Adelaide Hills | Holiday,5.493007,6.297901
 australia_tourism_quarterly,full,68,Chronos-2,Adelaide Hills | Other,1.861716,1.299552
@@ -5167,3 +4863,611 @@ australia_tourism_quarterly,full,68,Seasonal naive,Yorke Peninsula | Business,4.
 australia_tourism_quarterly,full,68,Seasonal naive,Yorke Peninsula | Holiday,31.082166,32.311607
 australia_tourism_quarterly,full,68,Seasonal naive,Yorke Peninsula | Other,2.897287,1.744932
 australia_tourism_quarterly,full,68,Seasonal naive,Yorke Peninsula | Visiting,11.072524,10.754905
+australia_tourism_quarterly,full,68,AutoETS,Adelaide Hills | Business,3.501764,2.911222
+australia_tourism_quarterly,full,68,AutoETS,Adelaide Hills | Holiday,3.57769,6.297901
+australia_tourism_quarterly,full,68,AutoETS,Adelaide Hills | Other,1.998565,1.299552
+australia_tourism_quarterly,full,68,AutoETS,Adelaide Hills | Visiting,10.365756,6.584068
+australia_tourism_quarterly,full,68,AutoETS,Adelaide | Business,19.096282,40.769237
+australia_tourism_quarterly,full,68,AutoETS,Adelaide | Holiday,29.279811,26.949111
+australia_tourism_quarterly,full,68,AutoETS,Adelaide | Other,14.636667,11.961508
+australia_tourism_quarterly,full,68,AutoETS,Adelaide | Visiting,29.881235,39.230396
+australia_tourism_quarterly,full,68,AutoETS,Alice Springs | Business,9.840068,6.404097
+australia_tourism_quarterly,full,68,AutoETS,Alice Springs | Holiday,8.767382,21.08746
+australia_tourism_quarterly,full,68,AutoETS,Alice Springs | Other,4.535496,3.241928
+australia_tourism_quarterly,full,68,AutoETS,Alice Springs | Visiting,3.031856,4.808121
+australia_tourism_quarterly,full,68,AutoETS,Australia's Coral Coast | Business,22.661803,15.190484
+australia_tourism_quarterly,full,68,AutoETS,Australia's Coral Coast | Holiday,30.429397,22.101146
+australia_tourism_quarterly,full,68,AutoETS,Australia's Coral Coast | Other,7.262814,4.270417
+australia_tourism_quarterly,full,68,AutoETS,Australia's Coral Coast | Visiting,17.318263,10.881101
+australia_tourism_quarterly,full,68,AutoETS,Australia's Golden Outback | Business,27.445085,18.34099
+australia_tourism_quarterly,full,68,AutoETS,Australia's Golden Outback | Holiday,18.492894,16.102546
+australia_tourism_quarterly,full,68,AutoETS,Australia's Golden Outback | Other,2.925937,4.919158
+australia_tourism_quarterly,full,68,AutoETS,Australia's Golden Outback | Visiting,13.931976,13.423349
+australia_tourism_quarterly,full,68,AutoETS,Australia's North West | Business,38.1526,22.867491
+australia_tourism_quarterly,full,68,AutoETS,Australia's North West | Holiday,14.313074,29.443609
+australia_tourism_quarterly,full,68,AutoETS,Australia's North West | Other,2.525675,3.008453
+australia_tourism_quarterly,full,68,AutoETS,Australia's North West | Visiting,8.748109,9.503763
+australia_tourism_quarterly,full,68,AutoETS,Australia's South West | Business,27.751692,17.335301
+australia_tourism_quarterly,full,68,AutoETS,Australia's South West | Holiday,37.438729,87.316519
+australia_tourism_quarterly,full,68,AutoETS,Australia's South West | Other,13.343162,6.607009
+australia_tourism_quarterly,full,68,AutoETS,Australia's South West | Visiting,30.344274,27.723984
+australia_tourism_quarterly,full,68,AutoETS,Ballarat | Business,10.512007,12.062278
+australia_tourism_quarterly,full,68,AutoETS,Ballarat | Holiday,10.411572,14.843572
+australia_tourism_quarterly,full,68,AutoETS,Ballarat | Other,7.079917,7.050868
+australia_tourism_quarterly,full,68,AutoETS,Ballarat | Visiting,15.127587,19.138326
+australia_tourism_quarterly,full,68,AutoETS,Barkly | Business,5.628558,4.328659
+australia_tourism_quarterly,full,68,AutoETS,Barkly | Holiday,3.854947,8.205824
+australia_tourism_quarterly,full,68,AutoETS,Barkly | Other,0.636693,1.000847
+australia_tourism_quarterly,full,68,AutoETS,Barkly | Visiting,3.313941,1.828452
+australia_tourism_quarterly,full,68,AutoETS,Barossa | Business,3.03362,4.772985
+australia_tourism_quarterly,full,68,AutoETS,Barossa | Holiday,6.459228,12.741725
+australia_tourism_quarterly,full,68,AutoETS,Barossa | Other,1.358563,1.609014
+australia_tourism_quarterly,full,68,AutoETS,Barossa | Visiting,5.089679,7.256757
+australia_tourism_quarterly,full,68,AutoETS,Bendigo Loddon | Business,12.746307,13.401433
+australia_tourism_quarterly,full,68,AutoETS,Bendigo Loddon | Holiday,20.582563,17.834257
+australia_tourism_quarterly,full,68,AutoETS,Bendigo Loddon | Other,7.773749,7.233904
+australia_tourism_quarterly,full,68,AutoETS,Bendigo Loddon | Visiting,18.993249,28.96079
+australia_tourism_quarterly,full,68,AutoETS,Blue Mountains | Business,8.759621,13.302844
+australia_tourism_quarterly,full,68,AutoETS,Blue Mountains | Holiday,22.085445,26.057901
+australia_tourism_quarterly,full,68,AutoETS,Blue Mountains | Other,5.832125,3.845509
+australia_tourism_quarterly,full,68,AutoETS,Blue Mountains | Visiting,12.59857,16.19176
+australia_tourism_quarterly,full,68,AutoETS,Brisbane | Business,64.524921,76.204749
+australia_tourism_quarterly,full,68,AutoETS,Brisbane | Holiday,46.479556,59.380907
+australia_tourism_quarterly,full,68,AutoETS,Brisbane | Other,29.615834,31.37997
+australia_tourism_quarterly,full,68,AutoETS,Brisbane | Visiting,42.187727,60.497276
+australia_tourism_quarterly,full,68,AutoETS,Bundaberg | Business,10.995183,15.773886
+australia_tourism_quarterly,full,68,AutoETS,Bundaberg | Holiday,8.504527,18.619926
+australia_tourism_quarterly,full,68,AutoETS,Bundaberg | Other,4.525362,6.773803
+australia_tourism_quarterly,full,68,AutoETS,Bundaberg | Visiting,15.255888,18.968311
+australia_tourism_quarterly,full,68,AutoETS,Canberra | Business,48.320784,42.16986
+australia_tourism_quarterly,full,68,AutoETS,Canberra | Holiday,33.930951,40.780764
+australia_tourism_quarterly,full,68,AutoETS,Canberra | Other,13.587042,13.219864
+australia_tourism_quarterly,full,68,AutoETS,Canberra | Visiting,35.645073,26.930602
+australia_tourism_quarterly,full,68,AutoETS,Capital Country | Business,10.33097,15.302514
+australia_tourism_quarterly,full,68,AutoETS,Capital Country | Holiday,17.721308,21.6348
+australia_tourism_quarterly,full,68,AutoETS,Capital Country | Other,6.589882,6.687232
+australia_tourism_quarterly,full,68,AutoETS,Capital Country | Visiting,25.046993,24.312515
+australia_tourism_quarterly,full,68,AutoETS,Central Coast | Business,10.321032,11.406407
+australia_tourism_quarterly,full,68,AutoETS,Central Coast | Holiday,15.404423,64.458119
+australia_tourism_quarterly,full,68,AutoETS,Central Coast | Other,4.139401,5.547739
+australia_tourism_quarterly,full,68,AutoETS,Central Coast | Visiting,27.026116,31.856213
+australia_tourism_quarterly,full,68,AutoETS,Central Highlands | Business,7.570045,6.473906
+australia_tourism_quarterly,full,68,AutoETS,Central Highlands | Holiday,15.475209,18.320451
+australia_tourism_quarterly,full,68,AutoETS,Central Highlands | Other,1.932806,2.960617
+australia_tourism_quarterly,full,68,AutoETS,Central Highlands | Visiting,7.771735,10.220552
+australia_tourism_quarterly,full,68,AutoETS,Central Murray | Business,7.118005,9.634888
+australia_tourism_quarterly,full,68,AutoETS,Central Murray | Holiday,21.667788,36.763379
+australia_tourism_quarterly,full,68,AutoETS,Central Murray | Other,2.524259,3.767156
+australia_tourism_quarterly,full,68,AutoETS,Central Murray | Visiting,15.76439,15.807131
+australia_tourism_quarterly,full,68,AutoETS,Central NSW | Business,31.093737,28.218438
+australia_tourism_quarterly,full,68,AutoETS,Central NSW | Holiday,27.006229,35.331138
+australia_tourism_quarterly,full,68,AutoETS,Central NSW | Other,15.631962,12.854166
+australia_tourism_quarterly,full,68,AutoETS,Central NSW | Visiting,34.227945,32.653367
+australia_tourism_quarterly,full,68,AutoETS,Central Queensland | Business,32.970276,23.765034
+australia_tourism_quarterly,full,68,AutoETS,Central Queensland | Holiday,19.877016,38.86512
+australia_tourism_quarterly,full,68,AutoETS,Central Queensland | Other,7.601794,10.906437
+australia_tourism_quarterly,full,68,AutoETS,Central Queensland | Visiting,19.668889,26.410052
+australia_tourism_quarterly,full,68,AutoETS,Clare Valley | Business,3.916659,4.412815
+australia_tourism_quarterly,full,68,AutoETS,Clare Valley | Holiday,8.292442,7.602591
+australia_tourism_quarterly,full,68,AutoETS,Clare Valley | Other,1.064611,1.378552
+australia_tourism_quarterly,full,68,AutoETS,Clare Valley | Visiting,4.801343,5.939278
+australia_tourism_quarterly,full,68,AutoETS,Darling Downs | Business,25.386222,27.442716
+australia_tourism_quarterly,full,68,AutoETS,Darling Downs | Holiday,23.059601,33.785827
+australia_tourism_quarterly,full,68,AutoETS,Darling Downs | Other,7.669573,11.367656
+australia_tourism_quarterly,full,68,AutoETS,Darling Downs | Visiting,32.008013,34.106379
+australia_tourism_quarterly,full,68,AutoETS,Darwin | Business,13.941339,15.516656
+australia_tourism_quarterly,full,68,AutoETS,Darwin | Holiday,7.48545,37.169477
+australia_tourism_quarterly,full,68,AutoETS,Darwin | Other,4.318294,4.244971
+australia_tourism_quarterly,full,68,AutoETS,Darwin | Visiting,12.520802,11.77468
+australia_tourism_quarterly,full,68,AutoETS,East Coast | Business,2.965993,3.762823
+australia_tourism_quarterly,full,68,AutoETS,East Coast | Holiday,19.205107,41.142371
+australia_tourism_quarterly,full,68,AutoETS,East Coast | Other,1.321433,1.868168
+australia_tourism_quarterly,full,68,AutoETS,East Coast | Visiting,4.66226,4.491463
+australia_tourism_quarterly,full,68,AutoETS,Experience Perth | Business,35.722612,41.139351
+australia_tourism_quarterly,full,68,AutoETS,Experience Perth | Holiday,33.57054,44.238539
+australia_tourism_quarterly,full,68,AutoETS,Experience Perth | Other,12.9142,14.918345
+australia_tourism_quarterly,full,68,AutoETS,Experience Perth | Visiting,63.092739,36.813738
+australia_tourism_quarterly,full,68,AutoETS,Eyre Peninsula | Business,8.457843,10.931281
+australia_tourism_quarterly,full,68,AutoETS,Eyre Peninsula | Holiday,3.867035,13.863333
+australia_tourism_quarterly,full,68,AutoETS,Eyre Peninsula | Other,3.67483,2.242638
+australia_tourism_quarterly,full,68,AutoETS,Eyre Peninsula | Visiting,7.143374,9.260778
+australia_tourism_quarterly,full,68,AutoETS,Fleurieu Peninsula | Business,6.137813,6.086604
+australia_tourism_quarterly,full,68,AutoETS,Fleurieu Peninsula | Holiday,17.958869,42.684526
+australia_tourism_quarterly,full,68,AutoETS,Fleurieu Peninsula | Other,3.080422,2.597899
+australia_tourism_quarterly,full,68,AutoETS,Fleurieu Peninsula | Visiting,14.533592,12.378086
+australia_tourism_quarterly,full,68,AutoETS,Flinders Ranges and Outback | Business,16.281647,12.245878
+australia_tourism_quarterly,full,68,AutoETS,Flinders Ranges and Outback | Holiday,8.435701,28.442023
+australia_tourism_quarterly,full,68,AutoETS,Flinders Ranges and Outback | Other,3.019318,4.146928
+australia_tourism_quarterly,full,68,AutoETS,Flinders Ranges and Outback | Visiting,8.781513,10.768581
+australia_tourism_quarterly,full,68,AutoETS,Fraser Coast | Business,8.220418,11.85635
+australia_tourism_quarterly,full,68,AutoETS,Fraser Coast | Holiday,14.311548,26.495447
+australia_tourism_quarterly,full,68,AutoETS,Fraser Coast | Other,2.884373,4.079381
+australia_tourism_quarterly,full,68,AutoETS,Fraser Coast | Visiting,9.955959,13.888593
+australia_tourism_quarterly,full,68,AutoETS,Geelong and the Bellarine | Business,11.175331,13.668667
+australia_tourism_quarterly,full,68,AutoETS,Geelong and the Bellarine | Holiday,33.670261,57.527236
+australia_tourism_quarterly,full,68,AutoETS,Geelong and the Bellarine | Other,8.961356,9.198652
+australia_tourism_quarterly,full,68,AutoETS,Geelong and the Bellarine | Visiting,40.240233,26.751539
+australia_tourism_quarterly,full,68,AutoETS,Gippsland | Business,11.364962,13.13597
+australia_tourism_quarterly,full,68,AutoETS,Gippsland | Holiday,38.829443,46.730159
+australia_tourism_quarterly,full,68,AutoETS,Gippsland | Other,6.305986,7.199869
+australia_tourism_quarterly,full,68,AutoETS,Gippsland | Visiting,24.50075,28.291037
+australia_tourism_quarterly,full,68,AutoETS,Gold Coast | Business,22.723743,23.524436
+australia_tourism_quarterly,full,68,AutoETS,Gold Coast | Holiday,39.473418,75.954106
+australia_tourism_quarterly,full,68,AutoETS,Gold Coast | Other,7.463625,10.791715
+australia_tourism_quarterly,full,68,AutoETS,Gold Coast | Visiting,41.617399,43.742935
+australia_tourism_quarterly,full,68,AutoETS,Goulburn | Business,12.046154,10.38062
+australia_tourism_quarterly,full,68,AutoETS,Goulburn | Holiday,12.414325,12.152907
+australia_tourism_quarterly,full,68,AutoETS,Goulburn | Other,6.693254,4.990214
+australia_tourism_quarterly,full,68,AutoETS,Goulburn | Visiting,14.5807,16.979256
+australia_tourism_quarterly,full,68,AutoETS,Great Ocean Road | Business,21.156832,15.340649
+australia_tourism_quarterly,full,68,AutoETS,Great Ocean Road | Holiday,31.671351,141.134496
+australia_tourism_quarterly,full,68,AutoETS,Great Ocean Road | Other,4.809177,5.726712
+australia_tourism_quarterly,full,68,AutoETS,Great Ocean Road | Visiting,30.385244,29.936551
+australia_tourism_quarterly,full,68,AutoETS,High Country | Business,6.846941,13.93256
+australia_tourism_quarterly,full,68,AutoETS,High Country | Holiday,46.030229,64.503366
+australia_tourism_quarterly,full,68,AutoETS,High Country | Other,3.566067,7.153902
+australia_tourism_quarterly,full,68,AutoETS,High Country | Visiting,26.473886,17.950011
+australia_tourism_quarterly,full,68,AutoETS,Hobart and the South | Business,13.407216,14.607143
+australia_tourism_quarterly,full,68,AutoETS,Hobart and the South | Holiday,29.624594,65.523764
+australia_tourism_quarterly,full,68,AutoETS,Hobart and the South | Other,4.428665,5.597749
+australia_tourism_quarterly,full,68,AutoETS,Hobart and the South | Visiting,13.773641,18.267475
+australia_tourism_quarterly,full,68,AutoETS,Hunter | Business,34.714475,28.016794
+australia_tourism_quarterly,full,68,AutoETS,Hunter | Holiday,52.534994,58.193113
+australia_tourism_quarterly,full,68,AutoETS,Hunter | Other,10.371902,12.035448
+australia_tourism_quarterly,full,68,AutoETS,Hunter | Visiting,55.671307,40.521927
+australia_tourism_quarterly,full,68,AutoETS,Kakadu Arnhem | Business,9.458767,7.200537
+australia_tourism_quarterly,full,68,AutoETS,Kakadu Arnhem | Holiday,7.77926,20.361176
+australia_tourism_quarterly,full,68,AutoETS,Kakadu Arnhem | Other,1.067627,1.677344
+australia_tourism_quarterly,full,68,AutoETS,Kakadu Arnhem | Visiting,6.889091,3.861309
+australia_tourism_quarterly,full,68,AutoETS,Kangaroo Island | Business,3.326314,2.273677
+australia_tourism_quarterly,full,68,AutoETS,Kangaroo Island | Holiday,5.717468,9.845476
+australia_tourism_quarterly,full,68,AutoETS,Kangaroo Island | Other,0.228745,0.611544
+australia_tourism_quarterly,full,68,AutoETS,Kangaroo Island | Visiting,2.197068,2.866699
+australia_tourism_quarterly,full,68,AutoETS,Katherine Daly | Business,14.293106,8.027162
+australia_tourism_quarterly,full,68,AutoETS,Katherine Daly | Holiday,5.481983,22.858751
+australia_tourism_quarterly,full,68,AutoETS,Katherine Daly | Other,2.37961,2.410908
+australia_tourism_quarterly,full,68,AutoETS,Katherine Daly | Visiting,7.202426,5.254213
+australia_tourism_quarterly,full,68,AutoETS,Lakes | Business,5.77904,9.430884
+australia_tourism_quarterly,full,68,AutoETS,Lakes | Holiday,15.251529,49.264841
+australia_tourism_quarterly,full,68,AutoETS,Lakes | Other,6.495632,4.020351
+australia_tourism_quarterly,full,68,AutoETS,Lakes | Visiting,11.942911,13.568536
+australia_tourism_quarterly,full,68,AutoETS,Lasseter | Business,5.462369,5.367844
+australia_tourism_quarterly,full,68,AutoETS,Lasseter | Holiday,14.753888,15.237184
+australia_tourism_quarterly,full,68,AutoETS,Lasseter | Other,1.39447,1.408878
+australia_tourism_quarterly,full,68,AutoETS,Lasseter | Visiting,1.517917,1.723671
+australia_tourism_quarterly,full,68,AutoETS,"Launceston, Tamar and the North | Business",10.91775,11.815504
+australia_tourism_quarterly,full,68,AutoETS,"Launceston, Tamar and the North | Holiday",15.622676,41.784392
+australia_tourism_quarterly,full,68,AutoETS,"Launceston, Tamar and the North | Other",3.201711,3.871544
+australia_tourism_quarterly,full,68,AutoETS,"Launceston, Tamar and the North | Visiting",12.535198,15.735455
+australia_tourism_quarterly,full,68,AutoETS,Limestone Coast | Business,10.640717,10.915661
+australia_tourism_quarterly,full,68,AutoETS,Limestone Coast | Holiday,11.118362,24.096631
+australia_tourism_quarterly,full,68,AutoETS,Limestone Coast | Other,3.302322,2.624565
+australia_tourism_quarterly,full,68,AutoETS,Limestone Coast | Visiting,9.667027,12.374663
+australia_tourism_quarterly,full,68,AutoETS,MacDonnell | Business,5.530915,4.41816
+australia_tourism_quarterly,full,68,AutoETS,MacDonnell | Holiday,4.406809,6.53668
+australia_tourism_quarterly,full,68,AutoETS,MacDonnell | Other,0.389117,0.722587
+australia_tourism_quarterly,full,68,AutoETS,MacDonnell | Visiting,1.896308,1.50449
+australia_tourism_quarterly,full,68,AutoETS,Macedon | Business,6.996917,6.16868
+australia_tourism_quarterly,full,68,AutoETS,Macedon | Holiday,9.032335,8.652825
+australia_tourism_quarterly,full,68,AutoETS,Macedon | Other,2.161489,2.282773
+australia_tourism_quarterly,full,68,AutoETS,Macedon | Visiting,11.32431,12.399605
+australia_tourism_quarterly,full,68,AutoETS,Mackay | Business,26.142357,22.989428
+australia_tourism_quarterly,full,68,AutoETS,Mackay | Holiday,10.47088,24.795271
+australia_tourism_quarterly,full,68,AutoETS,Mackay | Other,8.069912,7.787144
+australia_tourism_quarterly,full,68,AutoETS,Mackay | Visiting,11.652405,16.04309
+australia_tourism_quarterly,full,68,AutoETS,Mallee | Business,11.210664,15.106431
+australia_tourism_quarterly,full,68,AutoETS,Mallee | Holiday,10.456027,18.958684
+australia_tourism_quarterly,full,68,AutoETS,Mallee | Other,6.691431,6.165801
+australia_tourism_quarterly,full,68,AutoETS,Mallee | Visiting,13.718141,16.199948
+australia_tourism_quarterly,full,68,AutoETS,Melbourne East | Business,7.985832,5.644874
+australia_tourism_quarterly,full,68,AutoETS,Melbourne East | Holiday,16.557868,13.098081
+australia_tourism_quarterly,full,68,AutoETS,Melbourne East | Other,3.779587,4.234405
+australia_tourism_quarterly,full,68,AutoETS,Melbourne East | Visiting,16.106974,13.612412
+australia_tourism_quarterly,full,68,AutoETS,Melbourne | Business,90.873061,72.730166
+australia_tourism_quarterly,full,68,AutoETS,Melbourne | Holiday,57.118012,55.955316
+australia_tourism_quarterly,full,68,AutoETS,Melbourne | Other,13.43752,19.765724
+australia_tourism_quarterly,full,68,AutoETS,Melbourne | Visiting,81.437783,77.223247
+australia_tourism_quarterly,full,68,AutoETS,Murray East | Business,4.066902,5.940831
+australia_tourism_quarterly,full,68,AutoETS,Murray East | Holiday,4.81133,6.030895
+australia_tourism_quarterly,full,68,AutoETS,Murray East | Other,1.132922,2.314952
+australia_tourism_quarterly,full,68,AutoETS,Murray East | Visiting,9.520792,7.761988
+australia_tourism_quarterly,full,68,AutoETS,Murraylands | Business,4.552528,7.386005
+australia_tourism_quarterly,full,68,AutoETS,Murraylands | Holiday,8.31947,15.004092
+australia_tourism_quarterly,full,68,AutoETS,Murraylands | Other,1.535551,2.149538
+australia_tourism_quarterly,full,68,AutoETS,Murraylands | Visiting,3.945273,7.161333
+australia_tourism_quarterly,full,68,AutoETS,New England North West | Business,21.586314,20.151315
+australia_tourism_quarterly,full,68,AutoETS,New England North West | Holiday,16.756346,25.772956
+australia_tourism_quarterly,full,68,AutoETS,New England North West | Other,7.223178,10.402799
+australia_tourism_quarterly,full,68,AutoETS,New England North West | Visiting,16.265227,20.92596
+australia_tourism_quarterly,full,68,AutoETS,North Coast NSW | Business,20.536158,29.508721
+australia_tourism_quarterly,full,68,AutoETS,North Coast NSW | Holiday,81.266277,137.940201
+australia_tourism_quarterly,full,68,AutoETS,North Coast NSW | Other,18.140824,15.052831
+australia_tourism_quarterly,full,68,AutoETS,North Coast NSW | Visiting,45.167455,53.503245
+australia_tourism_quarterly,full,68,AutoETS,North West | Business,8.338893,7.583869
+australia_tourism_quarterly,full,68,AutoETS,North West | Holiday,12.465403,32.839324
+australia_tourism_quarterly,full,68,AutoETS,North West | Other,2.861293,2.906738
+australia_tourism_quarterly,full,68,AutoETS,North West | Visiting,13.119762,10.407824
+australia_tourism_quarterly,full,68,AutoETS,Northern | Business,21.932343,27.171553
+australia_tourism_quarterly,full,68,AutoETS,Northern | Holiday,12.572325,30.931146
+australia_tourism_quarterly,full,68,AutoETS,Northern | Other,7.236749,10.176683
+australia_tourism_quarterly,full,68,AutoETS,Northern | Visiting,19.494814,24.217475
+australia_tourism_quarterly,full,68,AutoETS,Outback NSW | Business,18.19853,14.412733
+australia_tourism_quarterly,full,68,AutoETS,Outback NSW | Holiday,9.686965,24.662998
+australia_tourism_quarterly,full,68,AutoETS,Outback NSW | Other,3.876655,3.86737
+australia_tourism_quarterly,full,68,AutoETS,Outback NSW | Visiting,7.881974,8.182635
+australia_tourism_quarterly,full,68,AutoETS,Outback | Business,21.065259,33.103289
+australia_tourism_quarterly,full,68,AutoETS,Outback | Holiday,17.844305,31.267305
+australia_tourism_quarterly,full,68,AutoETS,Outback | Other,4.745185,5.197256
+australia_tourism_quarterly,full,68,AutoETS,Outback | Visiting,9.066455,15.368946
+australia_tourism_quarterly,full,68,AutoETS,Peninsula | Business,5.150945,8.959355
+australia_tourism_quarterly,full,68,AutoETS,Peninsula | Holiday,50.39792,108.487879
+australia_tourism_quarterly,full,68,AutoETS,Peninsula | Other,3.775632,4.870756
+australia_tourism_quarterly,full,68,AutoETS,Peninsula | Visiting,16.848294,40.522223
+australia_tourism_quarterly,full,68,AutoETS,Phillip Island | Business,4.33294,7.044912
+australia_tourism_quarterly,full,68,AutoETS,Phillip Island | Holiday,21.939582,78.760646
+australia_tourism_quarterly,full,68,AutoETS,Phillip Island | Other,2.354154,3.953023
+australia_tourism_quarterly,full,68,AutoETS,Phillip Island | Visiting,14.684804,16.077857
+australia_tourism_quarterly,full,68,AutoETS,Riverina | Business,20.583194,21.785561
+australia_tourism_quarterly,full,68,AutoETS,Riverina | Holiday,16.49849,18.34497
+australia_tourism_quarterly,full,68,AutoETS,Riverina | Other,7.604706,8.414345
+australia_tourism_quarterly,full,68,AutoETS,Riverina | Visiting,9.857888,24.82794
+australia_tourism_quarterly,full,68,AutoETS,Riverland | Business,6.131412,5.652989
+australia_tourism_quarterly,full,68,AutoETS,Riverland | Holiday,13.140677,13.236366
+australia_tourism_quarterly,full,68,AutoETS,Riverland | Other,2.787354,1.916449
+australia_tourism_quarterly,full,68,AutoETS,Riverland | Visiting,7.567622,9.52415
+australia_tourism_quarterly,full,68,AutoETS,Snowy Mountains | Business,7.89254,10.407427
+australia_tourism_quarterly,full,68,AutoETS,Snowy Mountains | Holiday,28.016899,106.644918
+australia_tourism_quarterly,full,68,AutoETS,Snowy Mountains | Other,5.776956,5.442533
+australia_tourism_quarterly,full,68,AutoETS,Snowy Mountains | Visiting,8.200877,11.932425
+australia_tourism_quarterly,full,68,AutoETS,South Coast | Business,11.946096,26.063025
+australia_tourism_quarterly,full,68,AutoETS,South Coast | Holiday,51.851828,214.235053
+australia_tourism_quarterly,full,68,AutoETS,South Coast | Other,14.404493,9.41583
+australia_tourism_quarterly,full,68,AutoETS,South Coast | Visiting,30.328532,52.957375
+australia_tourism_quarterly,full,68,AutoETS,Spa Country | Business,2.497312,3.35225
+australia_tourism_quarterly,full,68,AutoETS,Spa Country | Holiday,17.644797,14.665885
+australia_tourism_quarterly,full,68,AutoETS,Spa Country | Other,2.791873,2.949727
+australia_tourism_quarterly,full,68,AutoETS,Spa Country | Visiting,6.964319,8.321788
+australia_tourism_quarterly,full,68,AutoETS,Sunshine Coast | Business,13.171695,17.748866
+australia_tourism_quarterly,full,68,AutoETS,Sunshine Coast | Holiday,46.419017,77.521176
+australia_tourism_quarterly,full,68,AutoETS,Sunshine Coast | Other,7.869186,11.558592
+australia_tourism_quarterly,full,68,AutoETS,Sunshine Coast | Visiting,27.921788,33.927156
+australia_tourism_quarterly,full,68,AutoETS,Sydney | Business,78.153182,106.025001
+australia_tourism_quarterly,full,68,AutoETS,Sydney | Holiday,39.593805,84.933658
+australia_tourism_quarterly,full,68,AutoETS,Sydney | Other,31.763195,22.71733
+australia_tourism_quarterly,full,68,AutoETS,Sydney | Visiting,50.122729,78.224184
+australia_tourism_quarterly,full,68,AutoETS,The Murray | Business,15.698121,17.855704
+australia_tourism_quarterly,full,68,AutoETS,The Murray | Holiday,23.069447,27.46231
+australia_tourism_quarterly,full,68,AutoETS,The Murray | Other,4.64051,6.374817
+australia_tourism_quarterly,full,68,AutoETS,The Murray | Visiting,15.654318,23.100716
+australia_tourism_quarterly,full,68,AutoETS,Tropical North Queensland | Business,31.48139,33.795784
+australia_tourism_quarterly,full,68,AutoETS,Tropical North Queensland | Holiday,31.484779,69.254401
+australia_tourism_quarterly,full,68,AutoETS,Tropical North Queensland | Other,7.036771,10.238167
+australia_tourism_quarterly,full,68,AutoETS,Tropical North Queensland | Visiting,18.91769,28.81686
+australia_tourism_quarterly,full,68,AutoETS,Upper Yarra | Business,4.106222,4.09382
+australia_tourism_quarterly,full,68,AutoETS,Upper Yarra | Holiday,15.865173,18.217677
+australia_tourism_quarterly,full,68,AutoETS,Upper Yarra | Other,1.625794,3.30121
+australia_tourism_quarterly,full,68,AutoETS,Upper Yarra | Visiting,5.146208,8.144212
+australia_tourism_quarterly,full,68,AutoETS,Western Grampians | Business,5.620131,9.748117
+australia_tourism_quarterly,full,68,AutoETS,Western Grampians | Holiday,14.415287,11.899332
+australia_tourism_quarterly,full,68,AutoETS,Western Grampians | Other,3.264337,2.886733
+australia_tourism_quarterly,full,68,AutoETS,Western Grampians | Visiting,8.689745,12.181979
+australia_tourism_quarterly,full,68,AutoETS,Whitsundays | Business,11.021441,11.545429
+australia_tourism_quarterly,full,68,AutoETS,Whitsundays | Holiday,17.1182,25.627696
+australia_tourism_quarterly,full,68,AutoETS,Whitsundays | Other,2.003356,3.54676
+australia_tourism_quarterly,full,68,AutoETS,Whitsundays | Visiting,3.743121,10.072934
+australia_tourism_quarterly,full,68,AutoETS,Wilderness West | Business,4.413584,3.649205
+australia_tourism_quarterly,full,68,AutoETS,Wilderness West | Holiday,7.628038,20.426528
+australia_tourism_quarterly,full,68,AutoETS,Wilderness West | Other,0.681661,0.869424
+australia_tourism_quarterly,full,68,AutoETS,Wilderness West | Visiting,3.665816,2.70047
+australia_tourism_quarterly,full,68,AutoETS,Wimmera | Business,5.027777,6.216777
+australia_tourism_quarterly,full,68,AutoETS,Wimmera | Holiday,6.511297,6.856851
+australia_tourism_quarterly,full,68,AutoETS,Wimmera | Other,2.490593,1.439502
+australia_tourism_quarterly,full,68,AutoETS,Wimmera | Visiting,6.932572,7.92651
+australia_tourism_quarterly,full,68,AutoETS,Yorke Peninsula | Business,4.618994,5.408629
+australia_tourism_quarterly,full,68,AutoETS,Yorke Peninsula | Holiday,19.205896,32.311607
+australia_tourism_quarterly,full,68,AutoETS,Yorke Peninsula | Other,3.049456,1.744932
+australia_tourism_quarterly,full,68,AutoETS,Yorke Peninsula | Visiting,10.300253,10.754905
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Adelaide Hills | Business,4.132105,2.911222
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Adelaide Hills | Holiday,4.923153,6.297901
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Adelaide Hills | Other,1.933921,1.299552
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Adelaide Hills | Visiting,9.052647,6.584068
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Adelaide | Business,23.163297,40.769237
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Adelaide | Holiday,31.035832,26.949111
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Adelaide | Other,21.427744,11.961508
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Adelaide | Visiting,26.005546,39.230396
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Alice Springs | Business,7.521688,6.404097
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Alice Springs | Holiday,12.593033,21.08746
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Alice Springs | Other,4.622797,3.241928
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Alice Springs | Visiting,3.599257,4.808121
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's Coral Coast | Business,21.121506,15.190484
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's Coral Coast | Holiday,36.260786,22.101146
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's Coral Coast | Other,6.79306,4.270417
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's Coral Coast | Visiting,10.634206,10.881101
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's Golden Outback | Business,39.084993,18.34099
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's Golden Outback | Holiday,18.25953,16.102546
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's Golden Outback | Other,2.942342,4.919158
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's Golden Outback | Visiting,13.486697,13.423349
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's North West | Business,51.121281,22.867491
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's North West | Holiday,20.449304,29.443609
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's North West | Other,2.313155,3.008453
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's North West | Visiting,8.024234,9.503763
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's South West | Business,30.439315,17.335301
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's South West | Holiday,100.003818,87.316519
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's South West | Other,12.197806,6.607009
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Australia's South West | Visiting,61.753915,27.723984
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Ballarat | Business,9.490904,12.062278
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Ballarat | Holiday,10.349114,14.843572
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Ballarat | Other,6.300112,7.050868
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Ballarat | Visiting,13.812535,19.138326
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Barkly | Business,4.242957,4.328659
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Barkly | Holiday,4.622829,8.205824
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Barkly | Other,0.64136,1.000847
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Barkly | Visiting,3.28876,1.828452
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Barossa | Business,3.542483,4.772985
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Barossa | Holiday,6.260804,12.741725
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Barossa | Other,1.202931,1.609014
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Barossa | Visiting,5.531618,7.256757
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Bendigo Loddon | Business,14.018137,13.401433
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Bendigo Loddon | Holiday,19.875077,17.834257
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Bendigo Loddon | Other,6.798612,7.233904
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Bendigo Loddon | Visiting,19.622122,28.96079
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Blue Mountains | Business,8.592809,13.302844
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Blue Mountains | Holiday,39.822426,26.057901
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Blue Mountains | Other,5.471716,3.845509
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Blue Mountains | Visiting,17.23519,16.19176
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Brisbane | Business,77.532585,76.204749
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Brisbane | Holiday,57.973512,59.380907
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Brisbane | Other,35.116208,31.37997
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Brisbane | Visiting,99.257741,60.497276
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Bundaberg | Business,11.226221,15.773886
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Bundaberg | Holiday,8.971444,18.619926
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Bundaberg | Other,5.640026,6.773803
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Bundaberg | Visiting,15.904973,18.968311
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Canberra | Business,42.62493,42.16986
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Canberra | Holiday,39.668824,40.780764
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Canberra | Other,12.32331,13.219864
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Canberra | Visiting,36.200849,26.930602
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Capital Country | Business,9.176879,15.302514
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Capital Country | Holiday,18.126032,21.6348
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Capital Country | Other,7.130609,6.687232
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Capital Country | Visiting,30.303123,24.312515
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Coast | Business,7.401917,11.406407
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Coast | Holiday,22.20495,64.458119
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Coast | Other,4.436698,5.547739
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Coast | Visiting,26.86296,31.856213
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Highlands | Business,6.98429,6.473906
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Highlands | Holiday,12.27834,18.320451
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Highlands | Other,1.865943,2.960617
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Highlands | Visiting,7.031641,10.220552
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Murray | Business,5.199525,9.634888
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Murray | Holiday,20.67618,36.763379
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Murray | Other,2.65976,3.767156
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Murray | Visiting,12.565827,15.807131
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central NSW | Business,27.798091,28.218438
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central NSW | Holiday,19.726058,35.331138
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central NSW | Other,13.843811,12.854166
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central NSW | Visiting,34.172411,32.653367
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Queensland | Business,29.981766,23.765034
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Queensland | Holiday,24.282731,38.86512
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Queensland | Other,8.155746,10.906437
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Central Queensland | Visiting,23.085667,26.410052
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Clare Valley | Business,4.119884,4.412815
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Clare Valley | Holiday,8.997132,7.602591
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Clare Valley | Other,1.17278,1.378552
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Clare Valley | Visiting,4.703545,5.939278
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Darling Downs | Business,32.986298,27.442716
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Darling Downs | Holiday,30.615721,33.785827
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Darling Downs | Other,8.170152,11.367656
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Darling Downs | Visiting,27.009488,34.106379
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Darwin | Business,20.599108,15.516656
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Darwin | Holiday,13.864449,37.169477
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Darwin | Other,4.578421,4.244971
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Darwin | Visiting,18.367994,11.77468
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],East Coast | Business,3.253665,3.762823
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],East Coast | Holiday,20.8761,41.142371
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],East Coast | Other,1.507367,1.868168
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],East Coast | Visiting,5.66581,4.491463
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Experience Perth | Business,53.14095,41.139351
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Experience Perth | Holiday,44.495622,44.238539
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Experience Perth | Other,25.852334,14.918345
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Experience Perth | Visiting,94.347246,36.813738
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Eyre Peninsula | Business,7.789622,10.931281
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Eyre Peninsula | Holiday,5.894262,13.863333
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Eyre Peninsula | Other,3.486718,2.242638
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Eyre Peninsula | Visiting,6.99965,9.260778
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Fleurieu Peninsula | Business,6.480082,6.086604
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Fleurieu Peninsula | Holiday,22.950448,42.684526
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Fleurieu Peninsula | Other,3.396046,2.597899
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Fleurieu Peninsula | Visiting,18.11532,12.378086
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Flinders Ranges and Outback | Business,13.601097,12.245878
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Flinders Ranges and Outback | Holiday,15.437538,28.442023
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Flinders Ranges and Outback | Other,3.105368,4.146928
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Flinders Ranges and Outback | Visiting,10.100983,10.768581
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Fraser Coast | Business,6.846326,11.85635
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Fraser Coast | Holiday,16.603049,26.495447
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Fraser Coast | Other,2.693619,4.079381
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Fraser Coast | Visiting,9.670886,13.888593
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Geelong and the Bellarine | Business,9.955292,13.668667
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Geelong and the Bellarine | Holiday,31.945087,57.527236
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Geelong and the Bellarine | Other,9.079085,9.198652
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Geelong and the Bellarine | Visiting,34.453189,26.751539
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Gippsland | Business,10.683946,13.13597
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Gippsland | Holiday,37.501355,46.730159
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Gippsland | Other,5.579313,7.199869
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Gippsland | Visiting,22.86701,28.291037
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Gold Coast | Business,21.126373,23.524436
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Gold Coast | Holiday,56.077318,75.954106
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Gold Coast | Other,10.732953,10.791715
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Gold Coast | Visiting,58.490425,43.742935
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Goulburn | Business,12.517452,10.38062
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Goulburn | Holiday,13.939105,12.152907
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Goulburn | Other,6.889622,4.990214
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Goulburn | Visiting,9.988892,16.979256
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Great Ocean Road | Business,19.459447,15.340649
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Great Ocean Road | Holiday,46.343443,141.134496
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Great Ocean Road | Other,5.324785,5.726712
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Great Ocean Road | Visiting,28.683942,29.936551
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],High Country | Business,6.884778,13.93256
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],High Country | Holiday,55.709079,64.503366
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],High Country | Other,3.224649,7.153902
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],High Country | Visiting,21.724398,17.950011
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Hobart and the South | Business,12.402295,14.607143
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Hobart and the South | Holiday,46.202436,65.523764
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Hobart and the South | Other,4.049863,5.597749
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Hobart and the South | Visiting,16.472099,18.267475
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Hunter | Business,27.879847,28.016794
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Hunter | Holiday,48.815534,58.193113
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Hunter | Other,13.69991,12.035448
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Hunter | Visiting,41.497933,40.521927
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Kakadu Arnhem | Business,8.51801,7.200537
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Kakadu Arnhem | Holiday,12.397775,20.361176
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Kakadu Arnhem | Other,0.953696,1.677344
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Kakadu Arnhem | Visiting,7.601331,3.861309
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Kangaroo Island | Business,3.409823,2.273677
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Kangaroo Island | Holiday,4.812766,9.845476
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Kangaroo Island | Other,0.316799,0.611544
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Kangaroo Island | Visiting,2.233755,2.866699
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Katherine Daly | Business,13.477308,8.027162
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Katherine Daly | Holiday,11.848432,22.858751
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Katherine Daly | Other,2.410267,2.410908
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Katherine Daly | Visiting,6.949957,5.254213
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Lakes | Business,5.7958,9.430884
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Lakes | Holiday,20.644691,49.264841
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Lakes | Other,6.196189,4.020351
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Lakes | Visiting,13.804525,13.568536
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Lasseter | Business,5.761735,5.367844
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Lasseter | Holiday,18.026435,15.237184
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Lasseter | Other,1.334776,1.408878
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Lasseter | Visiting,1.806599,1.723671
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],"Launceston, Tamar and the North | Business",10.747982,11.815504
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],"Launceston, Tamar and the North | Holiday",19.700079,41.784392
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],"Launceston, Tamar and the North | Other",2.76436,3.871544
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],"Launceston, Tamar and the North | Visiting",13.808687,15.735455
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Limestone Coast | Business,8.940743,10.915661
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Limestone Coast | Holiday,12.611068,24.096631
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Limestone Coast | Other,3.582375,2.624565
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Limestone Coast | Visiting,8.654642,12.374663
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],MacDonnell | Business,5.644026,4.41816
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],MacDonnell | Holiday,5.141217,6.53668
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],MacDonnell | Other,0.548506,0.722587
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],MacDonnell | Visiting,1.797113,1.50449
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Macedon | Business,7.641236,6.16868
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Macedon | Holiday,10.035209,8.652825
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Macedon | Other,2.108786,2.282773
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Macedon | Visiting,8.294957,12.399605
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Mackay | Business,36.6876,22.989428
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Mackay | Holiday,15.23958,24.795271
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Mackay | Other,7.1697,7.787144
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Mackay | Visiting,10.749398,16.04309
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Mallee | Business,10.72363,15.106431
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Mallee | Holiday,6.680679,18.958684
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Mallee | Other,6.578054,6.165801
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Mallee | Visiting,14.883994,16.199948
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Melbourne East | Business,8.304605,5.644874
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Melbourne East | Holiday,18.799797,13.098081
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Melbourne East | Other,3.644231,4.234405
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Melbourne East | Visiting,23.527205,13.612412
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Melbourne | Business,106.242671,72.730166
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Melbourne | Holiday,103.628604,55.955316
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Melbourne | Other,43.143241,19.765724
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Melbourne | Visiting,108.177444,77.223247
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Murray East | Business,4.082569,5.940831
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Murray East | Holiday,4.93699,6.030895
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Murray East | Other,1.30326,2.314952
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Murray East | Visiting,8.562682,7.761988
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Murraylands | Business,4.302363,7.386005
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Murraylands | Holiday,9.488165,15.004092
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Murraylands | Other,1.659743,2.149538
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Murraylands | Visiting,3.774549,7.161333
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],New England North West | Business,24.700194,20.151315
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],New England North West | Holiday,16.080224,25.772956
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],New England North West | Other,7.748442,10.402799
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],New England North West | Visiting,17.091813,20.92596
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],North Coast NSW | Business,29.553883,29.508721
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],North Coast NSW | Holiday,86.915628,137.940201
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],North Coast NSW | Other,14.97765,15.052831
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],North Coast NSW | Visiting,55.376033,53.503245
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],North West | Business,8.163216,7.583869
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],North West | Holiday,13.1187,32.839324
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],North West | Other,2.948087,2.906738
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],North West | Visiting,10.965762,10.407824
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Northern | Business,23.449058,27.171553
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Northern | Holiday,15.447549,30.931146
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Northern | Other,9.212501,10.176683
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Northern | Visiting,20.904776,24.217475
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Outback NSW | Business,11.622296,14.412733
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Outback NSW | Holiday,13.027779,24.662998
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Outback NSW | Other,3.450686,3.86737
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Outback NSW | Visiting,7.469187,8.182635
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Outback | Business,23.824156,33.103289
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Outback | Holiday,23.357821,31.267305
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Outback | Other,4.441842,5.197256
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Outback | Visiting,9.746018,15.368946
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Peninsula | Business,5.437109,8.959355
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Peninsula | Holiday,46.467932,108.487879
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Peninsula | Other,4.169571,4.870756
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Peninsula | Visiting,22.346613,40.522223
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Phillip Island | Business,5.420747,7.044912
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Phillip Island | Holiday,24.446739,78.760646
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Phillip Island | Other,2.410234,3.953023
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Phillip Island | Visiting,14.691419,16.077857
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Riverina | Business,15.156644,21.785561
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Riverina | Holiday,19.140958,18.34497
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Riverina | Other,8.05733,8.414345
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Riverina | Visiting,11.768172,24.82794
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Riverland | Business,6.219611,5.652989
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Riverland | Holiday,12.299411,13.236366
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Riverland | Other,3.043514,1.916449
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Riverland | Visiting,8.552944,9.52415
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Snowy Mountains | Business,8.78086,10.407427
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Snowy Mountains | Holiday,62.746622,106.644918
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Snowy Mountains | Other,5.814273,5.442533
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Snowy Mountains | Visiting,8.685048,11.932425
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],South Coast | Business,15.503673,26.063025
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],South Coast | Holiday,63.554372,214.235053
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],South Coast | Other,13.215581,9.41583
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],South Coast | Visiting,48.164094,52.957375
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Spa Country | Business,2.778658,3.35225
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Spa Country | Holiday,15.278416,14.665885
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Spa Country | Other,2.116337,2.949727
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Spa Country | Visiting,7.785003,8.321788
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Sunshine Coast | Business,13.668704,17.748866
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Sunshine Coast | Holiday,46.094142,77.521176
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Sunshine Coast | Other,10.541436,11.558592
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Sunshine Coast | Visiting,52.437754,33.927156
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Sydney | Business,122.378841,106.025001
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Sydney | Holiday,46.787689,84.933658
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Sydney | Other,47.76153,22.71733
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Sydney | Visiting,91.84165,78.224184
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],The Murray | Business,14.454753,17.855704
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],The Murray | Holiday,19.104942,27.46231
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],The Murray | Other,5.204802,6.374817
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],The Murray | Visiting,12.422995,23.100716
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Tropical North Queensland | Business,29.648171,33.795784
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Tropical North Queensland | Holiday,52.943011,69.254401
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Tropical North Queensland | Other,6.737403,10.238167
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Tropical North Queensland | Visiting,22.985988,28.81686
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Upper Yarra | Business,4.131153,4.09382
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Upper Yarra | Holiday,14.330901,18.217677
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Upper Yarra | Other,1.745944,3.30121
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Upper Yarra | Visiting,4.841114,8.144212
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Western Grampians | Business,5.722064,9.748117
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Western Grampians | Holiday,13.344489,11.899332
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Western Grampians | Other,3.668257,2.886733
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Western Grampians | Visiting,8.969176,12.181979
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Whitsundays | Business,11.485114,11.545429
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Whitsundays | Holiday,19.887768,25.627696
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Whitsundays | Other,1.942203,3.54676
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Whitsundays | Visiting,5.772693,10.072934
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Wilderness West | Business,4.562135,3.649205
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Wilderness West | Holiday,9.172502,20.426528
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Wilderness West | Other,0.704921,0.869424
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Wilderness West | Visiting,3.681284,2.70047
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Wimmera | Business,4.087567,6.216777
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Wimmera | Holiday,5.498962,6.856851
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Wimmera | Other,2.122802,1.439502
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Wimmera | Visiting,6.38227,7.92651
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Yorke Peninsula | Business,4.6038,5.408629
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Yorke Peninsula | Holiday,21.6234,32.311607
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Yorke Peninsula | Other,3.051148,1.744932
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Yorke Peninsula | Visiting,9.604149,10.754905

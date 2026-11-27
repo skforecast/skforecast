@@ -41,12 +41,6 @@ h2o_monthly,36,36,LightGBM snippet [refit],h2o,2,0.086929,0.091771
 h2o_monthly,36,36,Chronos-2,h2o,0,0.065809,0.091771
 h2o_monthly,36,36,Chronos-2,h2o,1,0.054491,0.091771
 h2o_monthly,36,36,Chronos-2,h2o,2,0.060532,0.091771
-h2o_monthly,36,36,AutoETS,h2o,0,0.05353,0.091771
-h2o_monthly,36,36,AutoETS,h2o,1,0.050787,0.091771
-h2o_monthly,36,36,AutoETS,h2o,2,0.068419,0.091771
-h2o_monthly,36,36,AutoARIMA,h2o,0,0.05259,0.091771
-h2o_monthly,36,36,AutoARIMA,h2o,1,0.056126,0.091771
-h2o_monthly,36,36,AutoARIMA,h2o,2,0.068913,0.091771
 h2o_monthly,60,60,Seasonal naive,h2o,0,0.067339,0.091771
 h2o_monthly,60,60,Seasonal naive,h2o,1,0.04798,0.091771
 h2o_monthly,60,60,Seasonal naive,h2o,2,0.084943,0.091771
@@ -95,12 +89,6 @@ h2o_monthly,60,60,ML selected on validation (6),h2o,2,0.083106,0.091771
 h2o_monthly,60,60,Chronos-2,h2o,0,0.072744,0.091771
 h2o_monthly,60,60,Chronos-2,h2o,1,0.05165,0.091771
 h2o_monthly,60,60,Chronos-2,h2o,2,0.067848,0.091771
-h2o_monthly,60,60,AutoETS,h2o,0,0.04712,0.091771
-h2o_monthly,60,60,AutoETS,h2o,1,0.045353,0.091771
-h2o_monthly,60,60,AutoETS,h2o,2,0.07816,0.091771
-h2o_monthly,60,60,AutoARIMA,h2o,0,0.075509,0.091771
-h2o_monthly,60,60,AutoARIMA,h2o,1,0.066084,0.091771
-h2o_monthly,60,60,AutoARIMA,h2o,2,0.058874,0.091771
 h2o_monthly,120,120,Seasonal naive,h2o,0,0.067339,0.091771
 h2o_monthly,120,120,Seasonal naive,h2o,1,0.04798,0.091771
 h2o_monthly,120,120,Seasonal naive,h2o,2,0.084943,0.091771
@@ -149,12 +137,6 @@ h2o_monthly,120,120,ML selected on validation (6),h2o,2,0.078835,0.091771
 h2o_monthly,120,120,Chronos-2,h2o,0,0.05915,0.091771
 h2o_monthly,120,120,Chronos-2,h2o,1,0.045439,0.091771
 h2o_monthly,120,120,Chronos-2,h2o,2,0.064016,0.091771
-h2o_monthly,120,120,AutoETS,h2o,0,0.052063,0.091771
-h2o_monthly,120,120,AutoETS,h2o,1,0.055875,0.091771
-h2o_monthly,120,120,AutoETS,h2o,2,0.076398,0.091771
-h2o_monthly,120,120,AutoARIMA,h2o,0,0.056322,0.091771
-h2o_monthly,120,120,AutoARIMA,h2o,1,0.068219,0.091771
-h2o_monthly,120,120,AutoARIMA,h2o,2,0.068213,0.091771
 h2o_monthly,full,168,Seasonal naive,h2o,0,0.067339,0.091771
 h2o_monthly,full,168,Seasonal naive,h2o,1,0.04798,0.091771
 h2o_monthly,full,168,Seasonal naive,h2o,2,0.084943,0.091771
@@ -209,9 +191,39 @@ h2o_monthly,full,168,Chronos-2 base,h2o,2,0.06068,0.091771
 h2o_monthly,full,168,Chronos-2 synth,h2o,0,0.045268,0.091771
 h2o_monthly,full,168,Chronos-2 synth,h2o,1,0.045896,0.091771
 h2o_monthly,full,168,Chronos-2 synth,h2o,2,0.064572,0.091771
+h2o_monthly,36,36,AutoETS,h2o,0,0.05353,0.091771
+h2o_monthly,36,36,AutoETS,h2o,1,0.050787,0.091771
+h2o_monthly,36,36,AutoETS,h2o,2,0.068419,0.091771
+h2o_monthly,36,36,AutoARIMA,h2o,0,0.05259,0.091771
+h2o_monthly,36,36,AutoARIMA,h2o,1,0.056126,0.091771
+h2o_monthly,36,36,AutoARIMA,h2o,2,0.068913,0.091771
+h2o_monthly,60,60,AutoETS,h2o,0,0.04712,0.091771
+h2o_monthly,60,60,AutoETS,h2o,1,0.045353,0.091771
+h2o_monthly,60,60,AutoETS,h2o,2,0.07816,0.091771
+h2o_monthly,60,60,AutoARIMA,h2o,0,0.075509,0.091771
+h2o_monthly,60,60,AutoARIMA,h2o,1,0.066084,0.091771
+h2o_monthly,60,60,AutoARIMA,h2o,2,0.058874,0.091771
+h2o_monthly,120,120,AutoETS,h2o,0,0.052063,0.091771
+h2o_monthly,120,120,AutoETS,h2o,1,0.055875,0.091771
+h2o_monthly,120,120,AutoETS,h2o,2,0.076398,0.091771
+h2o_monthly,120,120,AutoARIMA,h2o,0,0.056322,0.091771
+h2o_monthly,120,120,AutoARIMA,h2o,1,0.068219,0.091771
+h2o_monthly,120,120,AutoARIMA,h2o,2,0.068213,0.091771
 h2o_monthly,full,168,AutoETS,h2o,0,0.056941,0.091771
 h2o_monthly,full,168,AutoETS,h2o,1,0.061741,0.091771
 h2o_monthly,full,168,AutoETS,h2o,2,0.074988,0.091771
 h2o_monthly,full,168,AutoARIMA,h2o,0,0.063103,0.091771
 h2o_monthly,full,168,AutoARIMA,h2o,1,0.078506,0.091771
 h2o_monthly,full,168,AutoARIMA,h2o,2,0.071444,0.091771
+h2o_monthly,36,36,LightGBM snippet v2 [refit],h2o,0,0.079896,0.091771
+h2o_monthly,36,36,LightGBM snippet v2 [refit],h2o,1,0.074834,0.091771
+h2o_monthly,36,36,LightGBM snippet v2 [refit],h2o,2,0.058879,0.091771
+h2o_monthly,60,60,LightGBM snippet v2 [refit],h2o,0,0.062302,0.091771
+h2o_monthly,60,60,LightGBM snippet v2 [refit],h2o,1,0.058284,0.091771
+h2o_monthly,60,60,LightGBM snippet v2 [refit],h2o,2,0.070021,0.091771
+h2o_monthly,120,120,LightGBM snippet v2 [refit],h2o,0,0.060112,0.091771
+h2o_monthly,120,120,LightGBM snippet v2 [refit],h2o,1,0.055269,0.091771
+h2o_monthly,120,120,LightGBM snippet v2 [refit],h2o,2,0.074361,0.091771
+h2o_monthly,full,168,LightGBM snippet v2 [refit],h2o,0,0.057153,0.091771
+h2o_monthly,full,168,LightGBM snippet v2 [refit],h2o,1,0.050464,0.091771
+h2o_monthly,full,168,LightGBM snippet v2 [refit],h2o,2,0.0892,0.091771

@@ -95,12 +95,6 @@ public_transport_madrid,90,90,Chronos-2,total,2,1545504.830357,916644.595238
 public_transport_madrid,90,90,Chronos-2,total,3,206282.517857,916644.595238
 public_transport_madrid,90,90,Chronos-2,total,4,265429.5,916644.595238
 public_transport_madrid,90,90,Chronos-2,total,5,243495.598214,916644.595238
-public_transport_madrid,90,90,AutoETS,total,0,604379.292693,916644.595238
-public_transport_madrid,90,90,AutoETS,total,1,457726.528661,916644.595238
-public_transport_madrid,90,90,AutoETS,total,2,1189535.320388,916644.595238
-public_transport_madrid,90,90,AutoETS,total,3,402058.961778,916644.595238
-public_transport_madrid,90,90,AutoETS,total,4,335001.701454,916644.595238
-public_transport_madrid,90,90,AutoETS,total,5,260201.121938,916644.595238
 public_transport_madrid,182,182,Seasonal naive,total,0,559157.25,916644.595238
 public_transport_madrid,182,182,Seasonal naive,total,1,585270.25,916644.595238
 public_transport_madrid,182,182,Seasonal naive,total,2,1381559.392857,916644.595238
@@ -197,12 +191,6 @@ public_transport_madrid,182,182,Chronos-2,total,2,1451965.035714,916644.595238
 public_transport_madrid,182,182,Chronos-2,total,3,174604.232143,916644.595238
 public_transport_madrid,182,182,Chronos-2,total,4,270486.741071,916644.595238
 public_transport_madrid,182,182,Chronos-2,total,5,269365.723214,916644.595238
-public_transport_madrid,182,182,AutoETS,total,0,753341.131714,916644.595238
-public_transport_madrid,182,182,AutoETS,total,1,1034459.7606,916644.595238
-public_transport_madrid,182,182,AutoETS,total,2,797621.921513,916644.595238
-public_transport_madrid,182,182,AutoETS,total,3,522333.06689,916644.595238
-public_transport_madrid,182,182,AutoETS,total,4,460983.642035,916644.595238
-public_transport_madrid,182,182,AutoETS,total,5,412094.828692,916644.595238
 public_transport_madrid,365,365,Seasonal naive,total,0,559157.25,916644.595238
 public_transport_madrid,365,365,Seasonal naive,total,1,585270.25,916644.595238
 public_transport_madrid,365,365,Seasonal naive,total,2,1381559.392857,916644.595238
@@ -299,12 +287,6 @@ public_transport_madrid,365,365,Chronos-2,total,2,257324.517857,916644.595238
 public_transport_madrid,365,365,Chronos-2,total,3,161639.571429,916644.595238
 public_transport_madrid,365,365,Chronos-2,total,4,272593.5,916644.595238
 public_transport_madrid,365,365,Chronos-2,total,5,242252.214286,916644.595238
-public_transport_madrid,365,365,AutoETS,total,0,805816.499164,916644.595238
-public_transport_madrid,365,365,AutoETS,total,1,606293.345714,916644.595238
-public_transport_madrid,365,365,AutoETS,total,2,1032847.886605,916644.595238
-public_transport_madrid,365,365,AutoETS,total,3,210402.574323,916644.595238
-public_transport_madrid,365,365,AutoETS,total,4,320980.510365,916644.595238
-public_transport_madrid,365,365,AutoETS,total,5,229569.431414,916644.595238
 public_transport_madrid,full,547,Seasonal naive,total,0,559157.25,916644.595238
 public_transport_madrid,full,547,Seasonal naive,total,1,585270.25,916644.595238
 public_transport_madrid,full,547,Seasonal naive,total,2,1381559.392857,916644.595238
@@ -413,9 +395,51 @@ public_transport_madrid,full,547,Chronos-2 synth,total,2,216505.651786,916644.59
 public_transport_madrid,full,547,Chronos-2 synth,total,3,209428.857143,916644.595238
 public_transport_madrid,full,547,Chronos-2 synth,total,4,306044.142857,916644.595238
 public_transport_madrid,full,547,Chronos-2 synth,total,5,264564.294643,916644.595238
+public_transport_madrid,90,90,AutoETS,total,0,604379.292693,916644.595238
+public_transport_madrid,90,90,AutoETS,total,1,457726.528661,916644.595238
+public_transport_madrid,90,90,AutoETS,total,2,1189535.320388,916644.595238
+public_transport_madrid,90,90,AutoETS,total,3,402058.961778,916644.595238
+public_transport_madrid,90,90,AutoETS,total,4,335001.701454,916644.595238
+public_transport_madrid,90,90,AutoETS,total,5,260201.121938,916644.595238
+public_transport_madrid,182,182,AutoETS,total,0,753341.131714,916644.595238
+public_transport_madrid,182,182,AutoETS,total,1,1034459.7606,916644.595238
+public_transport_madrid,182,182,AutoETS,total,2,797621.921513,916644.595238
+public_transport_madrid,182,182,AutoETS,total,3,522333.06689,916644.595238
+public_transport_madrid,182,182,AutoETS,total,4,460983.642035,916644.595238
+public_transport_madrid,182,182,AutoETS,total,5,412094.828692,916644.595238
+public_transport_madrid,365,365,AutoETS,total,0,805816.499164,916644.595238
+public_transport_madrid,365,365,AutoETS,total,1,606293.300684,916644.595238
+public_transport_madrid,365,365,AutoETS,total,2,1032847.865437,916644.595238
+public_transport_madrid,365,365,AutoETS,total,3,210402.608462,916644.595238
+public_transport_madrid,365,365,AutoETS,total,4,320980.642333,916644.595238
+public_transport_madrid,365,365,AutoETS,total,5,229569.514473,916644.595238
 public_transport_madrid,full,547,AutoETS,total,0,630321.765981,916644.595238
 public_transport_madrid,full,547,AutoETS,total,1,498863.087636,916644.595238
 public_transport_madrid,full,547,AutoETS,total,2,1163312.605962,916644.595238
 public_transport_madrid,full,547,AutoETS,total,3,300089.562072,916644.595238
 public_transport_madrid,full,547,AutoETS,total,4,265665.90656,916644.595238
 public_transport_madrid,full,547,AutoETS,total,5,210796.356872,916644.595238
+public_transport_madrid,90,90,LightGBM snippet v2 [refit],total,0,563566.306435,916644.595238
+public_transport_madrid,90,90,LightGBM snippet v2 [refit],total,1,325837.42856,916644.595238
+public_transport_madrid,90,90,LightGBM snippet v2 [refit],total,2,1850708.002835,916644.595238
+public_transport_madrid,90,90,LightGBM snippet v2 [refit],total,3,194357.640508,916644.595238
+public_transport_madrid,90,90,LightGBM snippet v2 [refit],total,4,280701.347747,916644.595238
+public_transport_madrid,90,90,LightGBM snippet v2 [refit],total,5,315979.74899,916644.595238
+public_transport_madrid,182,182,LightGBM snippet v2 [refit],total,0,596801.21774,916644.595238
+public_transport_madrid,182,182,LightGBM snippet v2 [refit],total,1,417212.379976,916644.595238
+public_transport_madrid,182,182,LightGBM snippet v2 [refit],total,2,1480955.289752,916644.595238
+public_transport_madrid,182,182,LightGBM snippet v2 [refit],total,3,333677.414115,916644.595238
+public_transport_madrid,182,182,LightGBM snippet v2 [refit],total,4,303646.005364,916644.595238
+public_transport_madrid,182,182,LightGBM snippet v2 [refit],total,5,375845.347542,916644.595238
+public_transport_madrid,365,365,LightGBM snippet v2 [refit],total,0,356763.102797,916644.595238
+public_transport_madrid,365,365,LightGBM snippet v2 [refit],total,1,251648.872029,916644.595238
+public_transport_madrid,365,365,LightGBM snippet v2 [refit],total,2,1015578.784927,916644.595238
+public_transport_madrid,365,365,LightGBM snippet v2 [refit],total,3,443132.583111,916644.595238
+public_transport_madrid,365,365,LightGBM snippet v2 [refit],total,4,725994.694138,916644.595238
+public_transport_madrid,365,365,LightGBM snippet v2 [refit],total,5,675802.292463,916644.595238
+public_transport_madrid,full,547,LightGBM snippet v2 [refit],total,0,236107.727167,916644.595238
+public_transport_madrid,full,547,LightGBM snippet v2 [refit],total,1,307186.665599,916644.595238
+public_transport_madrid,full,547,LightGBM snippet v2 [refit],total,2,1395855.037389,916644.595238
+public_transport_madrid,full,547,LightGBM snippet v2 [refit],total,3,435497.502006,916644.595238
+public_transport_madrid,full,547,LightGBM snippet v2 [refit],total,4,581589.316924,916644.595238
+public_transport_madrid,full,547,LightGBM snippet v2 [refit],total,5,1107092.262241,916644.595238

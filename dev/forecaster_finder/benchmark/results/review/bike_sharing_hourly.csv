@@ -33,3 +33,5 @@ bike_sharing_hourly,full,8928,ML selected on validation (6),ML,0.453251292553304
 bike_sharing_hourly,full,8928,Chronos-2,Foundation,0.44058266537296414,12.550209247999987,,0.6336966987595855,1
 bike_sharing_hourly,full,8928,Chronos-2 base,Foundation,0.4118774593443381,43.66612372299994,,0.5924095675871517,1
 bike_sharing_hourly,full,8928,Chronos-2 synth,Foundation,0.4915378268146957,40.07047357300007,,0.7069862766939616,1
+bike_sharing_hourly,2160,2160,LightGBM snippet v2 [refit],ML,0.5963735403694619,2.2170110630004274,as written by finder_tree.py,0.8577730661277284,1
+bike_sharing_hourly,full,8928,LightGBM snippet v2 [refit],ML,0.5103421376385313,3.12983490500028,as written by finder_tree.py,0.7340328008267856,1

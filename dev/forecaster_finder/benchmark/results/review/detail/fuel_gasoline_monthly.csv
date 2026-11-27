@@ -69,16 +69,6 @@ fuel_gasoline_monthly,36,36,Chronos-2,Gasolinas,1,11939.426875,46808.319936
 fuel_gasoline_monthly,36,36,Chronos-2,Gasolinas,2,11274.227917,46808.319936
 fuel_gasoline_monthly,36,36,Chronos-2,Gasolinas,3,12513.5925,46808.319936
 fuel_gasoline_monthly,36,36,Chronos-2,Gasolinas,4,11365.726042,46808.319936
-fuel_gasoline_monthly,36,36,AutoETS,Gasolinas,0,6815.270913,46808.319936
-fuel_gasoline_monthly,36,36,AutoETS,Gasolinas,1,10616.984693,46808.319936
-fuel_gasoline_monthly,36,36,AutoETS,Gasolinas,2,11593.108333,46808.319936
-fuel_gasoline_monthly,36,36,AutoETS,Gasolinas,3,19886.065751,46808.319936
-fuel_gasoline_monthly,36,36,AutoETS,Gasolinas,4,17922.81435,46808.319936
-fuel_gasoline_monthly,36,36,AutoARIMA,Gasolinas,0,7026.177036,46808.319936
-fuel_gasoline_monthly,36,36,AutoARIMA,Gasolinas,1,12371.661149,46808.319936
-fuel_gasoline_monthly,36,36,AutoARIMA,Gasolinas,2,6794.121145,46808.319936
-fuel_gasoline_monthly,36,36,AutoARIMA,Gasolinas,3,12102.733851,46808.319936
-fuel_gasoline_monthly,36,36,AutoARIMA,Gasolinas,4,7180.468629,46808.319936
 fuel_gasoline_monthly,60,60,Seasonal naive,Gasolinas,0,6468.860833,46808.319936
 fuel_gasoline_monthly,60,60,Seasonal naive,Gasolinas,1,13015.3175,46808.319936
 fuel_gasoline_monthly,60,60,Seasonal naive,Gasolinas,2,10727.664167,46808.319936
@@ -159,16 +149,6 @@ fuel_gasoline_monthly,60,60,Chronos-2,Gasolinas,1,8765.28875,46808.319936
 fuel_gasoline_monthly,60,60,Chronos-2,Gasolinas,2,8221.447188,46808.319936
 fuel_gasoline_monthly,60,60,Chronos-2,Gasolinas,3,9019.1825,46808.319936
 fuel_gasoline_monthly,60,60,Chronos-2,Gasolinas,4,9720.700833,46808.319936
-fuel_gasoline_monthly,60,60,AutoETS,Gasolinas,0,7322.814439,46808.319936
-fuel_gasoline_monthly,60,60,AutoETS,Gasolinas,1,9011.455331,46808.319936
-fuel_gasoline_monthly,60,60,AutoETS,Gasolinas,2,8625.991132,46808.319936
-fuel_gasoline_monthly,60,60,AutoETS,Gasolinas,3,13772.702566,46808.319936
-fuel_gasoline_monthly,60,60,AutoETS,Gasolinas,4,8497.689513,46808.319936
-fuel_gasoline_monthly,60,60,AutoARIMA,Gasolinas,0,8459.83838,46808.319936
-fuel_gasoline_monthly,60,60,AutoARIMA,Gasolinas,1,13450.811656,46808.319936
-fuel_gasoline_monthly,60,60,AutoARIMA,Gasolinas,2,21050.749599,46808.319936
-fuel_gasoline_monthly,60,60,AutoARIMA,Gasolinas,3,29549.449767,46808.319936
-fuel_gasoline_monthly,60,60,AutoARIMA,Gasolinas,4,14440.515993,46808.319936
 fuel_gasoline_monthly,120,120,Seasonal naive,Gasolinas,0,6468.860833,46808.319936
 fuel_gasoline_monthly,120,120,Seasonal naive,Gasolinas,1,13015.3175,46808.319936
 fuel_gasoline_monthly,120,120,Seasonal naive,Gasolinas,2,10727.664167,46808.319936
@@ -249,16 +229,6 @@ fuel_gasoline_monthly,120,120,Chronos-2,Gasolinas,1,11163.770625,46808.319936
 fuel_gasoline_monthly,120,120,Chronos-2,Gasolinas,2,7087.365,46808.319936
 fuel_gasoline_monthly,120,120,Chronos-2,Gasolinas,3,12343.043437,46808.319936
 fuel_gasoline_monthly,120,120,Chronos-2,Gasolinas,4,10172.619062,46808.319936
-fuel_gasoline_monthly,120,120,AutoETS,Gasolinas,0,7339.925106,46808.319936
-fuel_gasoline_monthly,120,120,AutoETS,Gasolinas,1,8590.164462,46808.319936
-fuel_gasoline_monthly,120,120,AutoETS,Gasolinas,2,7630.129455,46808.319936
-fuel_gasoline_monthly,120,120,AutoETS,Gasolinas,3,13139.805648,46808.319936
-fuel_gasoline_monthly,120,120,AutoETS,Gasolinas,4,8511.035131,46808.319936
-fuel_gasoline_monthly,120,120,AutoARIMA,Gasolinas,0,16167.430655,46808.319936
-fuel_gasoline_monthly,120,120,AutoARIMA,Gasolinas,1,14638.933121,46808.319936
-fuel_gasoline_monthly,120,120,AutoARIMA,Gasolinas,2,13785.283255,46808.319936
-fuel_gasoline_monthly,120,120,AutoARIMA,Gasolinas,3,18205.007047,46808.319936
-fuel_gasoline_monthly,120,120,AutoARIMA,Gasolinas,4,11310.003527,46808.319936
 fuel_gasoline_monthly,full,552,Seasonal naive,Gasolinas,0,6468.860833,46808.319936
 fuel_gasoline_monthly,full,552,Seasonal naive,Gasolinas,1,13015.3175,46808.319936
 fuel_gasoline_monthly,full,552,Seasonal naive,Gasolinas,2,10727.664167,46808.319936
@@ -349,6 +319,36 @@ fuel_gasoline_monthly,full,552,Chronos-2 synth,Gasolinas,1,10190.388438,46808.31
 fuel_gasoline_monthly,full,552,Chronos-2 synth,Gasolinas,2,9238.90375,46808.319936
 fuel_gasoline_monthly,full,552,Chronos-2 synth,Gasolinas,3,16772.956771,46808.319936
 fuel_gasoline_monthly,full,552,Chronos-2 synth,Gasolinas,4,10891.411146,46808.319936
+fuel_gasoline_monthly,36,36,AutoETS,Gasolinas,0,6815.270913,46808.319936
+fuel_gasoline_monthly,36,36,AutoETS,Gasolinas,1,10616.984693,46808.319936
+fuel_gasoline_monthly,36,36,AutoETS,Gasolinas,2,11593.108333,46808.319936
+fuel_gasoline_monthly,36,36,AutoETS,Gasolinas,3,19886.065751,46808.319936
+fuel_gasoline_monthly,36,36,AutoETS,Gasolinas,4,17922.81435,46808.319936
+fuel_gasoline_monthly,36,36,AutoARIMA,Gasolinas,0,7026.177036,46808.319936
+fuel_gasoline_monthly,36,36,AutoARIMA,Gasolinas,1,12371.661149,46808.319936
+fuel_gasoline_monthly,36,36,AutoARIMA,Gasolinas,2,6794.121145,46808.319936
+fuel_gasoline_monthly,36,36,AutoARIMA,Gasolinas,3,12102.733851,46808.319936
+fuel_gasoline_monthly,36,36,AutoARIMA,Gasolinas,4,7180.468629,46808.319936
+fuel_gasoline_monthly,60,60,AutoETS,Gasolinas,0,7322.814439,46808.319936
+fuel_gasoline_monthly,60,60,AutoETS,Gasolinas,1,9011.455331,46808.319936
+fuel_gasoline_monthly,60,60,AutoETS,Gasolinas,2,8625.991132,46808.319936
+fuel_gasoline_monthly,60,60,AutoETS,Gasolinas,3,13772.702566,46808.319936
+fuel_gasoline_monthly,60,60,AutoETS,Gasolinas,4,8497.689513,46808.319936
+fuel_gasoline_monthly,60,60,AutoARIMA,Gasolinas,0,8459.83838,46808.319936
+fuel_gasoline_monthly,60,60,AutoARIMA,Gasolinas,1,13450.811656,46808.319936
+fuel_gasoline_monthly,60,60,AutoARIMA,Gasolinas,2,21050.749599,46808.319936
+fuel_gasoline_monthly,60,60,AutoARIMA,Gasolinas,3,29549.449767,46808.319936
+fuel_gasoline_monthly,60,60,AutoARIMA,Gasolinas,4,14440.515993,46808.319936
+fuel_gasoline_monthly,120,120,AutoETS,Gasolinas,0,7339.925106,46808.319936
+fuel_gasoline_monthly,120,120,AutoETS,Gasolinas,1,8590.164462,46808.319936
+fuel_gasoline_monthly,120,120,AutoETS,Gasolinas,2,7630.129455,46808.319936
+fuel_gasoline_monthly,120,120,AutoETS,Gasolinas,3,13139.805648,46808.319936
+fuel_gasoline_monthly,120,120,AutoETS,Gasolinas,4,8511.035131,46808.319936
+fuel_gasoline_monthly,120,120,AutoARIMA,Gasolinas,0,16167.430655,46808.319936
+fuel_gasoline_monthly,120,120,AutoARIMA,Gasolinas,1,14638.933121,46808.319936
+fuel_gasoline_monthly,120,120,AutoARIMA,Gasolinas,2,13785.283255,46808.319936
+fuel_gasoline_monthly,120,120,AutoARIMA,Gasolinas,3,18205.007047,46808.319936
+fuel_gasoline_monthly,120,120,AutoARIMA,Gasolinas,4,11310.003527,46808.319936
 fuel_gasoline_monthly,full,552,AutoETS,Gasolinas,0,15116.493926,46808.319936
 fuel_gasoline_monthly,full,552,AutoETS,Gasolinas,1,13554.029372,46808.319936
 fuel_gasoline_monthly,full,552,AutoETS,Gasolinas,2,10060.36884,46808.319936
@@ -359,3 +359,23 @@ fuel_gasoline_monthly,full,552,AutoARIMA,Gasolinas,1,18225.013383,46808.319936
 fuel_gasoline_monthly,full,552,AutoARIMA,Gasolinas,2,14416.038996,46808.319936
 fuel_gasoline_monthly,full,552,AutoARIMA,Gasolinas,3,19783.404658,46808.319936
 fuel_gasoline_monthly,full,552,AutoARIMA,Gasolinas,4,14040.124321,46808.319936
+fuel_gasoline_monthly,36,36,LightGBM snippet v2 [refit],Gasolinas,0,13313.000796,46808.319936
+fuel_gasoline_monthly,36,36,LightGBM snippet v2 [refit],Gasolinas,1,12990.855712,46808.319936
+fuel_gasoline_monthly,36,36,LightGBM snippet v2 [refit],Gasolinas,2,18250.468248,46808.319936
+fuel_gasoline_monthly,36,36,LightGBM snippet v2 [refit],Gasolinas,3,34511.820155,46808.319936
+fuel_gasoline_monthly,36,36,LightGBM snippet v2 [refit],Gasolinas,4,29372.27933,46808.319936
+fuel_gasoline_monthly,60,60,LightGBM snippet v2 [refit],Gasolinas,0,12054.534861,46808.319936
+fuel_gasoline_monthly,60,60,LightGBM snippet v2 [refit],Gasolinas,1,14101.886571,46808.319936
+fuel_gasoline_monthly,60,60,LightGBM snippet v2 [refit],Gasolinas,2,15720.974257,46808.319936
+fuel_gasoline_monthly,60,60,LightGBM snippet v2 [refit],Gasolinas,3,27836.28951,46808.319936
+fuel_gasoline_monthly,60,60,LightGBM snippet v2 [refit],Gasolinas,4,31949.896382,46808.319936
+fuel_gasoline_monthly,120,120,LightGBM snippet v2 [refit],Gasolinas,0,14116.368557,46808.319936
+fuel_gasoline_monthly,120,120,LightGBM snippet v2 [refit],Gasolinas,1,13144.123728,46808.319936
+fuel_gasoline_monthly,120,120,LightGBM snippet v2 [refit],Gasolinas,2,14705.430182,46808.319936
+fuel_gasoline_monthly,120,120,LightGBM snippet v2 [refit],Gasolinas,3,29517.898536,46808.319936
+fuel_gasoline_monthly,120,120,LightGBM snippet v2 [refit],Gasolinas,4,43424.97791,46808.319936
+fuel_gasoline_monthly,full,552,LightGBM snippet v2 [refit],Gasolinas,0,8786.394863,46808.319936
+fuel_gasoline_monthly,full,552,LightGBM snippet v2 [refit],Gasolinas,1,11329.115032,46808.319936
+fuel_gasoline_monthly,full,552,LightGBM snippet v2 [refit],Gasolinas,2,11583.405602,46808.319936
+fuel_gasoline_monthly,full,552,LightGBM snippet v2 [refit],Gasolinas,3,19644.969973,46808.319936
+fuel_gasoline_monthly,full,552,LightGBM snippet v2 [refit],Gasolinas,4,27740.797524,46808.319936

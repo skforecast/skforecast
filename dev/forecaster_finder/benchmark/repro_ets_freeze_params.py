@@ -1,12 +1,15 @@
 """
 Reproduction of BUG-ets-freeze-params, found while reviewing the forecaster
 finder study: `backtesting_stats` with an automatic `Ets` and the default
-`freeze_params=True` returns forecasts of the order of -1e11 from the second
-fold on in some series. With `freeze_params=False` the same folds are fine.
+`freeze_params=True` returned forecasts of the order of -1e11 from the second
+fold on in some series (first prediction of each fold of 'The Murray |
+Visiting': 76.5, -1.02e+11, -1.12e+11). With `freeze_params=False` the same
+folds were fine.
 
-The first fit selects the model and its smoothing parameters; `freeze_params`
-then sets all of `best_params_` (model, `alpha`, `beta`, `gamma`, `phi`) on
-the estimator that is refitted in the following folds.
+Fixed in commit 5f020a0 (a model with a multiplicative error or seasonality
+is not valid when its level or forecasts are not positive, and the initial
+states are searched from more starting points when alpha is fixed). With the
+fix, both values of `freeze_params` give forecasts in the range of the series.
 
 Usage:
     python -I repro_ets_freeze_params.py

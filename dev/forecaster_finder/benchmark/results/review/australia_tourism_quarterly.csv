@@ -15,4 +15,5 @@ australia_tourism_quarterly,full,68,ML selected on validation (6),ML,0.913336656
 australia_tourism_quarterly,full,68,Chronos-2,Foundation,0.8868795021633972,2.4427967630003877,,0.8663471498428645,304
 australia_tourism_quarterly,full,68,Chronos-2 base,Foundation,0.8767403965124047,5.624168758999986,,0.856442776970038,304
 australia_tourism_quarterly,full,68,Chronos-2 synth,Foundation,0.8800071622672432,5.407923187000051,,0.8596339130759069,304
-australia_tourism_quarterly,full,68,AutoETS,Statistical,13033403.717769183,44.91090251999958,one model per series,12731664.376160549,304
+australia_tourism_quarterly,full,68,AutoETS,Statistical,0.8793897990041564,39.18283163600063,one model per series,0.8590308425324021,304
+australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],ML,0.9428685814137413,1.4271450790001836,as written by finder_tree.py,0.9210400129798967,304
