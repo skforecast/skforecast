@@ -1,0 +1,18 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series
+australia_tourism_quarterly,full,68,Seasonal naive,Baseline,1.023699913278709,1.4353377450001972,,1.0,304
+australia_tourism_quarterly,full,68,LightGBM,ML,1.003446930122457,0.9414936200000739,,0.9802158983374475,304
+australia_tourism_quarterly,full,68,LightGBM [refit],ML,0.946550017711103,1.7705964430001586,,0.9246362194947247,304
+australia_tourism_quarterly,full,68,Ridge,ML,0.9184323008264975,0.5612472739999248,,0.8971694623719757,304
+australia_tourism_quarterly,full,68,Ridge [refit],ML,0.9165238416035955,0.7851823020000666,,0.8953051863296054,304
+australia_tourism_quarterly,full,68,LightGBM (diff),ML,0.863035049157562,1.050620772000002,,0.8430547252792382,304
+australia_tourism_quarterly,full,68,LightGBM (diff) [refit],ML,0.8596353340188693,1.7712006679998922,,0.8397337177314266,304
+australia_tourism_quarterly,full,68,LightGBM+ [refit],ML,0.9133366562366663,3.3674441460002527,,0.8921917882276936,304
+australia_tourism_quarterly,full,68,LightGBM+ (diff) [refit],ML,0.8535671445103133,3.8256568060000973,,0.8338060142805972,304
+australia_tourism_quarterly,full,68,LightGBM snippet,ML,0.9043085330272735,0.5341916269999274,,0.8833726771852032,304
+australia_tourism_quarterly,full,68,LightGBM snippet [refit],ML,0.9046512139850637,0.9786885899998197,,0.8837074246569429,304
+australia_tourism_quarterly,full,68,ML selected on validation (4),ML,0.946550017711103,4.355935096999929,LightGBM; n_val=12,0.9246362194947247,304
+australia_tourism_quarterly,full,68,ML selected on validation (6),ML,0.9133366562366663,8.632324717000301,LightGBM+; n_val=12,0.8921917882276936,304
+australia_tourism_quarterly,full,68,Chronos-2,Foundation,0.8868795021633972,2.4427967630003877,,0.8663471498428645,304
+australia_tourism_quarterly,full,68,Chronos-2 base,Foundation,0.8767403965124047,5.624168758999986,,0.856442776970038,304
+australia_tourism_quarterly,full,68,Chronos-2 synth,Foundation,0.8800071622672432,5.407923187000051,,0.8596339130759069,304
+australia_tourism_quarterly,full,68,AutoETS,Statistical,13033403.717769183,44.91090251999958,one model per series,12731664.376160549,304

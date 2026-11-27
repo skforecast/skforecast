@@ -1,0 +1,2201 @@
+case,history,history_obs,model,level,mae,scale
+store_sales_50_items,182,182,Chronos-2,item_1,4.418572,5.392879
+store_sales_50_items,182,182,Chronos-2,item_10,10.018767,12.299188
+store_sales_50_items,182,182,Chronos-2,item_11,7.982675,11.347908
+store_sales_50_items,182,182,Chronos-2,item_12,9.168334,11.763898
+store_sales_50_items,182,182,Chronos-2,item_13,9.357496,13.309182
+store_sales_50_items,182,182,Chronos-2,item_14,7.904037,10.169894
+store_sales_50_items,182,182,Chronos-2,item_15,10.305511,14.286071
+store_sales_50_items,182,182,Chronos-2,item_16,5.453925,6.049344
+store_sales_50_items,182,182,Chronos-2,item_17,5.202655,7.078076
+store_sales_50_items,182,182,Chronos-2,item_18,10.859588,13.640849
+store_sales_50_items,182,182,Chronos-2,item_19,6.152046,8.269831
+store_sales_50_items,182,182,Chronos-2,item_2,8.268376,10.49594
+store_sales_50_items,182,182,Chronos-2,item_20,7.325787,8.8401
+store_sales_50_items,182,182,Chronos-2,item_21,6.419178,7.940662
+store_sales_50_items,182,182,Chronos-2,item_22,9.987993,13.341037
+store_sales_50_items,182,182,Chronos-2,item_23,5.274695,6.910681
+store_sales_50_items,182,182,Chronos-2,item_24,9.251039,11.492817
+store_sales_50_items,182,182,Chronos-2,item_25,9.031224,13.224859
+store_sales_50_items,182,182,Chronos-2,item_26,6.693298,9.078701
+store_sales_50_items,182,182,Chronos-2,item_27,4.608473,5.640849
+store_sales_50_items,182,182,Chronos-2,item_28,10.475594,14.078076
+store_sales_50_items,182,182,Chronos-2,item_29,9.827098,11.591505
+store_sales_50_items,182,182,Chronos-2,item_3,6.418043,7.435353
+store_sales_50_items,182,182,Chronos-2,item_30,6.246039,8.318551
+store_sales_50_items,182,182,Chronos-2,item_31,7.467042,10.534666
+store_sales_50_items,182,182,Chronos-2,item_32,6.19992,8.498438
+store_sales_50_items,182,182,Chronos-2,item_33,8.158728,11.60837
+store_sales_50_items,182,182,Chronos-2,item_34,4.664645,6.097439
+store_sales_50_items,182,182,Chronos-2,item_35,9.681028,11.294191
+store_sales_50_items,182,182,Chronos-2,item_36,11.292762,12.259838
+store_sales_50_items,182,182,Chronos-2,item_37,5.916012,6.640849
+store_sales_50_items,182,182,Chronos-2,item_38,10.322146,12.822611
+store_sales_50_items,182,182,Chronos-2,item_39,7.633433,8.376015
+store_sales_50_items,182,182,Chronos-2,item_4,4.7105,5.675203
+store_sales_50_items,182,182,Chronos-2,item_40,4.903012,6.41599
+store_sales_50_items,182,182,Chronos-2,item_41,4.688553,5.700812
+store_sales_50_items,182,182,Chronos-2,item_42,6.005856,7.101811
+store_sales_50_items,182,182,Chronos-2,item_43,8.153387,9.169894
+store_sales_50_items,182,182,Chronos-2,item_44,5.873852,6.778264
+store_sales_50_items,182,182,Chronos-2,item_45,9.484154,13.209869
+store_sales_50_items,182,182,Chronos-2,item_46,8.00489,10.511555
+store_sales_50_items,182,182,Chronos-2,item_47,4.414979,5.306683
+store_sales_50_items,182,182,Chronos-2,item_48,6.731739,9.834478
+store_sales_50_items,182,182,Chronos-2,item_49,5.039974,6.626483
+store_sales_50_items,182,182,Chronos-2,item_5,3.434743,4.928795
+store_sales_50_items,182,182,Chronos-2,item_50,8.361374,11.326046
+store_sales_50_items,182,182,Chronos-2,item_6,7.917974,10.538413
+store_sales_50_items,182,182,Chronos-2,item_7,8.444171,10.667083
+store_sales_50_items,182,182,Chronos-2,item_8,9.250845,12.53529
+store_sales_50_items,182,182,Chronos-2,item_9,7.421626,9.454716
+store_sales_50_items,182,182,LightGBM,item_1,5.34029,5.392879
+store_sales_50_items,182,182,LightGBM,item_10,13.717619,12.299188
+store_sales_50_items,182,182,LightGBM,item_11,13.386376,11.347908
+store_sales_50_items,182,182,LightGBM,item_12,13.625381,11.763898
+store_sales_50_items,182,182,LightGBM,item_13,15.065415,13.309182
+store_sales_50_items,182,182,LightGBM,item_14,12.008948,10.169894
+store_sales_50_items,182,182,LightGBM,item_15,15.735598,14.286071
+store_sales_50_items,182,182,LightGBM,item_16,6.188078,6.049344
+store_sales_50_items,182,182,LightGBM,item_17,7.109674,7.078076
+store_sales_50_items,182,182,LightGBM,item_18,16.34504,13.640849
+store_sales_50_items,182,182,LightGBM,item_19,8.912988,8.269831
+store_sales_50_items,182,182,LightGBM,item_2,12.129362,10.49594
+store_sales_50_items,182,182,LightGBM,item_20,9.14577,8.8401
+store_sales_50_items,182,182,LightGBM,item_21,8.701692,7.940662
+store_sales_50_items,182,182,LightGBM,item_22,15.256908,13.341037
+store_sales_50_items,182,182,LightGBM,item_23,6.619409,6.910681
+store_sales_50_items,182,182,LightGBM,item_24,12.382762,11.492817
+store_sales_50_items,182,182,LightGBM,item_25,15.238742,13.224859
+store_sales_50_items,182,182,LightGBM,item_26,10.263041,9.078701
+store_sales_50_items,182,182,LightGBM,item_27,5.687519,5.640849
+store_sales_50_items,182,182,LightGBM,item_28,16.743517,14.078076
+store_sales_50_items,182,182,LightGBM,item_29,13.183969,11.591505
+store_sales_50_items,182,182,LightGBM,item_3,8.079963,7.435353
+store_sales_50_items,182,182,LightGBM,item_30,8.574509,8.318551
+store_sales_50_items,182,182,LightGBM,item_31,11.834101,10.534666
+store_sales_50_items,182,182,LightGBM,item_32,9.371058,8.498438
+store_sales_50_items,182,182,LightGBM,item_33,13.126158,11.60837
+store_sales_50_items,182,182,LightGBM,item_34,5.802406,6.097439
+store_sales_50_items,182,182,LightGBM,item_35,11.771014,11.294191
+store_sales_50_items,182,182,LightGBM,item_36,14.046651,12.259838
+store_sales_50_items,182,182,LightGBM,item_37,7.493518,6.640849
+store_sales_50_items,182,182,LightGBM,item_38,15.069439,12.822611
+store_sales_50_items,182,182,LightGBM,item_39,9.278992,8.376015
+store_sales_50_items,182,182,LightGBM,item_4,5.022414,5.675203
+store_sales_50_items,182,182,LightGBM,item_40,6.107714,6.41599
+store_sales_50_items,182,182,LightGBM,item_41,5.325552,5.700812
+store_sales_50_items,182,182,LightGBM,item_42,7.469378,7.101811
+store_sales_50_items,182,182,LightGBM,item_43,10.56223,9.169894
+store_sales_50_items,182,182,LightGBM,item_44,7.100375,6.778264
+store_sales_50_items,182,182,LightGBM,item_45,15.012248,13.209869
+store_sales_50_items,182,182,LightGBM,item_46,11.330617,10.511555
+store_sales_50_items,182,182,LightGBM,item_47,5.367994,5.306683
+store_sales_50_items,182,182,LightGBM,item_48,9.907711,9.834478
+store_sales_50_items,182,182,LightGBM,item_49,6.366288,6.626483
+store_sales_50_items,182,182,LightGBM,item_5,4.368353,4.928795
+store_sales_50_items,182,182,LightGBM,item_50,12.43951,11.326046
+store_sales_50_items,182,182,LightGBM,item_6,10.441767,10.538413
+store_sales_50_items,182,182,LightGBM,item_7,12.478587,10.667083
+store_sales_50_items,182,182,LightGBM,item_8,14.709573,12.53529
+store_sales_50_items,182,182,LightGBM,item_9,10.189954,9.454716
+store_sales_50_items,182,182,LightGBM (diff),item_1,4.550393,5.392879
+store_sales_50_items,182,182,LightGBM (diff),item_10,10.16072,12.299188
+store_sales_50_items,182,182,LightGBM (diff),item_11,8.284912,11.347908
+store_sales_50_items,182,182,LightGBM (diff),item_12,8.785197,11.763898
+store_sales_50_items,182,182,LightGBM (diff),item_13,9.660227,13.309182
+store_sales_50_items,182,182,LightGBM (diff),item_14,8.086861,10.169894
+store_sales_50_items,182,182,LightGBM (diff),item_15,9.945826,14.286071
+store_sales_50_items,182,182,LightGBM (diff),item_16,5.235751,6.049344
+store_sales_50_items,182,182,LightGBM (diff),item_17,4.882665,7.078076
+store_sales_50_items,182,182,LightGBM (diff),item_18,11.170124,13.640849
+store_sales_50_items,182,182,LightGBM (diff),item_19,6.110778,8.269831
+store_sales_50_items,182,182,LightGBM (diff),item_2,9.040455,10.49594
+store_sales_50_items,182,182,LightGBM (diff),item_20,7.073948,8.8401
+store_sales_50_items,182,182,LightGBM (diff),item_21,6.466511,7.940662
+store_sales_50_items,182,182,LightGBM (diff),item_22,10.041144,13.341037
+store_sales_50_items,182,182,LightGBM (diff),item_23,5.164643,6.910681
+store_sales_50_items,182,182,LightGBM (diff),item_24,9.141283,11.492817
+store_sales_50_items,182,182,LightGBM (diff),item_25,9.012258,13.224859
+store_sales_50_items,182,182,LightGBM (diff),item_26,7.046665,9.078701
+store_sales_50_items,182,182,LightGBM (diff),item_27,4.403877,5.640849
+store_sales_50_items,182,182,LightGBM (diff),item_28,10.44939,14.078076
+store_sales_50_items,182,182,LightGBM (diff),item_29,9.461398,11.591505
+store_sales_50_items,182,182,LightGBM (diff),item_3,6.32075,7.435353
+store_sales_50_items,182,182,LightGBM (diff),item_30,6.686018,8.318551
+store_sales_50_items,182,182,LightGBM (diff),item_31,7.378024,10.534666
+store_sales_50_items,182,182,LightGBM (diff),item_32,7.045117,8.498438
+store_sales_50_items,182,182,LightGBM (diff),item_33,8.346403,11.60837
+store_sales_50_items,182,182,LightGBM (diff),item_34,4.484146,6.097439
+store_sales_50_items,182,182,LightGBM (diff),item_35,9.056076,11.294191
+store_sales_50_items,182,182,LightGBM (diff),item_36,10.811221,12.259838
+store_sales_50_items,182,182,LightGBM (diff),item_37,5.893223,6.640849
+store_sales_50_items,182,182,LightGBM (diff),item_38,10.091039,12.822611
+store_sales_50_items,182,182,LightGBM (diff),item_39,7.18047,8.376015
+store_sales_50_items,182,182,LightGBM (diff),item_4,4.58674,5.675203
+store_sales_50_items,182,182,LightGBM (diff),item_40,5.129881,6.41599
+store_sales_50_items,182,182,LightGBM (diff),item_41,4.31157,5.700812
+store_sales_50_items,182,182,LightGBM (diff),item_42,6.033018,7.101811
+store_sales_50_items,182,182,LightGBM (diff),item_43,8.007649,9.169894
+store_sales_50_items,182,182,LightGBM (diff),item_44,6.237167,6.778264
+store_sales_50_items,182,182,LightGBM (diff),item_45,9.772883,13.209869
+store_sales_50_items,182,182,LightGBM (diff),item_46,7.8277,10.511555
+store_sales_50_items,182,182,LightGBM (diff),item_47,4.546493,5.306683
+store_sales_50_items,182,182,LightGBM (diff),item_48,7.13383,9.834478
+store_sales_50_items,182,182,LightGBM (diff),item_49,5.147546,6.626483
+store_sales_50_items,182,182,LightGBM (diff),item_5,3.637301,4.928795
+store_sales_50_items,182,182,LightGBM (diff),item_50,8.284527,11.326046
+store_sales_50_items,182,182,LightGBM (diff),item_6,7.760842,10.538413
+store_sales_50_items,182,182,LightGBM (diff),item_7,7.827808,10.667083
+store_sales_50_items,182,182,LightGBM (diff),item_8,9.73684,12.53529
+store_sales_50_items,182,182,LightGBM (diff),item_9,8.050986,9.454716
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_1,4.950348,5.392879
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_10,11.072094,12.299188
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_11,8.756886,11.347908
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_12,10.393741,11.763898
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_13,10.976095,13.309182
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_14,8.557454,10.169894
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_15,12.081299,14.286071
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_16,5.579056,6.049344
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_17,5.870539,7.078076
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_18,12.833278,13.640849
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_19,7.091229,8.269831
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_2,10.222849,10.49594
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_20,7.726505,8.8401
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_21,7.21153,7.940662
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_22,11.25703,13.341037
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_23,5.248081,6.910681
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_24,10.368442,11.492817
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_25,10.838087,13.224859
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_26,7.701379,9.078701
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_27,4.729649,5.640849
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_28,11.685906,14.078076
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_29,10.380869,11.591505
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_3,7.365188,7.435353
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_30,7.69935,8.318551
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_31,7.979268,10.534666
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_32,7.699687,8.498438
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_33,9.160399,11.60837
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_34,5.087806,6.097439
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_35,9.281217,11.294191
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_36,10.882599,12.259838
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_37,6.293257,6.640849
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_38,13.066377,12.822611
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_39,7.49261,8.376015
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_4,4.305299,5.675203
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_40,5.534782,6.41599
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_41,4.649587,5.700812
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_42,6.597285,7.101811
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_43,8.602353,9.169894
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_44,6.324406,6.778264
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_45,10.576567,13.209869
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_46,9.005231,10.511555
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_47,5.141648,5.306683
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_48,7.931182,9.834478
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_49,5.098532,6.626483
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_5,4.122512,4.928795
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_50,8.673972,11.326046
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_6,9.022722,10.538413
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_7,8.959704,10.667083
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_8,10.967003,12.53529
+store_sales_50_items,182,182,LightGBM (diff) [refit],item_9,8.35892,9.454716
+store_sales_50_items,182,182,LightGBM [refit],item_1,4.200238,5.392879
+store_sales_50_items,182,182,LightGBM [refit],item_10,8.743871,12.299188
+store_sales_50_items,182,182,LightGBM [refit],item_11,7.917473,11.347908
+store_sales_50_items,182,182,LightGBM [refit],item_12,8.339369,11.763898
+store_sales_50_items,182,182,LightGBM [refit],item_13,9.123481,13.309182
+store_sales_50_items,182,182,LightGBM [refit],item_14,7.400079,10.169894
+store_sales_50_items,182,182,LightGBM [refit],item_15,9.612005,14.286071
+store_sales_50_items,182,182,LightGBM [refit],item_16,5.051264,6.049344
+store_sales_50_items,182,182,LightGBM [refit],item_17,5.487588,7.078076
+store_sales_50_items,182,182,LightGBM [refit],item_18,10.165996,13.640849
+store_sales_50_items,182,182,LightGBM [refit],item_19,5.916733,8.269831
+store_sales_50_items,182,182,LightGBM [refit],item_2,7.406439,10.49594
+store_sales_50_items,182,182,LightGBM [refit],item_20,7.146843,8.8401
+store_sales_50_items,182,182,LightGBM [refit],item_21,5.572087,7.940662
+store_sales_50_items,182,182,LightGBM [refit],item_22,9.352609,13.341037
+store_sales_50_items,182,182,LightGBM [refit],item_23,4.716635,6.910681
+store_sales_50_items,182,182,LightGBM [refit],item_24,8.501813,11.492817
+store_sales_50_items,182,182,LightGBM [refit],item_25,9.338824,13.224859
+store_sales_50_items,182,182,LightGBM [refit],item_26,6.797562,9.078701
+store_sales_50_items,182,182,LightGBM [refit],item_27,4.377802,5.640849
+store_sales_50_items,182,182,LightGBM [refit],item_28,9.410806,14.078076
+store_sales_50_items,182,182,LightGBM [refit],item_29,8.365669,11.591505
+store_sales_50_items,182,182,LightGBM [refit],item_3,6.207333,7.435353
+store_sales_50_items,182,182,LightGBM [refit],item_30,5.881829,8.318551
+store_sales_50_items,182,182,LightGBM [refit],item_31,7.122298,10.534666
+store_sales_50_items,182,182,LightGBM [refit],item_32,6.249278,8.498438
+store_sales_50_items,182,182,LightGBM [refit],item_33,8.298283,11.60837
+store_sales_50_items,182,182,LightGBM [refit],item_34,4.452559,6.097439
+store_sales_50_items,182,182,LightGBM [refit],item_35,7.776267,11.294191
+store_sales_50_items,182,182,LightGBM [refit],item_36,9.692416,12.259838
+store_sales_50_items,182,182,LightGBM [refit],item_37,5.550043,6.640849
+store_sales_50_items,182,182,LightGBM [refit],item_38,9.816273,12.822611
+store_sales_50_items,182,182,LightGBM [refit],item_39,6.588211,8.376015
+store_sales_50_items,182,182,LightGBM [refit],item_4,4.02267,5.675203
+store_sales_50_items,182,182,LightGBM [refit],item_40,4.782523,6.41599
+store_sales_50_items,182,182,LightGBM [refit],item_41,4.269101,5.700812
+store_sales_50_items,182,182,LightGBM [refit],item_42,5.683888,7.101811
+store_sales_50_items,182,182,LightGBM [refit],item_43,7.356348,9.169894
+store_sales_50_items,182,182,LightGBM [refit],item_44,5.19715,6.778264
+store_sales_50_items,182,182,LightGBM [refit],item_45,9.173538,13.209869
+store_sales_50_items,182,182,LightGBM [refit],item_46,6.971109,10.511555
+store_sales_50_items,182,182,LightGBM [refit],item_47,4.000657,5.306683
+store_sales_50_items,182,182,LightGBM [refit],item_48,6.533631,9.834478
+store_sales_50_items,182,182,LightGBM [refit],item_49,4.837726,6.626483
+store_sales_50_items,182,182,LightGBM [refit],item_5,3.72251,4.928795
+store_sales_50_items,182,182,LightGBM [refit],item_50,7.543203,11.326046
+store_sales_50_items,182,182,LightGBM [refit],item_6,6.885438,10.538413
+store_sales_50_items,182,182,LightGBM [refit],item_7,7.97252,10.667083
+store_sales_50_items,182,182,LightGBM [refit],item_8,9.406345,12.53529
+store_sales_50_items,182,182,LightGBM [refit],item_9,7.316941,9.454716
+store_sales_50_items,182,182,LightGBM snippet,item_1,4.387768,5.392879
+store_sales_50_items,182,182,LightGBM snippet,item_10,9.627415,12.299188
+store_sales_50_items,182,182,LightGBM snippet,item_11,9.367311,11.347908
+store_sales_50_items,182,182,LightGBM snippet,item_12,9.296885,11.763898
+store_sales_50_items,182,182,LightGBM snippet,item_13,10.089759,13.309182
+store_sales_50_items,182,182,LightGBM snippet,item_14,7.64118,10.169894
+store_sales_50_items,182,182,LightGBM snippet,item_15,11.296119,14.286071
+store_sales_50_items,182,182,LightGBM snippet,item_16,5.251709,6.049344
+store_sales_50_items,182,182,LightGBM snippet,item_17,5.311253,7.078076
+store_sales_50_items,182,182,LightGBM snippet,item_18,10.953614,13.640849
+store_sales_50_items,182,182,LightGBM snippet,item_19,6.043457,8.269831
+store_sales_50_items,182,182,LightGBM snippet,item_2,8.326043,10.49594
+store_sales_50_items,182,182,LightGBM snippet,item_20,7.227042,8.8401
+store_sales_50_items,182,182,LightGBM snippet,item_21,6.349064,7.940662
+store_sales_50_items,182,182,LightGBM snippet,item_22,11.282951,13.341037
+store_sales_50_items,182,182,LightGBM snippet,item_23,5.104218,6.910681
+store_sales_50_items,182,182,LightGBM snippet,item_24,10.127446,11.492817
+store_sales_50_items,182,182,LightGBM snippet,item_25,10.060343,13.224859
+store_sales_50_items,182,182,LightGBM snippet,item_26,6.878977,9.078701
+store_sales_50_items,182,182,LightGBM snippet,item_27,4.316144,5.640849
+store_sales_50_items,182,182,LightGBM snippet,item_28,12.543805,14.078076
+store_sales_50_items,182,182,LightGBM snippet,item_29,10.221739,11.591505
+store_sales_50_items,182,182,LightGBM snippet,item_3,6.350094,7.435353
+store_sales_50_items,182,182,LightGBM snippet,item_30,6.130068,8.318551
+store_sales_50_items,182,182,LightGBM snippet,item_31,7.271098,10.534666
+store_sales_50_items,182,182,LightGBM snippet,item_32,6.475703,8.498438
+store_sales_50_items,182,182,LightGBM snippet,item_33,8.700211,11.60837
+store_sales_50_items,182,182,LightGBM snippet,item_34,4.718705,6.097439
+store_sales_50_items,182,182,LightGBM snippet,item_35,8.966397,11.294191
+store_sales_50_items,182,182,LightGBM snippet,item_36,10.934177,12.259838
+store_sales_50_items,182,182,LightGBM snippet,item_37,6.113782,6.640849
+store_sales_50_items,182,182,LightGBM snippet,item_38,11.364171,12.822611
+store_sales_50_items,182,182,LightGBM snippet,item_39,6.951292,8.376015
+store_sales_50_items,182,182,LightGBM snippet,item_4,4.606785,5.675203
+store_sales_50_items,182,182,LightGBM snippet,item_40,4.998291,6.41599
+store_sales_50_items,182,182,LightGBM snippet,item_41,4.599412,5.700812
+store_sales_50_items,182,182,LightGBM snippet,item_42,5.519276,7.101811
+store_sales_50_items,182,182,LightGBM snippet,item_43,7.11954,9.169894
+store_sales_50_items,182,182,LightGBM snippet,item_44,6.213982,6.778264
+store_sales_50_items,182,182,LightGBM snippet,item_45,12.429972,13.209869
+store_sales_50_items,182,182,LightGBM snippet,item_46,7.722614,10.511555
+store_sales_50_items,182,182,LightGBM snippet,item_47,4.609549,5.306683
+store_sales_50_items,182,182,LightGBM snippet,item_48,6.474161,9.834478
+store_sales_50_items,182,182,LightGBM snippet,item_49,5.181743,6.626483
+store_sales_50_items,182,182,LightGBM snippet,item_5,3.747787,4.928795
+store_sales_50_items,182,182,LightGBM snippet,item_50,9.738731,11.326046
+store_sales_50_items,182,182,LightGBM snippet,item_6,7.967849,10.538413
+store_sales_50_items,182,182,LightGBM snippet,item_7,8.267617,10.667083
+store_sales_50_items,182,182,LightGBM snippet,item_8,10.61112,12.53529
+store_sales_50_items,182,182,LightGBM snippet,item_9,7.335808,9.454716
+store_sales_50_items,182,182,LightGBM snippet [refit],item_1,4.668885,5.392879
+store_sales_50_items,182,182,LightGBM snippet [refit],item_10,10.607218,12.299188
+store_sales_50_items,182,182,LightGBM snippet [refit],item_11,9.783002,11.347908
+store_sales_50_items,182,182,LightGBM snippet [refit],item_12,10.544067,11.763898
+store_sales_50_items,182,182,LightGBM snippet [refit],item_13,11.097296,13.309182
+store_sales_50_items,182,182,LightGBM snippet [refit],item_14,8.312363,10.169894
+store_sales_50_items,182,182,LightGBM snippet [refit],item_15,12.361239,14.286071
+store_sales_50_items,182,182,LightGBM snippet [refit],item_16,5.361145,6.049344
+store_sales_50_items,182,182,LightGBM snippet [refit],item_17,6.226074,7.078076
+store_sales_50_items,182,182,LightGBM snippet [refit],item_18,12.780249,13.640849
+store_sales_50_items,182,182,LightGBM snippet [refit],item_19,6.931622,8.269831
+store_sales_50_items,182,182,LightGBM snippet [refit],item_2,8.897668,10.49594
+store_sales_50_items,182,182,LightGBM snippet [refit],item_20,8.159567,8.8401
+store_sales_50_items,182,182,LightGBM snippet [refit],item_21,6.629852,7.940662
+store_sales_50_items,182,182,LightGBM snippet [refit],item_22,12.272608,13.341037
+store_sales_50_items,182,182,LightGBM snippet [refit],item_23,5.242189,6.910681
+store_sales_50_items,182,182,LightGBM snippet [refit],item_24,12.051966,11.492817
+store_sales_50_items,182,182,LightGBM snippet [refit],item_25,12.106621,13.224859
+store_sales_50_items,182,182,LightGBM snippet [refit],item_26,8.133798,9.078701
+store_sales_50_items,182,182,LightGBM snippet [refit],item_27,4.43163,5.640849
+store_sales_50_items,182,182,LightGBM snippet [refit],item_28,11.734306,14.078076
+store_sales_50_items,182,182,LightGBM snippet [refit],item_29,10.569876,11.591505
+store_sales_50_items,182,182,LightGBM snippet [refit],item_3,7.322567,7.435353
+store_sales_50_items,182,182,LightGBM snippet [refit],item_30,6.953019,8.318551
+store_sales_50_items,182,182,LightGBM snippet [refit],item_31,8.256802,10.534666
+store_sales_50_items,182,182,LightGBM snippet [refit],item_32,7.531524,8.498438
+store_sales_50_items,182,182,LightGBM snippet [refit],item_33,10.335311,11.60837
+store_sales_50_items,182,182,LightGBM snippet [refit],item_34,5.037165,6.097439
+store_sales_50_items,182,182,LightGBM snippet [refit],item_35,9.223628,11.294191
+store_sales_50_items,182,182,LightGBM snippet [refit],item_36,11.381691,12.259838
+store_sales_50_items,182,182,LightGBM snippet [refit],item_37,6.154171,6.640849
+store_sales_50_items,182,182,LightGBM snippet [refit],item_38,11.490587,12.822611
+store_sales_50_items,182,182,LightGBM snippet [refit],item_39,7.430516,8.376015
+store_sales_50_items,182,182,LightGBM snippet [refit],item_4,4.496467,5.675203
+store_sales_50_items,182,182,LightGBM snippet [refit],item_40,5.350423,6.41599
+store_sales_50_items,182,182,LightGBM snippet [refit],item_41,4.684302,5.700812
+store_sales_50_items,182,182,LightGBM snippet [refit],item_42,6.346467,7.101811
+store_sales_50_items,182,182,LightGBM snippet [refit],item_43,8.470041,9.169894
+store_sales_50_items,182,182,LightGBM snippet [refit],item_44,6.348988,6.778264
+store_sales_50_items,182,182,LightGBM snippet [refit],item_45,11.796443,13.209869
+store_sales_50_items,182,182,LightGBM snippet [refit],item_46,7.81382,10.511555
+store_sales_50_items,182,182,LightGBM snippet [refit],item_47,4.524916,5.306683
+store_sales_50_items,182,182,LightGBM snippet [refit],item_48,7.63657,9.834478
+store_sales_50_items,182,182,LightGBM snippet [refit],item_49,5.104499,6.626483
+store_sales_50_items,182,182,LightGBM snippet [refit],item_5,3.882876,4.928795
+store_sales_50_items,182,182,LightGBM snippet [refit],item_50,9.621091,11.326046
+store_sales_50_items,182,182,LightGBM snippet [refit],item_6,7.481354,10.538413
+store_sales_50_items,182,182,LightGBM snippet [refit],item_7,8.985391,10.667083
+store_sales_50_items,182,182,LightGBM snippet [refit],item_8,11.532751,12.53529
+store_sales_50_items,182,182,LightGBM snippet [refit],item_9,8.233769,9.454716
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_1,4.263628,5.392879
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_10,9.85863,12.299188
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_11,7.987637,11.347908
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_12,9.077808,11.763898
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_13,9.699425,13.309182
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_14,7.557609,10.169894
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_15,10.783403,14.286071
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_16,5.494795,6.049344
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_17,5.562473,7.078076
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_18,11.48189,13.640849
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_19,6.280024,8.269831
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_2,8.45775,10.49594
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_20,7.567911,8.8401
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_21,6.294395,7.940662
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_22,9.89489,13.341037
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_23,4.845399,6.910681
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_24,9.187364,11.492817
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_25,9.418805,13.224859
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_26,7.172436,9.078701
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_27,4.337614,5.640849
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_28,10.401469,14.078076
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_29,9.060909,11.591505
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_3,6.745276,7.435353
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_30,6.557044,8.318551
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_31,7.571168,10.534666
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_32,6.853054,8.498438
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_33,8.234475,11.60837
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_34,4.772529,6.097439
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_35,8.463263,11.294191
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_36,9.93472,12.259838
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_37,6.010716,6.640849
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_38,10.572383,12.822611
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_39,7.290641,8.376015
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_4,4.33539,5.675203
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_40,4.967343,6.41599
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_41,4.621861,5.700812
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_42,6.053886,7.101811
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_43,7.701486,9.169894
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_44,5.557118,6.778264
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_45,9.410657,13.209869
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_46,7.454957,10.511555
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_47,4.468445,5.306683
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_48,7.004592,9.834478
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_49,4.788445,6.626483
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_5,3.771086,4.928795
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_50,7.919403,11.326046
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_6,7.420906,10.538413
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_7,8.413745,10.667083
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_8,9.843537,12.53529
+store_sales_50_items,182,182,LightGBM+ (diff) [refit],item_9,7.524471,9.454716
+store_sales_50_items,182,182,LightGBM+ [refit],item_1,4.279843,5.392879
+store_sales_50_items,182,182,LightGBM+ [refit],item_10,9.323047,12.299188
+store_sales_50_items,182,182,LightGBM+ [refit],item_11,8.465377,11.347908
+store_sales_50_items,182,182,LightGBM+ [refit],item_12,8.764879,11.763898
+store_sales_50_items,182,182,LightGBM+ [refit],item_13,9.641864,13.309182
+store_sales_50_items,182,182,LightGBM+ [refit],item_14,7.746199,10.169894
+store_sales_50_items,182,182,LightGBM+ [refit],item_15,10.146363,14.286071
+store_sales_50_items,182,182,LightGBM+ [refit],item_16,5.226849,6.049344
+store_sales_50_items,182,182,LightGBM+ [refit],item_17,5.348338,7.078076
+store_sales_50_items,182,182,LightGBM+ [refit],item_18,10.576602,13.640849
+store_sales_50_items,182,182,LightGBM+ [refit],item_19,6.21073,8.269831
+store_sales_50_items,182,182,LightGBM+ [refit],item_2,7.56847,10.49594
+store_sales_50_items,182,182,LightGBM+ [refit],item_20,7.411473,8.8401
+store_sales_50_items,182,182,LightGBM+ [refit],item_21,5.75367,7.940662
+store_sales_50_items,182,182,LightGBM+ [refit],item_22,9.887022,13.341037
+store_sales_50_items,182,182,LightGBM+ [refit],item_23,4.844378,6.910681
+store_sales_50_items,182,182,LightGBM+ [refit],item_24,8.964956,11.492817
+store_sales_50_items,182,182,LightGBM+ [refit],item_25,9.477916,13.224859
+store_sales_50_items,182,182,LightGBM+ [refit],item_26,6.892032,9.078701
+store_sales_50_items,182,182,LightGBM+ [refit],item_27,4.507346,5.640849
+store_sales_50_items,182,182,LightGBM+ [refit],item_28,10.137093,14.078076
+store_sales_50_items,182,182,LightGBM+ [refit],item_29,8.830478,11.591505
+store_sales_50_items,182,182,LightGBM+ [refit],item_3,6.302698,7.435353
+store_sales_50_items,182,182,LightGBM+ [refit],item_30,6.084747,8.318551
+store_sales_50_items,182,182,LightGBM+ [refit],item_31,7.471444,10.534666
+store_sales_50_items,182,182,LightGBM+ [refit],item_32,6.478384,8.498438
+store_sales_50_items,182,182,LightGBM+ [refit],item_33,8.433703,11.60837
+store_sales_50_items,182,182,LightGBM+ [refit],item_34,4.394717,6.097439
+store_sales_50_items,182,182,LightGBM+ [refit],item_35,8.495399,11.294191
+store_sales_50_items,182,182,LightGBM+ [refit],item_36,10.072702,12.259838
+store_sales_50_items,182,182,LightGBM+ [refit],item_37,5.63288,6.640849
+store_sales_50_items,182,182,LightGBM+ [refit],item_38,10.472657,12.822611
+store_sales_50_items,182,182,LightGBM+ [refit],item_39,6.842619,8.376015
+store_sales_50_items,182,182,LightGBM+ [refit],item_4,4.071886,5.675203
+store_sales_50_items,182,182,LightGBM+ [refit],item_40,4.894065,6.41599
+store_sales_50_items,182,182,LightGBM+ [refit],item_41,4.362663,5.700812
+store_sales_50_items,182,182,LightGBM+ [refit],item_42,5.982184,7.101811
+store_sales_50_items,182,182,LightGBM+ [refit],item_43,7.715496,9.169894
+store_sales_50_items,182,182,LightGBM+ [refit],item_44,5.144213,6.778264
+store_sales_50_items,182,182,LightGBM+ [refit],item_45,9.411071,13.209869
+store_sales_50_items,182,182,LightGBM+ [refit],item_46,7.502175,10.511555
+store_sales_50_items,182,182,LightGBM+ [refit],item_47,4.236397,5.306683
+store_sales_50_items,182,182,LightGBM+ [refit],item_48,6.802779,9.834478
+store_sales_50_items,182,182,LightGBM+ [refit],item_49,4.961158,6.626483
+store_sales_50_items,182,182,LightGBM+ [refit],item_5,3.781913,4.928795
+store_sales_50_items,182,182,LightGBM+ [refit],item_50,7.815299,11.326046
+store_sales_50_items,182,182,LightGBM+ [refit],item_6,6.966617,10.538413
+store_sales_50_items,182,182,LightGBM+ [refit],item_7,8.357969,10.667083
+store_sales_50_items,182,182,LightGBM+ [refit],item_8,9.426721,12.53529
+store_sales_50_items,182,182,LightGBM+ [refit],item_9,7.520761,9.454716
+store_sales_50_items,182,182,ML selected on validation (4),item_1,4.950348,5.392879
+store_sales_50_items,182,182,ML selected on validation (4),item_10,11.072094,12.299188
+store_sales_50_items,182,182,ML selected on validation (4),item_11,8.756886,11.347908
+store_sales_50_items,182,182,ML selected on validation (4),item_12,10.393741,11.763898
+store_sales_50_items,182,182,ML selected on validation (4),item_13,10.976095,13.309182
+store_sales_50_items,182,182,ML selected on validation (4),item_14,8.557454,10.169894
+store_sales_50_items,182,182,ML selected on validation (4),item_15,12.081299,14.286071
+store_sales_50_items,182,182,ML selected on validation (4),item_16,5.579056,6.049344
+store_sales_50_items,182,182,ML selected on validation (4),item_17,5.870539,7.078076
+store_sales_50_items,182,182,ML selected on validation (4),item_18,12.833278,13.640849
+store_sales_50_items,182,182,ML selected on validation (4),item_19,7.091229,8.269831
+store_sales_50_items,182,182,ML selected on validation (4),item_2,10.222849,10.49594
+store_sales_50_items,182,182,ML selected on validation (4),item_20,7.726505,8.8401
+store_sales_50_items,182,182,ML selected on validation (4),item_21,7.21153,7.940662
+store_sales_50_items,182,182,ML selected on validation (4),item_22,11.25703,13.341037
+store_sales_50_items,182,182,ML selected on validation (4),item_23,5.248081,6.910681
+store_sales_50_items,182,182,ML selected on validation (4),item_24,10.368442,11.492817
+store_sales_50_items,182,182,ML selected on validation (4),item_25,10.838087,13.224859
+store_sales_50_items,182,182,ML selected on validation (4),item_26,7.701379,9.078701
+store_sales_50_items,182,182,ML selected on validation (4),item_27,4.729649,5.640849
+store_sales_50_items,182,182,ML selected on validation (4),item_28,11.685906,14.078076
+store_sales_50_items,182,182,ML selected on validation (4),item_29,10.380869,11.591505
+store_sales_50_items,182,182,ML selected on validation (4),item_3,7.365188,7.435353
+store_sales_50_items,182,182,ML selected on validation (4),item_30,7.69935,8.318551
+store_sales_50_items,182,182,ML selected on validation (4),item_31,7.979268,10.534666
+store_sales_50_items,182,182,ML selected on validation (4),item_32,7.699687,8.498438
+store_sales_50_items,182,182,ML selected on validation (4),item_33,9.160399,11.60837
+store_sales_50_items,182,182,ML selected on validation (4),item_34,5.087806,6.097439
+store_sales_50_items,182,182,ML selected on validation (4),item_35,9.281217,11.294191
+store_sales_50_items,182,182,ML selected on validation (4),item_36,10.882599,12.259838
+store_sales_50_items,182,182,ML selected on validation (4),item_37,6.293257,6.640849
+store_sales_50_items,182,182,ML selected on validation (4),item_38,13.066377,12.822611
+store_sales_50_items,182,182,ML selected on validation (4),item_39,7.49261,8.376015
+store_sales_50_items,182,182,ML selected on validation (4),item_4,4.305299,5.675203
+store_sales_50_items,182,182,ML selected on validation (4),item_40,5.534782,6.41599
+store_sales_50_items,182,182,ML selected on validation (4),item_41,4.649587,5.700812
+store_sales_50_items,182,182,ML selected on validation (4),item_42,6.597285,7.101811
+store_sales_50_items,182,182,ML selected on validation (4),item_43,8.602353,9.169894
+store_sales_50_items,182,182,ML selected on validation (4),item_44,6.324406,6.778264
+store_sales_50_items,182,182,ML selected on validation (4),item_45,10.576567,13.209869
+store_sales_50_items,182,182,ML selected on validation (4),item_46,9.005231,10.511555
+store_sales_50_items,182,182,ML selected on validation (4),item_47,5.141648,5.306683
+store_sales_50_items,182,182,ML selected on validation (4),item_48,7.931182,9.834478
+store_sales_50_items,182,182,ML selected on validation (4),item_49,5.098532,6.626483
+store_sales_50_items,182,182,ML selected on validation (4),item_5,4.122512,4.928795
+store_sales_50_items,182,182,ML selected on validation (4),item_50,8.673972,11.326046
+store_sales_50_items,182,182,ML selected on validation (4),item_6,9.022722,10.538413
+store_sales_50_items,182,182,ML selected on validation (4),item_7,8.959704,10.667083
+store_sales_50_items,182,182,ML selected on validation (4),item_8,10.967003,12.53529
+store_sales_50_items,182,182,ML selected on validation (4),item_9,8.35892,9.454716
+store_sales_50_items,182,182,ML selected on validation (6),item_1,4.950348,5.392879
+store_sales_50_items,182,182,ML selected on validation (6),item_10,11.072094,12.299188
+store_sales_50_items,182,182,ML selected on validation (6),item_11,8.756886,11.347908
+store_sales_50_items,182,182,ML selected on validation (6),item_12,10.393741,11.763898
+store_sales_50_items,182,182,ML selected on validation (6),item_13,10.976095,13.309182
+store_sales_50_items,182,182,ML selected on validation (6),item_14,8.557454,10.169894
+store_sales_50_items,182,182,ML selected on validation (6),item_15,12.081299,14.286071
+store_sales_50_items,182,182,ML selected on validation (6),item_16,5.579056,6.049344
+store_sales_50_items,182,182,ML selected on validation (6),item_17,5.870539,7.078076
+store_sales_50_items,182,182,ML selected on validation (6),item_18,12.833278,13.640849
+store_sales_50_items,182,182,ML selected on validation (6),item_19,7.091229,8.269831
+store_sales_50_items,182,182,ML selected on validation (6),item_2,10.222849,10.49594
+store_sales_50_items,182,182,ML selected on validation (6),item_20,7.726505,8.8401
+store_sales_50_items,182,182,ML selected on validation (6),item_21,7.21153,7.940662
+store_sales_50_items,182,182,ML selected on validation (6),item_22,11.25703,13.341037
+store_sales_50_items,182,182,ML selected on validation (6),item_23,5.248081,6.910681
+store_sales_50_items,182,182,ML selected on validation (6),item_24,10.368442,11.492817
+store_sales_50_items,182,182,ML selected on validation (6),item_25,10.838087,13.224859
+store_sales_50_items,182,182,ML selected on validation (6),item_26,7.701379,9.078701
+store_sales_50_items,182,182,ML selected on validation (6),item_27,4.729649,5.640849
+store_sales_50_items,182,182,ML selected on validation (6),item_28,11.685906,14.078076
+store_sales_50_items,182,182,ML selected on validation (6),item_29,10.380869,11.591505
+store_sales_50_items,182,182,ML selected on validation (6),item_3,7.365188,7.435353
+store_sales_50_items,182,182,ML selected on validation (6),item_30,7.69935,8.318551
+store_sales_50_items,182,182,ML selected on validation (6),item_31,7.979268,10.534666
+store_sales_50_items,182,182,ML selected on validation (6),item_32,7.699687,8.498438
+store_sales_50_items,182,182,ML selected on validation (6),item_33,9.160399,11.60837
+store_sales_50_items,182,182,ML selected on validation (6),item_34,5.087806,6.097439
+store_sales_50_items,182,182,ML selected on validation (6),item_35,9.281217,11.294191
+store_sales_50_items,182,182,ML selected on validation (6),item_36,10.882599,12.259838
+store_sales_50_items,182,182,ML selected on validation (6),item_37,6.293257,6.640849
+store_sales_50_items,182,182,ML selected on validation (6),item_38,13.066377,12.822611
+store_sales_50_items,182,182,ML selected on validation (6),item_39,7.49261,8.376015
+store_sales_50_items,182,182,ML selected on validation (6),item_4,4.305299,5.675203
+store_sales_50_items,182,182,ML selected on validation (6),item_40,5.534782,6.41599
+store_sales_50_items,182,182,ML selected on validation (6),item_41,4.649587,5.700812
+store_sales_50_items,182,182,ML selected on validation (6),item_42,6.597285,7.101811
+store_sales_50_items,182,182,ML selected on validation (6),item_43,8.602353,9.169894
+store_sales_50_items,182,182,ML selected on validation (6),item_44,6.324406,6.778264
+store_sales_50_items,182,182,ML selected on validation (6),item_45,10.576567,13.209869
+store_sales_50_items,182,182,ML selected on validation (6),item_46,9.005231,10.511555
+store_sales_50_items,182,182,ML selected on validation (6),item_47,5.141648,5.306683
+store_sales_50_items,182,182,ML selected on validation (6),item_48,7.931182,9.834478
+store_sales_50_items,182,182,ML selected on validation (6),item_49,5.098532,6.626483
+store_sales_50_items,182,182,ML selected on validation (6),item_5,4.122512,4.928795
+store_sales_50_items,182,182,ML selected on validation (6),item_50,8.673972,11.326046
+store_sales_50_items,182,182,ML selected on validation (6),item_6,9.022722,10.538413
+store_sales_50_items,182,182,ML selected on validation (6),item_7,8.959704,10.667083
+store_sales_50_items,182,182,ML selected on validation (6),item_8,10.967003,12.53529
+store_sales_50_items,182,182,ML selected on validation (6),item_9,8.35892,9.454716
+store_sales_50_items,182,182,Ridge,item_1,4.929949,5.392879
+store_sales_50_items,182,182,Ridge,item_10,10.364695,12.299188
+store_sales_50_items,182,182,Ridge,item_11,8.530863,11.347908
+store_sales_50_items,182,182,Ridge,item_12,9.028046,11.763898
+store_sales_50_items,182,182,Ridge,item_13,9.656186,13.309182
+store_sales_50_items,182,182,Ridge,item_14,7.61313,10.169894
+store_sales_50_items,182,182,Ridge,item_15,10.107943,14.286071
+store_sales_50_items,182,182,Ridge,item_16,5.47467,6.049344
+store_sales_50_items,182,182,Ridge,item_17,5.52634,7.078076
+store_sales_50_items,182,182,Ridge,item_18,11.240986,13.640849
+store_sales_50_items,182,182,Ridge,item_19,5.933253,8.269831
+store_sales_50_items,182,182,Ridge,item_2,8.594856,10.49594
+store_sales_50_items,182,182,Ridge,item_20,7.013783,8.8401
+store_sales_50_items,182,182,Ridge,item_21,6.14445,7.940662
+store_sales_50_items,182,182,Ridge,item_22,10.400031,13.341037
+store_sales_50_items,182,182,Ridge,item_23,5.280933,6.910681
+store_sales_50_items,182,182,Ridge,item_24,9.648389,11.492817
+store_sales_50_items,182,182,Ridge,item_25,9.651882,13.224859
+store_sales_50_items,182,182,Ridge,item_26,7.138169,9.078701
+store_sales_50_items,182,182,Ridge,item_27,5.132699,5.640849
+store_sales_50_items,182,182,Ridge,item_28,10.868321,14.078076
+store_sales_50_items,182,182,Ridge,item_29,9.041255,11.591505
+store_sales_50_items,182,182,Ridge,item_3,6.344186,7.435353
+store_sales_50_items,182,182,Ridge,item_30,6.133039,8.318551
+store_sales_50_items,182,182,Ridge,item_31,7.088086,10.534666
+store_sales_50_items,182,182,Ridge,item_32,6.333167,8.498438
+store_sales_50_items,182,182,Ridge,item_33,8.513848,11.60837
+store_sales_50_items,182,182,Ridge,item_34,5.162064,6.097439
+store_sales_50_items,182,182,Ridge,item_35,8.857962,11.294191
+store_sales_50_items,182,182,Ridge,item_36,10.949035,12.259838
+store_sales_50_items,182,182,Ridge,item_37,5.867365,6.640849
+store_sales_50_items,182,182,Ridge,item_38,10.626073,12.822611
+store_sales_50_items,182,182,Ridge,item_39,6.79743,8.376015
+store_sales_50_items,182,182,Ridge,item_4,4.982852,5.675203
+store_sales_50_items,182,182,Ridge,item_40,4.995645,6.41599
+store_sales_50_items,182,182,Ridge,item_41,4.93432,5.700812
+store_sales_50_items,182,182,Ridge,item_42,5.866973,7.101811
+store_sales_50_items,182,182,Ridge,item_43,7.967676,9.169894
+store_sales_50_items,182,182,Ridge,item_44,6.512809,6.778264
+store_sales_50_items,182,182,Ridge,item_45,9.97718,13.209869
+store_sales_50_items,182,182,Ridge,item_46,7.794613,10.511555
+store_sales_50_items,182,182,Ridge,item_47,5.014701,5.306683
+store_sales_50_items,182,182,Ridge,item_48,6.978993,9.834478
+store_sales_50_items,182,182,Ridge,item_49,5.302722,6.626483
+store_sales_50_items,182,182,Ridge,item_5,4.650281,4.928795
+store_sales_50_items,182,182,Ridge,item_50,8.04349,11.326046
+store_sales_50_items,182,182,Ridge,item_6,7.657384,10.538413
+store_sales_50_items,182,182,Ridge,item_7,8.065381,10.667083
+store_sales_50_items,182,182,Ridge,item_8,9.781556,12.53529
+store_sales_50_items,182,182,Ridge,item_9,7.620451,9.454716
+store_sales_50_items,182,182,Ridge [refit],item_1,7.053328,5.392879
+store_sales_50_items,182,182,Ridge [refit],item_10,10.628344,12.299188
+store_sales_50_items,182,182,Ridge [refit],item_11,8.688683,11.347908
+store_sales_50_items,182,182,Ridge [refit],item_12,9.779781,11.763898
+store_sales_50_items,182,182,Ridge [refit],item_13,9.987707,13.309182
+store_sales_50_items,182,182,Ridge [refit],item_14,8.535441,10.169894
+store_sales_50_items,182,182,Ridge [refit],item_15,11.132793,14.286071
+store_sales_50_items,182,182,Ridge [refit],item_16,7.057113,6.049344
+store_sales_50_items,182,182,Ridge [refit],item_17,7.827589,7.078076
+store_sales_50_items,182,182,Ridge [refit],item_18,12.759602,13.640849
+store_sales_50_items,182,182,Ridge [refit],item_19,7.861302,8.269831
+store_sales_50_items,182,182,Ridge [refit],item_2,9.491414,10.49594
+store_sales_50_items,182,182,Ridge [refit],item_20,8.508699,8.8401
+store_sales_50_items,182,182,Ridge [refit],item_21,7.612478,7.940662
+store_sales_50_items,182,182,Ridge [refit],item_22,11.655279,13.341037
+store_sales_50_items,182,182,Ridge [refit],item_23,6.868602,6.910681
+store_sales_50_items,182,182,Ridge [refit],item_24,10.648721,11.492817
+store_sales_50_items,182,182,Ridge [refit],item_25,10.26445,13.224859
+store_sales_50_items,182,182,Ridge [refit],item_26,8.072313,9.078701
+store_sales_50_items,182,182,Ridge [refit],item_27,7.172505,5.640849
+store_sales_50_items,182,182,Ridge [refit],item_28,11.496122,14.078076
+store_sales_50_items,182,182,Ridge [refit],item_29,9.668982,11.591505
+store_sales_50_items,182,182,Ridge [refit],item_3,8.665534,7.435353
+store_sales_50_items,182,182,Ridge [refit],item_30,7.815061,8.318551
+store_sales_50_items,182,182,Ridge [refit],item_31,8.613494,10.534666
+store_sales_50_items,182,182,Ridge [refit],item_32,8.295448,8.498438
+store_sales_50_items,182,182,Ridge [refit],item_33,9.497259,11.60837
+store_sales_50_items,182,182,Ridge [refit],item_34,7.104481,6.097439
+store_sales_50_items,182,182,Ridge [refit],item_35,8.845339,11.294191
+store_sales_50_items,182,182,Ridge [refit],item_36,11.311751,12.259838
+store_sales_50_items,182,182,Ridge [refit],item_37,7.952765,6.640849
+store_sales_50_items,182,182,Ridge [refit],item_38,11.892371,12.822611
+store_sales_50_items,182,182,Ridge [refit],item_39,8.181766,8.376015
+store_sales_50_items,182,182,Ridge [refit],item_4,6.529812,5.675203
+store_sales_50_items,182,182,Ridge [refit],item_40,6.9368,6.41599
+store_sales_50_items,182,182,Ridge [refit],item_41,6.624022,5.700812
+store_sales_50_items,182,182,Ridge [refit],item_42,7.693502,7.101811
+store_sales_50_items,182,182,Ridge [refit],item_43,8.856836,9.169894
+store_sales_50_items,182,182,Ridge [refit],item_44,7.797331,6.778264
+store_sales_50_items,182,182,Ridge [refit],item_45,10.888337,13.209869
+store_sales_50_items,182,182,Ridge [refit],item_46,8.529059,10.511555
+store_sales_50_items,182,182,Ridge [refit],item_47,7.226907,5.306683
+store_sales_50_items,182,182,Ridge [refit],item_48,8.508208,9.834478
+store_sales_50_items,182,182,Ridge [refit],item_49,6.705445,6.626483
+store_sales_50_items,182,182,Ridge [refit],item_5,7.129683,4.928795
+store_sales_50_items,182,182,Ridge [refit],item_50,9.199605,11.326046
+store_sales_50_items,182,182,Ridge [refit],item_6,8.852165,10.538413
+store_sales_50_items,182,182,Ridge [refit],item_7,9.945808,10.667083
+store_sales_50_items,182,182,Ridge [refit],item_8,11.08624,12.53529
+store_sales_50_items,182,182,Ridge [refit],item_9,8.92712,9.454716
+store_sales_50_items,182,182,Seasonal naive,item_1,5.924107,5.392879
+store_sales_50_items,182,182,Seasonal naive,item_10,12.866071,12.299188
+store_sales_50_items,182,182,Seasonal naive,item_11,10.571429,11.347908
+store_sales_50_items,182,182,Seasonal naive,item_12,10.517857,11.763898
+store_sales_50_items,182,182,Seasonal naive,item_13,12.928571,13.309182
+store_sales_50_items,182,182,Seasonal naive,item_14,9.303571,10.169894
+store_sales_50_items,182,182,Seasonal naive,item_15,11.879464,14.286071
+store_sales_50_items,182,182,Seasonal naive,item_16,7.366071,6.049344
+store_sales_50_items,182,182,Seasonal naive,item_17,6.90625,7.078076
+store_sales_50_items,182,182,Seasonal naive,item_18,12.90625,13.640849
+store_sales_50_items,182,182,Seasonal naive,item_19,7.758929,8.269831
+store_sales_50_items,182,182,Seasonal naive,item_2,10.678571,10.49594
+store_sales_50_items,182,182,Seasonal naive,item_20,8.861607,8.8401
+store_sales_50_items,182,182,Seasonal naive,item_21,7.799107,7.940662
+store_sales_50_items,182,182,Seasonal naive,item_22,12.71875,13.341037
+store_sales_50_items,182,182,Seasonal naive,item_23,6.683036,6.910681
+store_sales_50_items,182,182,Seasonal naive,item_24,11.522321,11.492817
+store_sales_50_items,182,182,Seasonal naive,item_25,12.78125,13.224859
+store_sales_50_items,182,182,Seasonal naive,item_26,8.875,9.078701
+store_sales_50_items,182,182,Seasonal naive,item_27,5.848214,5.640849
+store_sales_50_items,182,182,Seasonal naive,item_28,12.611607,14.078076
+store_sales_50_items,182,182,Seasonal naive,item_29,11.5625,11.591505
+store_sales_50_items,182,182,Seasonal naive,item_3,8.611607,7.435353
+store_sales_50_items,182,182,Seasonal naive,item_30,8.098214,8.318551
+store_sales_50_items,182,182,Seasonal naive,item_31,8.955357,10.534666
+store_sales_50_items,182,182,Seasonal naive,item_32,8.566964,8.498438
+store_sales_50_items,182,182,Seasonal naive,item_33,11.379464,11.60837
+store_sales_50_items,182,182,Seasonal naive,item_34,5.683036,6.097439
+store_sales_50_items,182,182,Seasonal naive,item_35,10.59375,11.294191
+store_sales_50_items,182,182,Seasonal naive,item_36,12.875,12.259838
+store_sales_50_items,182,182,Seasonal naive,item_37,7.883929,6.640849
+store_sales_50_items,182,182,Seasonal naive,item_38,14.933036,12.822611
+store_sales_50_items,182,182,Seasonal naive,item_39,9.044643,8.376015
+store_sales_50_items,182,182,Seasonal naive,item_4,5.848214,5.675203
+store_sales_50_items,182,182,Seasonal naive,item_40,6.392857,6.41599
+store_sales_50_items,182,182,Seasonal naive,item_41,6.361607,5.700812
+store_sales_50_items,182,182,Seasonal naive,item_42,7.482143,7.101811
+store_sales_50_items,182,182,Seasonal naive,item_43,9.428571,9.169894
+store_sales_50_items,182,182,Seasonal naive,item_44,8.017857,6.778264
+store_sales_50_items,182,182,Seasonal naive,item_45,12.040179,13.209869
+store_sales_50_items,182,182,Seasonal naive,item_46,10.232143,10.511555
+store_sales_50_items,182,182,Seasonal naive,item_47,6.03125,5.306683
+store_sales_50_items,182,182,Seasonal naive,item_48,9.433036,9.834478
+store_sales_50_items,182,182,Seasonal naive,item_49,6.633929,6.626483
+store_sales_50_items,182,182,Seasonal naive,item_5,5.066964,4.928795
+store_sales_50_items,182,182,Seasonal naive,item_50,10.357143,11.326046
+store_sales_50_items,182,182,Seasonal naive,item_6,9.544643,10.538413
+store_sales_50_items,182,182,Seasonal naive,item_7,10.790179,10.667083
+store_sales_50_items,182,182,Seasonal naive,item_8,12.625,12.53529
+store_sales_50_items,182,182,Seasonal naive,item_9,10.410714,9.454716
+store_sales_50_items,365,365,Chronos-2,item_1,3.990089,5.392879
+store_sales_50_items,365,365,Chronos-2,item_10,8.468344,12.299188
+store_sales_50_items,365,365,Chronos-2,item_11,7.486687,11.347908
+store_sales_50_items,365,365,Chronos-2,item_12,8.197383,11.763898
+store_sales_50_items,365,365,Chronos-2,item_13,8.340962,13.309182
+store_sales_50_items,365,365,Chronos-2,item_14,6.966515,10.169894
+store_sales_50_items,365,365,Chronos-2,item_15,8.859596,14.286071
+store_sales_50_items,365,365,Chronos-2,item_16,5.051386,6.049344
+store_sales_50_items,365,365,Chronos-2,item_17,4.955688,7.078076
+store_sales_50_items,365,365,Chronos-2,item_18,9.523578,13.640849
+store_sales_50_items,365,365,Chronos-2,item_19,5.787001,8.269831
+store_sales_50_items,365,365,Chronos-2,item_2,7.475953,10.49594
+store_sales_50_items,365,365,Chronos-2,item_20,7.007765,8.8401
+store_sales_50_items,365,365,Chronos-2,item_21,5.447974,7.940662
+store_sales_50_items,365,365,Chronos-2,item_22,8.655343,13.341037
+store_sales_50_items,365,365,Chronos-2,item_23,4.880592,6.910681
+store_sales_50_items,365,365,Chronos-2,item_24,8.101645,11.492817
+store_sales_50_items,365,365,Chronos-2,item_25,8.877692,13.224859
+store_sales_50_items,365,365,Chronos-2,item_26,5.997056,9.078701
+store_sales_50_items,365,365,Chronos-2,item_27,4.177775,5.640849
+store_sales_50_items,365,365,Chronos-2,item_28,9.159,14.078076
+store_sales_50_items,365,365,Chronos-2,item_29,7.935361,11.591505
+store_sales_50_items,365,365,Chronos-2,item_3,5.88045,7.435353
+store_sales_50_items,365,365,Chronos-2,item_30,5.421532,8.318551
+store_sales_50_items,365,365,Chronos-2,item_31,6.843871,10.534666
+store_sales_50_items,365,365,Chronos-2,item_32,6.04336,8.498438
+store_sales_50_items,365,365,Chronos-2,item_33,7.710482,11.60837
+store_sales_50_items,365,365,Chronos-2,item_34,4.35839,6.097439
+store_sales_50_items,365,365,Chronos-2,item_35,7.457339,11.294191
+store_sales_50_items,365,365,Chronos-2,item_36,9.906624,12.259838
+store_sales_50_items,365,365,Chronos-2,item_37,5.603495,6.640849
+store_sales_50_items,365,365,Chronos-2,item_38,8.844725,12.822611
+store_sales_50_items,365,365,Chronos-2,item_39,6.709932,8.376015
+store_sales_50_items,365,365,Chronos-2,item_4,4.434975,5.675203
+store_sales_50_items,365,365,Chronos-2,item_40,4.636844,6.41599
+store_sales_50_items,365,365,Chronos-2,item_41,4.218768,5.700812
+store_sales_50_items,365,365,Chronos-2,item_42,5.461789,7.101811
+store_sales_50_items,365,365,Chronos-2,item_43,7.490482,9.169894
+store_sales_50_items,365,365,Chronos-2,item_44,5.571426,6.778264
+store_sales_50_items,365,365,Chronos-2,item_45,8.952476,13.209869
+store_sales_50_items,365,365,Chronos-2,item_46,6.977852,10.511555
+store_sales_50_items,365,365,Chronos-2,item_47,3.94147,5.306683
+store_sales_50_items,365,365,Chronos-2,item_48,6.182321,9.834478
+store_sales_50_items,365,365,Chronos-2,item_49,4.662474,6.626483
+store_sales_50_items,365,365,Chronos-2,item_5,3.280507,4.928795
+store_sales_50_items,365,365,Chronos-2,item_50,7.37704,11.326046
+store_sales_50_items,365,365,Chronos-2,item_6,6.796152,10.538413
+store_sales_50_items,365,365,Chronos-2,item_7,7.672775,10.667083
+store_sales_50_items,365,365,Chronos-2,item_8,8.565327,12.53529
+store_sales_50_items,365,365,Chronos-2,item_9,6.870598,9.454716
+store_sales_50_items,365,365,LightGBM,item_1,3.891073,5.392879
+store_sales_50_items,365,365,LightGBM,item_10,8.47193,12.299188
+store_sales_50_items,365,365,LightGBM,item_11,7.531944,11.347908
+store_sales_50_items,365,365,LightGBM,item_12,7.042724,11.763898
+store_sales_50_items,365,365,LightGBM,item_13,8.052959,13.309182
+store_sales_50_items,365,365,LightGBM,item_14,6.217559,10.169894
+store_sales_50_items,365,365,LightGBM,item_15,8.500715,14.286071
+store_sales_50_items,365,365,LightGBM,item_16,4.626098,6.049344
+store_sales_50_items,365,365,LightGBM,item_17,4.717167,7.078076
+store_sales_50_items,365,365,LightGBM,item_18,8.581168,13.640849
+store_sales_50_items,365,365,LightGBM,item_19,5.294354,8.269831
+store_sales_50_items,365,365,LightGBM,item_2,6.40412,10.49594
+store_sales_50_items,365,365,LightGBM,item_20,6.24144,8.8401
+store_sales_50_items,365,365,LightGBM,item_21,5.197642,7.940662
+store_sales_50_items,365,365,LightGBM,item_22,7.96227,13.341037
+store_sales_50_items,365,365,LightGBM,item_23,4.338104,6.910681
+store_sales_50_items,365,365,LightGBM,item_24,7.382415,11.492817
+store_sales_50_items,365,365,LightGBM,item_25,7.715872,13.224859
+store_sales_50_items,365,365,LightGBM,item_26,5.94399,9.078701
+store_sales_50_items,365,365,LightGBM,item_27,3.976224,5.640849
+store_sales_50_items,365,365,LightGBM,item_28,8.681675,14.078076
+store_sales_50_items,365,365,LightGBM,item_29,7.40517,11.591505
+store_sales_50_items,365,365,LightGBM,item_3,5.490632,7.435353
+store_sales_50_items,365,365,LightGBM,item_30,5.082972,8.318551
+store_sales_50_items,365,365,LightGBM,item_31,6.295518,10.534666
+store_sales_50_items,365,365,LightGBM,item_32,5.651546,8.498438
+store_sales_50_items,365,365,LightGBM,item_33,7.611752,11.60837
+store_sales_50_items,365,365,LightGBM,item_34,4.145207,6.097439
+store_sales_50_items,365,365,LightGBM,item_35,6.793073,11.294191
+store_sales_50_items,365,365,LightGBM,item_36,8.096164,12.259838
+store_sales_50_items,365,365,LightGBM,item_37,5.329653,6.640849
+store_sales_50_items,365,365,LightGBM,item_38,8.68306,12.822611
+store_sales_50_items,365,365,LightGBM,item_39,6.02973,8.376015
+store_sales_50_items,365,365,LightGBM,item_4,3.854652,5.675203
+store_sales_50_items,365,365,LightGBM,item_40,4.192668,6.41599
+store_sales_50_items,365,365,LightGBM,item_41,3.982033,5.700812
+store_sales_50_items,365,365,LightGBM,item_42,4.838501,7.101811
+store_sales_50_items,365,365,LightGBM,item_43,6.280527,9.169894
+store_sales_50_items,365,365,LightGBM,item_44,4.85797,6.778264
+store_sales_50_items,365,365,LightGBM,item_45,7.990275,13.209869
+store_sales_50_items,365,365,LightGBM,item_46,6.158767,10.511555
+store_sales_50_items,365,365,LightGBM,item_47,3.748634,5.306683
+store_sales_50_items,365,365,LightGBM,item_48,5.791795,9.834478
+store_sales_50_items,365,365,LightGBM,item_49,4.38805,6.626483
+store_sales_50_items,365,365,LightGBM,item_5,3.279063,4.928795
+store_sales_50_items,365,365,LightGBM,item_50,6.823762,11.326046
+store_sales_50_items,365,365,LightGBM,item_6,6.135059,10.538413
+store_sales_50_items,365,365,LightGBM,item_7,7.062976,10.667083
+store_sales_50_items,365,365,LightGBM,item_8,8.180023,12.53529
+store_sales_50_items,365,365,LightGBM,item_9,6.182979,9.454716
+store_sales_50_items,365,365,LightGBM (diff),item_1,4.430782,5.392879
+store_sales_50_items,365,365,LightGBM (diff),item_10,9.545175,12.299188
+store_sales_50_items,365,365,LightGBM (diff),item_11,7.566074,11.347908
+store_sales_50_items,365,365,LightGBM (diff),item_12,8.548015,11.763898
+store_sales_50_items,365,365,LightGBM (diff),item_13,9.136799,13.309182
+store_sales_50_items,365,365,LightGBM (diff),item_14,7.491367,10.169894
+store_sales_50_items,365,365,LightGBM (diff),item_15,10.082086,14.286071
+store_sales_50_items,365,365,LightGBM (diff),item_16,5.233262,6.049344
+store_sales_50_items,365,365,LightGBM (diff),item_17,5.173497,7.078076
+store_sales_50_items,365,365,LightGBM (diff),item_18,10.940841,13.640849
+store_sales_50_items,365,365,LightGBM (diff),item_19,6.051501,8.269831
+store_sales_50_items,365,365,LightGBM (diff),item_2,8.616821,10.49594
+store_sales_50_items,365,365,LightGBM (diff),item_20,7.094189,8.8401
+store_sales_50_items,365,365,LightGBM (diff),item_21,6.096258,7.940662
+store_sales_50_items,365,365,LightGBM (diff),item_22,9.378281,13.341037
+store_sales_50_items,365,365,LightGBM (diff),item_23,4.995447,6.910681
+store_sales_50_items,365,365,LightGBM (diff),item_24,9.285464,11.492817
+store_sales_50_items,365,365,LightGBM (diff),item_25,9.279191,13.224859
+store_sales_50_items,365,365,LightGBM (diff),item_26,6.894348,9.078701
+store_sales_50_items,365,365,LightGBM (diff),item_27,4.264331,5.640849
+store_sales_50_items,365,365,LightGBM (diff),item_28,10.147784,14.078076
+store_sales_50_items,365,365,LightGBM (diff),item_29,8.791943,11.591505
+store_sales_50_items,365,365,LightGBM (diff),item_3,6.286793,7.435353
+store_sales_50_items,365,365,LightGBM (diff),item_30,6.456981,8.318551
+store_sales_50_items,365,365,LightGBM (diff),item_31,7.107007,10.534666
+store_sales_50_items,365,365,LightGBM (diff),item_32,6.644658,8.498438
+store_sales_50_items,365,365,LightGBM (diff),item_33,7.844658,11.60837
+store_sales_50_items,365,365,LightGBM (diff),item_34,4.455975,6.097439
+store_sales_50_items,365,365,LightGBM (diff),item_35,8.235243,11.294191
+store_sales_50_items,365,365,LightGBM (diff),item_36,9.92339,12.259838
+store_sales_50_items,365,365,LightGBM (diff),item_37,5.872365,6.640849
+store_sales_50_items,365,365,LightGBM (diff),item_38,9.963617,12.822611
+store_sales_50_items,365,365,LightGBM (diff),item_39,6.703207,8.376015
+store_sales_50_items,365,365,LightGBM (diff),item_4,4.433529,5.675203
+store_sales_50_items,365,365,LightGBM (diff),item_40,5.052572,6.41599
+store_sales_50_items,365,365,LightGBM (diff),item_41,4.344388,5.700812
+store_sales_50_items,365,365,LightGBM (diff),item_42,5.79784,7.101811
+store_sales_50_items,365,365,LightGBM (diff),item_43,7.708839,9.169894
+store_sales_50_items,365,365,LightGBM (diff),item_44,5.956676,6.778264
+store_sales_50_items,365,365,LightGBM (diff),item_45,9.382926,13.209869
+store_sales_50_items,365,365,LightGBM (diff),item_46,7.780295,10.511555
+store_sales_50_items,365,365,LightGBM (diff),item_47,4.428643,5.306683
+store_sales_50_items,365,365,LightGBM (diff),item_48,6.836276,9.834478
+store_sales_50_items,365,365,LightGBM (diff),item_49,5.044531,6.626483
+store_sales_50_items,365,365,LightGBM (diff),item_5,3.681671,4.928795
+store_sales_50_items,365,365,LightGBM (diff),item_50,8.001336,11.326046
+store_sales_50_items,365,365,LightGBM (diff),item_6,7.55986,10.538413
+store_sales_50_items,365,365,LightGBM (diff),item_7,7.534772,10.667083
+store_sales_50_items,365,365,LightGBM (diff),item_8,8.881562,12.53529
+store_sales_50_items,365,365,LightGBM (diff),item_9,7.597481,9.454716
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_1,4.456724,5.392879
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_10,9.589788,12.299188
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_11,7.719419,11.347908
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_12,8.594475,11.763898
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_13,8.638628,13.309182
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_14,7.395157,10.169894
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_15,10.024042,14.286071
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_16,5.255898,6.049344
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_17,5.135667,7.078076
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_18,11.108265,13.640849
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_19,5.996343,8.269831
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_2,8.502406,10.49594
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_20,7.032978,8.8401
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_21,6.084547,7.940662
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_22,9.607558,13.341037
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_23,4.976054,6.910681
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_24,9.067845,11.492817
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_25,9.191526,13.224859
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_26,6.938503,9.078701
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_27,4.271333,5.640849
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_28,10.171906,14.078076
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_29,8.936286,11.591505
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_3,6.416408,7.435353
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_30,6.45393,8.318551
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_31,7.142326,10.534666
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_32,6.843664,8.498438
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_33,7.707553,11.60837
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_34,4.493225,6.097439
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_35,8.32384,11.294191
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_36,9.697347,12.259838
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_37,5.879159,6.640849
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_38,10.206422,12.822611
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_39,6.745592,8.376015
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_4,4.35126,5.675203
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_40,5.085634,6.41599
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_41,4.368804,5.700812
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_42,5.696301,7.101811
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_43,7.663177,9.169894
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_44,6.021573,6.778264
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_45,9.325315,13.209869
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_46,7.625591,10.511555
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_47,4.43411,5.306683
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_48,7.055244,9.834478
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_49,5.066786,6.626483
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_5,3.655463,4.928795
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_50,8.078131,11.326046
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_6,7.556712,10.538413
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_7,7.921843,10.667083
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_8,9.204147,12.53529
+store_sales_50_items,365,365,LightGBM (diff) [refit],item_9,7.517168,9.454716
+store_sales_50_items,365,365,LightGBM [refit],item_1,3.894076,5.392879
+store_sales_50_items,365,365,LightGBM [refit],item_10,8.289364,12.299188
+store_sales_50_items,365,365,LightGBM [refit],item_11,7.360888,11.347908
+store_sales_50_items,365,365,LightGBM [refit],item_12,6.834449,11.763898
+store_sales_50_items,365,365,LightGBM [refit],item_13,8.039494,13.309182
+store_sales_50_items,365,365,LightGBM [refit],item_14,6.206143,10.169894
+store_sales_50_items,365,365,LightGBM [refit],item_15,8.381312,14.286071
+store_sales_50_items,365,365,LightGBM [refit],item_16,4.664083,6.049344
+store_sales_50_items,365,365,LightGBM [refit],item_17,4.777083,7.078076
+store_sales_50_items,365,365,LightGBM [refit],item_18,8.451984,13.640849
+store_sales_50_items,365,365,LightGBM [refit],item_19,5.284895,8.269831
+store_sales_50_items,365,365,LightGBM [refit],item_2,6.309415,10.49594
+store_sales_50_items,365,365,LightGBM [refit],item_20,6.263058,8.8401
+store_sales_50_items,365,365,LightGBM [refit],item_21,5.185491,7.940662
+store_sales_50_items,365,365,LightGBM [refit],item_22,7.85315,13.341037
+store_sales_50_items,365,365,LightGBM [refit],item_23,4.31271,6.910681
+store_sales_50_items,365,365,LightGBM [refit],item_24,7.282612,11.492817
+store_sales_50_items,365,365,LightGBM [refit],item_25,7.711177,13.224859
+store_sales_50_items,365,365,LightGBM [refit],item_26,5.947736,9.078701
+store_sales_50_items,365,365,LightGBM [refit],item_27,3.98879,5.640849
+store_sales_50_items,365,365,LightGBM [refit],item_28,8.395773,14.078076
+store_sales_50_items,365,365,LightGBM [refit],item_29,7.323519,11.591505
+store_sales_50_items,365,365,LightGBM [refit],item_3,5.547838,7.435353
+store_sales_50_items,365,365,LightGBM [refit],item_30,5.123281,8.318551
+store_sales_50_items,365,365,LightGBM [refit],item_31,6.224425,10.534666
+store_sales_50_items,365,365,LightGBM [refit],item_32,5.618778,8.498438
+store_sales_50_items,365,365,LightGBM [refit],item_33,7.373854,11.60837
+store_sales_50_items,365,365,LightGBM [refit],item_34,4.258168,6.097439
+store_sales_50_items,365,365,LightGBM [refit],item_35,6.781549,11.294191
+store_sales_50_items,365,365,LightGBM [refit],item_36,8.051792,12.259838
+store_sales_50_items,365,365,LightGBM [refit],item_37,5.303804,6.640849
+store_sales_50_items,365,365,LightGBM [refit],item_38,8.549277,12.822611
+store_sales_50_items,365,365,LightGBM [refit],item_39,6.054251,8.376015
+store_sales_50_items,365,365,LightGBM [refit],item_4,3.846557,5.675203
+store_sales_50_items,365,365,LightGBM [refit],item_40,4.211241,6.41599
+store_sales_50_items,365,365,LightGBM [refit],item_41,4.013913,5.700812
+store_sales_50_items,365,365,LightGBM [refit],item_42,4.860608,7.101811
+store_sales_50_items,365,365,LightGBM [refit],item_43,6.283402,9.169894
+store_sales_50_items,365,365,LightGBM [refit],item_44,4.809041,6.778264
+store_sales_50_items,365,365,LightGBM [refit],item_45,7.809928,13.209869
+store_sales_50_items,365,365,LightGBM [refit],item_46,6.105619,10.511555
+store_sales_50_items,365,365,LightGBM [refit],item_47,3.767632,5.306683
+store_sales_50_items,365,365,LightGBM [refit],item_48,5.726761,9.834478
+store_sales_50_items,365,365,LightGBM [refit],item_49,4.435902,6.626483
+store_sales_50_items,365,365,LightGBM [refit],item_5,3.31608,4.928795
+store_sales_50_items,365,365,LightGBM [refit],item_50,6.729617,11.326046
+store_sales_50_items,365,365,LightGBM [refit],item_6,6.216794,10.538413
+store_sales_50_items,365,365,LightGBM [refit],item_7,6.969768,10.667083
+store_sales_50_items,365,365,LightGBM [refit],item_8,7.914164,12.53529
+store_sales_50_items,365,365,LightGBM [refit],item_9,6.309035,9.454716
+store_sales_50_items,365,365,LightGBM snippet,item_1,4.305492,5.392879
+store_sales_50_items,365,365,LightGBM snippet,item_10,8.350622,12.299188
+store_sales_50_items,365,365,LightGBM snippet,item_11,7.419675,11.347908
+store_sales_50_items,365,365,LightGBM snippet,item_12,7.555999,11.763898
+store_sales_50_items,365,365,LightGBM snippet,item_13,8.224347,13.309182
+store_sales_50_items,365,365,LightGBM snippet,item_14,7.068796,10.169894
+store_sales_50_items,365,365,LightGBM snippet,item_15,9.938905,14.286071
+store_sales_50_items,365,365,LightGBM snippet,item_16,5.077193,6.049344
+store_sales_50_items,365,365,LightGBM snippet,item_17,5.187871,7.078076
+store_sales_50_items,365,365,LightGBM snippet,item_18,8.844874,13.640849
+store_sales_50_items,365,365,LightGBM snippet,item_19,5.830429,8.269831
+store_sales_50_items,365,365,LightGBM snippet,item_2,8.092939,10.49594
+store_sales_50_items,365,365,LightGBM snippet,item_20,6.781726,8.8401
+store_sales_50_items,365,365,LightGBM snippet,item_21,5.72191,7.940662
+store_sales_50_items,365,365,LightGBM snippet,item_22,8.080446,13.341037
+store_sales_50_items,365,365,LightGBM snippet,item_23,5.027838,6.910681
+store_sales_50_items,365,365,LightGBM snippet,item_24,8.562735,11.492817
+store_sales_50_items,365,365,LightGBM snippet,item_25,7.927466,13.224859
+store_sales_50_items,365,365,LightGBM snippet,item_26,6.441731,9.078701
+store_sales_50_items,365,365,LightGBM snippet,item_27,4.228044,5.640849
+store_sales_50_items,365,365,LightGBM snippet,item_28,9.616202,14.078076
+store_sales_50_items,365,365,LightGBM snippet,item_29,7.79379,11.591505
+store_sales_50_items,365,365,LightGBM snippet,item_3,6.38264,7.435353
+store_sales_50_items,365,365,LightGBM snippet,item_30,5.919747,8.318551
+store_sales_50_items,365,365,LightGBM snippet,item_31,6.906206,10.534666
+store_sales_50_items,365,365,LightGBM snippet,item_32,6.190533,8.498438
+store_sales_50_items,365,365,LightGBM snippet,item_33,7.416759,11.60837
+store_sales_50_items,365,365,LightGBM snippet,item_34,4.584123,6.097439
+store_sales_50_items,365,365,LightGBM snippet,item_35,7.395439,11.294191
+store_sales_50_items,365,365,LightGBM snippet,item_36,8.42599,12.259838
+store_sales_50_items,365,365,LightGBM snippet,item_37,5.805387,6.640849
+store_sales_50_items,365,365,LightGBM snippet,item_38,8.726201,12.822611
+store_sales_50_items,365,365,LightGBM snippet,item_39,6.604174,8.376015
+store_sales_50_items,365,365,LightGBM snippet,item_4,4.285843,5.675203
+store_sales_50_items,365,365,LightGBM snippet,item_40,5.004319,6.41599
+store_sales_50_items,365,365,LightGBM snippet,item_41,4.272121,5.700812
+store_sales_50_items,365,365,LightGBM snippet,item_42,5.466924,7.101811
+store_sales_50_items,365,365,LightGBM snippet,item_43,7.349497,9.169894
+store_sales_50_items,365,365,LightGBM snippet,item_44,5.917652,6.778264
+store_sales_50_items,365,365,LightGBM snippet,item_45,8.76955,13.209869
+store_sales_50_items,365,365,LightGBM snippet,item_46,6.872226,10.511555
+store_sales_50_items,365,365,LightGBM snippet,item_47,4.226313,5.306683
+store_sales_50_items,365,365,LightGBM snippet,item_48,6.529416,9.834478
+store_sales_50_items,365,365,LightGBM snippet,item_49,5.048823,6.626483
+store_sales_50_items,365,365,LightGBM snippet,item_5,3.725232,4.928795
+store_sales_50_items,365,365,LightGBM snippet,item_50,7.260926,11.326046
+store_sales_50_items,365,365,LightGBM snippet,item_6,6.997951,10.538413
+store_sales_50_items,365,365,LightGBM snippet,item_7,7.915917,10.667083
+store_sales_50_items,365,365,LightGBM snippet,item_8,8.387063,12.53529
+store_sales_50_items,365,365,LightGBM snippet,item_9,7.076057,9.454716
+store_sales_50_items,365,365,LightGBM snippet [refit],item_1,4.347504,5.392879
+store_sales_50_items,365,365,LightGBM snippet [refit],item_10,8.439484,12.299188
+store_sales_50_items,365,365,LightGBM snippet [refit],item_11,7.321332,11.347908
+store_sales_50_items,365,365,LightGBM snippet [refit],item_12,8.108599,11.763898
+store_sales_50_items,365,365,LightGBM snippet [refit],item_13,8.472813,13.309182
+store_sales_50_items,365,365,LightGBM snippet [refit],item_14,7.115544,10.169894
+store_sales_50_items,365,365,LightGBM snippet [refit],item_15,9.646074,14.286071
+store_sales_50_items,365,365,LightGBM snippet [refit],item_16,5.073913,6.049344
+store_sales_50_items,365,365,LightGBM snippet [refit],item_17,5.30885,7.078076
+store_sales_50_items,365,365,LightGBM snippet [refit],item_18,8.99842,13.640849
+store_sales_50_items,365,365,LightGBM snippet [refit],item_19,5.689857,8.269831
+store_sales_50_items,365,365,LightGBM snippet [refit],item_2,7.976362,10.49594
+store_sales_50_items,365,365,LightGBM snippet [refit],item_20,6.99117,8.8401
+store_sales_50_items,365,365,LightGBM snippet [refit],item_21,5.597968,7.940662
+store_sales_50_items,365,365,LightGBM snippet [refit],item_22,8.76976,13.341037
+store_sales_50_items,365,365,LightGBM snippet [refit],item_23,4.980783,6.910681
+store_sales_50_items,365,365,LightGBM snippet [refit],item_24,8.717612,11.492817
+store_sales_50_items,365,365,LightGBM snippet [refit],item_25,8.452046,13.224859
+store_sales_50_items,365,365,LightGBM snippet [refit],item_26,6.539361,9.078701
+store_sales_50_items,365,365,LightGBM snippet [refit],item_27,4.31358,5.640849
+store_sales_50_items,365,365,LightGBM snippet [refit],item_28,9.311351,14.078076
+store_sales_50_items,365,365,LightGBM snippet [refit],item_29,7.688643,11.591505
+store_sales_50_items,365,365,LightGBM snippet [refit],item_3,6.465686,7.435353
+store_sales_50_items,365,365,LightGBM snippet [refit],item_30,5.911662,8.318551
+store_sales_50_items,365,365,LightGBM snippet [refit],item_31,6.74583,10.534666
+store_sales_50_items,365,365,LightGBM snippet [refit],item_32,6.387259,8.498438
+store_sales_50_items,365,365,LightGBM snippet [refit],item_33,7.466164,11.60837
+store_sales_50_items,365,365,LightGBM snippet [refit],item_34,4.586263,6.097439
+store_sales_50_items,365,365,LightGBM snippet [refit],item_35,7.309284,11.294191
+store_sales_50_items,365,365,LightGBM snippet [refit],item_36,8.669776,12.259838
+store_sales_50_items,365,365,LightGBM snippet [refit],item_37,5.807585,6.640849
+store_sales_50_items,365,365,LightGBM snippet [refit],item_38,8.860452,12.822611
+store_sales_50_items,365,365,LightGBM snippet [refit],item_39,6.601836,8.376015
+store_sales_50_items,365,365,LightGBM snippet [refit],item_4,4.273578,5.675203
+store_sales_50_items,365,365,LightGBM snippet [refit],item_40,4.982319,6.41599
+store_sales_50_items,365,365,LightGBM snippet [refit],item_41,4.387425,5.700812
+store_sales_50_items,365,365,LightGBM snippet [refit],item_42,5.520792,7.101811
+store_sales_50_items,365,365,LightGBM snippet [refit],item_43,7.434479,9.169894
+store_sales_50_items,365,365,LightGBM snippet [refit],item_44,6.044694,6.778264
+store_sales_50_items,365,365,LightGBM snippet [refit],item_45,9.051741,13.209869
+store_sales_50_items,365,365,LightGBM snippet [refit],item_46,6.816412,10.511555
+store_sales_50_items,365,365,LightGBM snippet [refit],item_47,4.18609,5.306683
+store_sales_50_items,365,365,LightGBM snippet [refit],item_48,6.674384,9.834478
+store_sales_50_items,365,365,LightGBM snippet [refit],item_49,5.044956,6.626483
+store_sales_50_items,365,365,LightGBM snippet [refit],item_5,3.649035,4.928795
+store_sales_50_items,365,365,LightGBM snippet [refit],item_50,7.53159,11.326046
+store_sales_50_items,365,365,LightGBM snippet [refit],item_6,6.843127,10.538413
+store_sales_50_items,365,365,LightGBM snippet [refit],item_7,7.842778,10.667083
+store_sales_50_items,365,365,LightGBM snippet [refit],item_8,8.746708,12.53529
+store_sales_50_items,365,365,LightGBM snippet [refit],item_9,7.227206,9.454716
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_1,4.122889,5.392879
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_10,8.66274,12.299188
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_11,7.093672,11.347908
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_12,7.750469,11.763898
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_13,8.263635,13.309182
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_14,6.696531,10.169894
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_15,9.030696,14.286071
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_16,5.125686,6.049344
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_17,5.028745,7.078076
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_18,9.919921,13.640849
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_19,5.559914,8.269831
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_2,7.12141,10.49594
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_20,6.80085,8.8401
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_21,5.556677,7.940662
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_22,8.472457,13.341037
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_23,4.555665,6.910681
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_24,8.134936,11.492817
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_25,8.284495,13.224859
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_26,6.409344,9.078701
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_27,4.119007,5.640849
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_28,9.063657,14.078076
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_29,8.037997,11.591505
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_3,6.062329,7.435353
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_30,5.643489,8.318551
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_31,6.764318,10.534666
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_32,6.301813,8.498438
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_33,7.439237,11.60837
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_34,4.38699,6.097439
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_35,7.199759,11.294191
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_36,8.825365,12.259838
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_37,5.496043,6.640849
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_38,8.99229,12.822611
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_39,6.489199,8.376015
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_4,4.166249,5.675203
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_40,4.571576,6.41599
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_41,4.275301,5.700812
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_42,5.388573,7.101811
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_43,6.90341,9.169894
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_44,5.267733,6.778264
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_45,8.283141,13.209869
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_46,6.627105,10.511555
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_47,4.140072,5.306683
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_48,6.352987,9.834478
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_49,4.55758,6.626483
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_5,3.540652,4.928795
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_50,7.108493,11.326046
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_6,6.661379,10.538413
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_7,7.406486,10.667083
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_8,8.413513,12.53529
+store_sales_50_items,365,365,LightGBM+ (diff) [refit],item_9,6.708662,9.454716
+store_sales_50_items,365,365,LightGBM+ [refit],item_1,3.93549,5.392879
+store_sales_50_items,365,365,LightGBM+ [refit],item_10,8.083154,12.299188
+store_sales_50_items,365,365,LightGBM+ [refit],item_11,7.400781,11.347908
+store_sales_50_items,365,365,LightGBM+ [refit],item_12,6.95879,11.763898
+store_sales_50_items,365,365,LightGBM+ [refit],item_13,7.781347,13.309182
+store_sales_50_items,365,365,LightGBM+ [refit],item_14,6.141668,10.169894
+store_sales_50_items,365,365,LightGBM+ [refit],item_15,8.3824,14.286071
+store_sales_50_items,365,365,LightGBM+ [refit],item_16,4.682238,6.049344
+store_sales_50_items,365,365,LightGBM+ [refit],item_17,4.759012,7.078076
+store_sales_50_items,365,365,LightGBM+ [refit],item_18,8.397253,13.640849
+store_sales_50_items,365,365,LightGBM+ [refit],item_19,5.369429,8.269831
+store_sales_50_items,365,365,LightGBM+ [refit],item_2,6.317223,10.49594
+store_sales_50_items,365,365,LightGBM+ [refit],item_20,6.235438,8.8401
+store_sales_50_items,365,365,LightGBM+ [refit],item_21,5.021933,7.940662
+store_sales_50_items,365,365,LightGBM+ [refit],item_22,7.80541,13.341037
+store_sales_50_items,365,365,LightGBM+ [refit],item_23,4.366489,6.910681
+store_sales_50_items,365,365,LightGBM+ [refit],item_24,7.292558,11.492817
+store_sales_50_items,365,365,LightGBM+ [refit],item_25,7.667657,13.224859
+store_sales_50_items,365,365,LightGBM+ [refit],item_26,5.952475,9.078701
+store_sales_50_items,365,365,LightGBM+ [refit],item_27,3.946706,5.640849
+store_sales_50_items,365,365,LightGBM+ [refit],item_28,8.234389,14.078076
+store_sales_50_items,365,365,LightGBM+ [refit],item_29,7.314557,11.591505
+store_sales_50_items,365,365,LightGBM+ [refit],item_3,5.520549,7.435353
+store_sales_50_items,365,365,LightGBM+ [refit],item_30,5.076347,8.318551
+store_sales_50_items,365,365,LightGBM+ [refit],item_31,6.23544,10.534666
+store_sales_50_items,365,365,LightGBM+ [refit],item_32,5.663323,8.498438
+store_sales_50_items,365,365,LightGBM+ [refit],item_33,7.372939,11.60837
+store_sales_50_items,365,365,LightGBM+ [refit],item_34,4.164369,6.097439
+store_sales_50_items,365,365,LightGBM+ [refit],item_35,6.655506,11.294191
+store_sales_50_items,365,365,LightGBM+ [refit],item_36,8.095666,12.259838
+store_sales_50_items,365,365,LightGBM+ [refit],item_37,5.27977,6.640849
+store_sales_50_items,365,365,LightGBM+ [refit],item_38,8.61676,12.822611
+store_sales_50_items,365,365,LightGBM+ [refit],item_39,6.004595,8.376015
+store_sales_50_items,365,365,LightGBM+ [refit],item_4,3.842315,5.675203
+store_sales_50_items,365,365,LightGBM+ [refit],item_40,4.196602,6.41599
+store_sales_50_items,365,365,LightGBM+ [refit],item_41,4.017239,5.700812
+store_sales_50_items,365,365,LightGBM+ [refit],item_42,4.765082,7.101811
+store_sales_50_items,365,365,LightGBM+ [refit],item_43,6.21957,9.169894
+store_sales_50_items,365,365,LightGBM+ [refit],item_44,4.761873,6.778264
+store_sales_50_items,365,365,LightGBM+ [refit],item_45,7.851976,13.209869
+store_sales_50_items,365,365,LightGBM+ [refit],item_46,6.060416,10.511555
+store_sales_50_items,365,365,LightGBM+ [refit],item_47,3.792658,5.306683
+store_sales_50_items,365,365,LightGBM+ [refit],item_48,5.741412,9.834478
+store_sales_50_items,365,365,LightGBM+ [refit],item_49,4.413822,6.626483
+store_sales_50_items,365,365,LightGBM+ [refit],item_5,3.346454,4.928795
+store_sales_50_items,365,365,LightGBM+ [refit],item_50,6.85089,11.326046
+store_sales_50_items,365,365,LightGBM+ [refit],item_6,6.129976,10.538413
+store_sales_50_items,365,365,LightGBM+ [refit],item_7,7.111079,10.667083
+store_sales_50_items,365,365,LightGBM+ [refit],item_8,7.907488,12.53529
+store_sales_50_items,365,365,LightGBM+ [refit],item_9,6.256893,9.454716
+store_sales_50_items,365,365,ML selected on validation (4),item_1,3.894076,5.392879
+store_sales_50_items,365,365,ML selected on validation (4),item_10,8.289364,12.299188
+store_sales_50_items,365,365,ML selected on validation (4),item_11,7.360888,11.347908
+store_sales_50_items,365,365,ML selected on validation (4),item_12,6.834449,11.763898
+store_sales_50_items,365,365,ML selected on validation (4),item_13,8.039494,13.309182
+store_sales_50_items,365,365,ML selected on validation (4),item_14,6.206143,10.169894
+store_sales_50_items,365,365,ML selected on validation (4),item_15,8.381312,14.286071
+store_sales_50_items,365,365,ML selected on validation (4),item_16,4.664083,6.049344
+store_sales_50_items,365,365,ML selected on validation (4),item_17,4.777083,7.078076
+store_sales_50_items,365,365,ML selected on validation (4),item_18,8.451984,13.640849
+store_sales_50_items,365,365,ML selected on validation (4),item_19,5.284895,8.269831
+store_sales_50_items,365,365,ML selected on validation (4),item_2,6.309415,10.49594
+store_sales_50_items,365,365,ML selected on validation (4),item_20,6.263058,8.8401
+store_sales_50_items,365,365,ML selected on validation (4),item_21,5.185491,7.940662
+store_sales_50_items,365,365,ML selected on validation (4),item_22,7.85315,13.341037
+store_sales_50_items,365,365,ML selected on validation (4),item_23,4.31271,6.910681
+store_sales_50_items,365,365,ML selected on validation (4),item_24,7.282612,11.492817
+store_sales_50_items,365,365,ML selected on validation (4),item_25,7.711177,13.224859
+store_sales_50_items,365,365,ML selected on validation (4),item_26,5.947736,9.078701
+store_sales_50_items,365,365,ML selected on validation (4),item_27,3.98879,5.640849
+store_sales_50_items,365,365,ML selected on validation (4),item_28,8.395773,14.078076
+store_sales_50_items,365,365,ML selected on validation (4),item_29,7.323519,11.591505
+store_sales_50_items,365,365,ML selected on validation (4),item_3,5.547838,7.435353
+store_sales_50_items,365,365,ML selected on validation (4),item_30,5.123281,8.318551
+store_sales_50_items,365,365,ML selected on validation (4),item_31,6.224425,10.534666
+store_sales_50_items,365,365,ML selected on validation (4),item_32,5.618778,8.498438
+store_sales_50_items,365,365,ML selected on validation (4),item_33,7.373854,11.60837
+store_sales_50_items,365,365,ML selected on validation (4),item_34,4.258168,6.097439
+store_sales_50_items,365,365,ML selected on validation (4),item_35,6.781549,11.294191
+store_sales_50_items,365,365,ML selected on validation (4),item_36,8.051792,12.259838
+store_sales_50_items,365,365,ML selected on validation (4),item_37,5.303804,6.640849
+store_sales_50_items,365,365,ML selected on validation (4),item_38,8.549277,12.822611
+store_sales_50_items,365,365,ML selected on validation (4),item_39,6.054251,8.376015
+store_sales_50_items,365,365,ML selected on validation (4),item_4,3.846557,5.675203
+store_sales_50_items,365,365,ML selected on validation (4),item_40,4.211241,6.41599
+store_sales_50_items,365,365,ML selected on validation (4),item_41,4.013913,5.700812
+store_sales_50_items,365,365,ML selected on validation (4),item_42,4.860608,7.101811
+store_sales_50_items,365,365,ML selected on validation (4),item_43,6.283402,9.169894
+store_sales_50_items,365,365,ML selected on validation (4),item_44,4.809041,6.778264
+store_sales_50_items,365,365,ML selected on validation (4),item_45,7.809928,13.209869
+store_sales_50_items,365,365,ML selected on validation (4),item_46,6.105619,10.511555
+store_sales_50_items,365,365,ML selected on validation (4),item_47,3.767632,5.306683
+store_sales_50_items,365,365,ML selected on validation (4),item_48,5.726761,9.834478
+store_sales_50_items,365,365,ML selected on validation (4),item_49,4.435902,6.626483
+store_sales_50_items,365,365,ML selected on validation (4),item_5,3.31608,4.928795
+store_sales_50_items,365,365,ML selected on validation (4),item_50,6.729617,11.326046
+store_sales_50_items,365,365,ML selected on validation (4),item_6,6.216794,10.538413
+store_sales_50_items,365,365,ML selected on validation (4),item_7,6.969768,10.667083
+store_sales_50_items,365,365,ML selected on validation (4),item_8,7.914164,12.53529
+store_sales_50_items,365,365,ML selected on validation (4),item_9,6.309035,9.454716
+store_sales_50_items,365,365,ML selected on validation (6),item_1,3.894076,5.392879
+store_sales_50_items,365,365,ML selected on validation (6),item_10,8.289364,12.299188
+store_sales_50_items,365,365,ML selected on validation (6),item_11,7.360888,11.347908
+store_sales_50_items,365,365,ML selected on validation (6),item_12,6.834449,11.763898
+store_sales_50_items,365,365,ML selected on validation (6),item_13,8.039494,13.309182
+store_sales_50_items,365,365,ML selected on validation (6),item_14,6.206143,10.169894
+store_sales_50_items,365,365,ML selected on validation (6),item_15,8.381312,14.286071
+store_sales_50_items,365,365,ML selected on validation (6),item_16,4.664083,6.049344
+store_sales_50_items,365,365,ML selected on validation (6),item_17,4.777083,7.078076
+store_sales_50_items,365,365,ML selected on validation (6),item_18,8.451984,13.640849
+store_sales_50_items,365,365,ML selected on validation (6),item_19,5.284895,8.269831
+store_sales_50_items,365,365,ML selected on validation (6),item_2,6.309415,10.49594
+store_sales_50_items,365,365,ML selected on validation (6),item_20,6.263058,8.8401
+store_sales_50_items,365,365,ML selected on validation (6),item_21,5.185491,7.940662
+store_sales_50_items,365,365,ML selected on validation (6),item_22,7.85315,13.341037
+store_sales_50_items,365,365,ML selected on validation (6),item_23,4.31271,6.910681
+store_sales_50_items,365,365,ML selected on validation (6),item_24,7.282612,11.492817
+store_sales_50_items,365,365,ML selected on validation (6),item_25,7.711177,13.224859
+store_sales_50_items,365,365,ML selected on validation (6),item_26,5.947736,9.078701
+store_sales_50_items,365,365,ML selected on validation (6),item_27,3.98879,5.640849
+store_sales_50_items,365,365,ML selected on validation (6),item_28,8.395773,14.078076
+store_sales_50_items,365,365,ML selected on validation (6),item_29,7.323519,11.591505
+store_sales_50_items,365,365,ML selected on validation (6),item_3,5.547838,7.435353
+store_sales_50_items,365,365,ML selected on validation (6),item_30,5.123281,8.318551
+store_sales_50_items,365,365,ML selected on validation (6),item_31,6.224425,10.534666
+store_sales_50_items,365,365,ML selected on validation (6),item_32,5.618778,8.498438
+store_sales_50_items,365,365,ML selected on validation (6),item_33,7.373854,11.60837
+store_sales_50_items,365,365,ML selected on validation (6),item_34,4.258168,6.097439
+store_sales_50_items,365,365,ML selected on validation (6),item_35,6.781549,11.294191
+store_sales_50_items,365,365,ML selected on validation (6),item_36,8.051792,12.259838
+store_sales_50_items,365,365,ML selected on validation (6),item_37,5.303804,6.640849
+store_sales_50_items,365,365,ML selected on validation (6),item_38,8.549277,12.822611
+store_sales_50_items,365,365,ML selected on validation (6),item_39,6.054251,8.376015
+store_sales_50_items,365,365,ML selected on validation (6),item_4,3.846557,5.675203
+store_sales_50_items,365,365,ML selected on validation (6),item_40,4.211241,6.41599
+store_sales_50_items,365,365,ML selected on validation (6),item_41,4.013913,5.700812
+store_sales_50_items,365,365,ML selected on validation (6),item_42,4.860608,7.101811
+store_sales_50_items,365,365,ML selected on validation (6),item_43,6.283402,9.169894
+store_sales_50_items,365,365,ML selected on validation (6),item_44,4.809041,6.778264
+store_sales_50_items,365,365,ML selected on validation (6),item_45,7.809928,13.209869
+store_sales_50_items,365,365,ML selected on validation (6),item_46,6.105619,10.511555
+store_sales_50_items,365,365,ML selected on validation (6),item_47,3.767632,5.306683
+store_sales_50_items,365,365,ML selected on validation (6),item_48,5.726761,9.834478
+store_sales_50_items,365,365,ML selected on validation (6),item_49,4.435902,6.626483
+store_sales_50_items,365,365,ML selected on validation (6),item_5,3.31608,4.928795
+store_sales_50_items,365,365,ML selected on validation (6),item_50,6.729617,11.326046
+store_sales_50_items,365,365,ML selected on validation (6),item_6,6.216794,10.538413
+store_sales_50_items,365,365,ML selected on validation (6),item_7,6.969768,10.667083
+store_sales_50_items,365,365,ML selected on validation (6),item_8,7.914164,12.53529
+store_sales_50_items,365,365,ML selected on validation (6),item_9,6.309035,9.454716
+store_sales_50_items,365,365,Ridge,item_1,5.104883,5.392879
+store_sales_50_items,365,365,Ridge,item_10,9.370739,12.299188
+store_sales_50_items,365,365,Ridge,item_11,7.801945,11.347908
+store_sales_50_items,365,365,Ridge,item_12,8.171636,11.763898
+store_sales_50_items,365,365,Ridge,item_13,8.861252,13.309182
+store_sales_50_items,365,365,Ridge,item_14,6.984048,10.169894
+store_sales_50_items,365,365,Ridge,item_15,9.244029,14.286071
+store_sales_50_items,365,365,Ridge,item_16,5.574247,6.049344
+store_sales_50_items,365,365,Ridge,item_17,5.671124,7.078076
+store_sales_50_items,365,365,Ridge,item_18,10.726893,13.640849
+store_sales_50_items,365,365,Ridge,item_19,5.79236,8.269831
+store_sales_50_items,365,365,Ridge,item_2,7.598958,10.49594
+store_sales_50_items,365,365,Ridge,item_20,6.884231,8.8401
+store_sales_50_items,365,365,Ridge,item_21,5.736718,7.940662
+store_sales_50_items,365,365,Ridge,item_22,9.665794,13.341037
+store_sales_50_items,365,365,Ridge,item_23,5.305392,6.910681
+store_sales_50_items,365,365,Ridge,item_24,8.860006,11.492817
+store_sales_50_items,365,365,Ridge,item_25,8.735926,13.224859
+store_sales_50_items,365,365,Ridge,item_26,6.64742,9.078701
+store_sales_50_items,365,365,Ridge,item_27,5.366745,5.640849
+store_sales_50_items,365,365,Ridge,item_28,10.072595,14.078076
+store_sales_50_items,365,365,Ridge,item_29,8.305484,11.591505
+store_sales_50_items,365,365,Ridge,item_3,6.423117,7.435353
+store_sales_50_items,365,365,Ridge,item_30,5.884193,8.318551
+store_sales_50_items,365,365,Ridge,item_31,6.893972,10.534666
+store_sales_50_items,365,365,Ridge,item_32,6.318037,8.498438
+store_sales_50_items,365,365,Ridge,item_33,7.924573,11.60837
+store_sales_50_items,365,365,Ridge,item_34,5.394136,6.097439
+store_sales_50_items,365,365,Ridge,item_35,7.898267,11.294191
+store_sales_50_items,365,365,Ridge,item_36,10.081424,12.259838
+store_sales_50_items,365,365,Ridge,item_37,6.228819,6.640849
+store_sales_50_items,365,365,Ridge,item_38,9.895071,12.822611
+store_sales_50_items,365,365,Ridge,item_39,6.720591,8.376015
+store_sales_50_items,365,365,Ridge,item_4,5.049569,5.675203
+store_sales_50_items,365,365,Ridge,item_40,5.061728,6.41599
+store_sales_50_items,365,365,Ridge,item_41,5.090089,5.700812
+store_sales_50_items,365,365,Ridge,item_42,5.600931,7.101811
+store_sales_50_items,365,365,Ridge,item_43,7.151273,9.169894
+store_sales_50_items,365,365,Ridge,item_44,6.328452,6.778264
+store_sales_50_items,365,365,Ridge,item_45,9.564155,13.209869
+store_sales_50_items,365,365,Ridge,item_46,6.877835,10.511555
+store_sales_50_items,365,365,Ridge,item_47,5.236914,5.306683
+store_sales_50_items,365,365,Ridge,item_48,6.881098,9.834478
+store_sales_50_items,365,365,Ridge,item_49,5.414377,6.626483
+store_sales_50_items,365,365,Ridge,item_5,5.175337,4.928795
+store_sales_50_items,365,365,Ridge,item_50,7.545566,11.326046
+store_sales_50_items,365,365,Ridge,item_6,6.968352,10.538413
+store_sales_50_items,365,365,Ridge,item_7,7.939902,10.667083
+store_sales_50_items,365,365,Ridge,item_8,9.347619,12.53529
+store_sales_50_items,365,365,Ridge,item_9,7.100939,9.454716
+store_sales_50_items,365,365,Ridge [refit],item_1,5.697108,5.392879
+store_sales_50_items,365,365,Ridge [refit],item_10,9.339575,12.299188
+store_sales_50_items,365,365,Ridge [refit],item_11,7.818884,11.347908
+store_sales_50_items,365,365,Ridge [refit],item_12,8.344221,11.763898
+store_sales_50_items,365,365,Ridge [refit],item_13,8.863493,13.309182
+store_sales_50_items,365,365,Ridge [refit],item_14,7.272315,10.169894
+store_sales_50_items,365,365,Ridge [refit],item_15,9.388373,14.286071
+store_sales_50_items,365,365,Ridge [refit],item_16,5.955262,6.049344
+store_sales_50_items,365,365,Ridge [refit],item_17,6.227048,7.078076
+store_sales_50_items,365,365,Ridge [refit],item_18,11.021411,13.640849
+store_sales_50_items,365,365,Ridge [refit],item_19,6.212085,8.269831
+store_sales_50_items,365,365,Ridge [refit],item_2,7.741847,10.49594
+store_sales_50_items,365,365,Ridge [refit],item_20,7.330355,8.8401
+store_sales_50_items,365,365,Ridge [refit],item_21,6.047036,7.940662
+store_sales_50_items,365,365,Ridge [refit],item_22,9.875657,13.341037
+store_sales_50_items,365,365,Ridge [refit],item_23,5.695813,6.910681
+store_sales_50_items,365,365,Ridge [refit],item_24,9.028909,11.492817
+store_sales_50_items,365,365,Ridge [refit],item_25,9.001544,13.224859
+store_sales_50_items,365,365,Ridge [refit],item_26,6.961326,9.078701
+store_sales_50_items,365,365,Ridge [refit],item_27,5.924612,5.640849
+store_sales_50_items,365,365,Ridge [refit],item_28,10.1187,14.078076
+store_sales_50_items,365,365,Ridge [refit],item_29,8.421061,11.591505
+store_sales_50_items,365,365,Ridge [refit],item_3,7.092028,7.435353
+store_sales_50_items,365,365,Ridge [refit],item_30,6.311184,8.318551
+store_sales_50_items,365,365,Ridge [refit],item_31,7.228024,10.534666
+store_sales_50_items,365,365,Ridge [refit],item_32,6.797483,8.498438
+store_sales_50_items,365,365,Ridge [refit],item_33,8.253122,11.60837
+store_sales_50_items,365,365,Ridge [refit],item_34,5.930317,6.097439
+store_sales_50_items,365,365,Ridge [refit],item_35,7.876719,11.294191
+store_sales_50_items,365,365,Ridge [refit],item_36,10.20635,12.259838
+store_sales_50_items,365,365,Ridge [refit],item_37,6.779134,6.640849
+store_sales_50_items,365,365,Ridge [refit],item_38,9.99499,12.822611
+store_sales_50_items,365,365,Ridge [refit],item_39,6.994179,8.376015
+store_sales_50_items,365,365,Ridge [refit],item_4,5.510537,5.675203
+store_sales_50_items,365,365,Ridge [refit],item_40,5.595703,6.41599
+store_sales_50_items,365,365,Ridge [refit],item_41,5.510788,5.700812
+store_sales_50_items,365,365,Ridge [refit],item_42,6.042777,7.101811
+store_sales_50_items,365,365,Ridge [refit],item_43,7.508913,9.169894
+store_sales_50_items,365,365,Ridge [refit],item_44,6.782105,6.778264
+store_sales_50_items,365,365,Ridge [refit],item_45,9.74328,13.209869
+store_sales_50_items,365,365,Ridge [refit],item_46,7.014644,10.511555
+store_sales_50_items,365,365,Ridge [refit],item_47,5.701735,5.306683
+store_sales_50_items,365,365,Ridge [refit],item_48,7.302964,9.834478
+store_sales_50_items,365,365,Ridge [refit],item_49,5.907308,6.626483
+store_sales_50_items,365,365,Ridge [refit],item_5,5.77001,4.928795
+store_sales_50_items,365,365,Ridge [refit],item_50,7.689551,11.326046
+store_sales_50_items,365,365,Ridge [refit],item_6,7.168671,10.538413
+store_sales_50_items,365,365,Ridge [refit],item_7,8.275415,10.667083
+store_sales_50_items,365,365,Ridge [refit],item_8,9.572351,12.53529
+store_sales_50_items,365,365,Ridge [refit],item_9,7.306989,9.454716
+store_sales_50_items,365,365,Seasonal naive,item_1,5.924107,5.392879
+store_sales_50_items,365,365,Seasonal naive,item_10,12.866071,12.299188
+store_sales_50_items,365,365,Seasonal naive,item_11,10.571429,11.347908
+store_sales_50_items,365,365,Seasonal naive,item_12,10.517857,11.763898
+store_sales_50_items,365,365,Seasonal naive,item_13,12.928571,13.309182
+store_sales_50_items,365,365,Seasonal naive,item_14,9.303571,10.169894
+store_sales_50_items,365,365,Seasonal naive,item_15,11.879464,14.286071
+store_sales_50_items,365,365,Seasonal naive,item_16,7.366071,6.049344
+store_sales_50_items,365,365,Seasonal naive,item_17,6.90625,7.078076
+store_sales_50_items,365,365,Seasonal naive,item_18,12.90625,13.640849
+store_sales_50_items,365,365,Seasonal naive,item_19,7.758929,8.269831
+store_sales_50_items,365,365,Seasonal naive,item_2,10.678571,10.49594
+store_sales_50_items,365,365,Seasonal naive,item_20,8.861607,8.8401
+store_sales_50_items,365,365,Seasonal naive,item_21,7.799107,7.940662
+store_sales_50_items,365,365,Seasonal naive,item_22,12.71875,13.341037
+store_sales_50_items,365,365,Seasonal naive,item_23,6.683036,6.910681
+store_sales_50_items,365,365,Seasonal naive,item_24,11.522321,11.492817
+store_sales_50_items,365,365,Seasonal naive,item_25,12.78125,13.224859
+store_sales_50_items,365,365,Seasonal naive,item_26,8.875,9.078701
+store_sales_50_items,365,365,Seasonal naive,item_27,5.848214,5.640849
+store_sales_50_items,365,365,Seasonal naive,item_28,12.611607,14.078076
+store_sales_50_items,365,365,Seasonal naive,item_29,11.5625,11.591505
+store_sales_50_items,365,365,Seasonal naive,item_3,8.611607,7.435353
+store_sales_50_items,365,365,Seasonal naive,item_30,8.098214,8.318551
+store_sales_50_items,365,365,Seasonal naive,item_31,8.955357,10.534666
+store_sales_50_items,365,365,Seasonal naive,item_32,8.566964,8.498438
+store_sales_50_items,365,365,Seasonal naive,item_33,11.379464,11.60837
+store_sales_50_items,365,365,Seasonal naive,item_34,5.683036,6.097439
+store_sales_50_items,365,365,Seasonal naive,item_35,10.59375,11.294191
+store_sales_50_items,365,365,Seasonal naive,item_36,12.875,12.259838
+store_sales_50_items,365,365,Seasonal naive,item_37,7.883929,6.640849
+store_sales_50_items,365,365,Seasonal naive,item_38,14.933036,12.822611
+store_sales_50_items,365,365,Seasonal naive,item_39,9.044643,8.376015
+store_sales_50_items,365,365,Seasonal naive,item_4,5.848214,5.675203
+store_sales_50_items,365,365,Seasonal naive,item_40,6.392857,6.41599
+store_sales_50_items,365,365,Seasonal naive,item_41,6.361607,5.700812
+store_sales_50_items,365,365,Seasonal naive,item_42,7.482143,7.101811
+store_sales_50_items,365,365,Seasonal naive,item_43,9.428571,9.169894
+store_sales_50_items,365,365,Seasonal naive,item_44,8.017857,6.778264
+store_sales_50_items,365,365,Seasonal naive,item_45,12.040179,13.209869
+store_sales_50_items,365,365,Seasonal naive,item_46,10.232143,10.511555
+store_sales_50_items,365,365,Seasonal naive,item_47,6.03125,5.306683
+store_sales_50_items,365,365,Seasonal naive,item_48,9.433036,9.834478
+store_sales_50_items,365,365,Seasonal naive,item_49,6.633929,6.626483
+store_sales_50_items,365,365,Seasonal naive,item_5,5.066964,4.928795
+store_sales_50_items,365,365,Seasonal naive,item_50,10.357143,11.326046
+store_sales_50_items,365,365,Seasonal naive,item_6,9.544643,10.538413
+store_sales_50_items,365,365,Seasonal naive,item_7,10.790179,10.667083
+store_sales_50_items,365,365,Seasonal naive,item_8,12.625,12.53529
+store_sales_50_items,365,365,Seasonal naive,item_9,10.410714,9.454716
+store_sales_50_items,full,1602,Chronos-2,item_1,3.886864,5.392879
+store_sales_50_items,full,1602,Chronos-2,item_10,8.118935,12.299188
+store_sales_50_items,full,1602,Chronos-2,item_11,6.990687,11.347908
+store_sales_50_items,full,1602,Chronos-2,item_12,7.112248,11.763898
+store_sales_50_items,full,1602,Chronos-2,item_13,7.777196,13.309182
+store_sales_50_items,full,1602,Chronos-2,item_14,6.676169,10.169894
+store_sales_50_items,full,1602,Chronos-2,item_15,8.342111,14.286071
+store_sales_50_items,full,1602,Chronos-2,item_16,4.80531,6.049344
+store_sales_50_items,full,1602,Chronos-2,item_17,4.93484,7.078076
+store_sales_50_items,full,1602,Chronos-2,item_18,8.245334,13.640849
+store_sales_50_items,full,1602,Chronos-2,item_19,5.535612,8.269831
+store_sales_50_items,full,1602,Chronos-2,item_2,6.660182,10.49594
+store_sales_50_items,full,1602,Chronos-2,item_20,6.638441,8.8401
+store_sales_50_items,full,1602,Chronos-2,item_21,5.339797,7.940662
+store_sales_50_items,full,1602,Chronos-2,item_22,7.788298,13.341037
+store_sales_50_items,full,1602,Chronos-2,item_23,4.500856,6.910681
+store_sales_50_items,full,1602,Chronos-2,item_24,7.620213,11.492817
+store_sales_50_items,full,1602,Chronos-2,item_25,7.604502,13.224859
+store_sales_50_items,full,1602,Chronos-2,item_26,5.839442,9.078701
+store_sales_50_items,full,1602,Chronos-2,item_27,4.030177,5.640849
+store_sales_50_items,full,1602,Chronos-2,item_28,8.238372,14.078076
+store_sales_50_items,full,1602,Chronos-2,item_29,7.339951,11.591505
+store_sales_50_items,full,1602,Chronos-2,item_3,5.563997,7.435353
+store_sales_50_items,full,1602,Chronos-2,item_30,5.15915,8.318551
+store_sales_50_items,full,1602,Chronos-2,item_31,6.369651,10.534666
+store_sales_50_items,full,1602,Chronos-2,item_32,5.863054,8.498438
+store_sales_50_items,full,1602,Chronos-2,item_33,7.307206,11.60837
+store_sales_50_items,full,1602,Chronos-2,item_34,4.253208,6.097439
+store_sales_50_items,full,1602,Chronos-2,item_35,6.918013,11.294191
+store_sales_50_items,full,1602,Chronos-2,item_36,8.928825,12.259838
+store_sales_50_items,full,1602,Chronos-2,item_37,5.247309,6.640849
+store_sales_50_items,full,1602,Chronos-2,item_38,8.371846,12.822611
+store_sales_50_items,full,1602,Chronos-2,item_39,6.193351,8.376015
+store_sales_50_items,full,1602,Chronos-2,item_4,4.096894,5.675203
+store_sales_50_items,full,1602,Chronos-2,item_40,4.463255,6.41599
+store_sales_50_items,full,1602,Chronos-2,item_41,3.884936,5.700812
+store_sales_50_items,full,1602,Chronos-2,item_42,5.112038,7.101811
+store_sales_50_items,full,1602,Chronos-2,item_43,6.358299,9.169894
+store_sales_50_items,full,1602,Chronos-2,item_44,4.879384,6.778264
+store_sales_50_items,full,1602,Chronos-2,item_45,8.024379,13.209869
+store_sales_50_items,full,1602,Chronos-2,item_46,6.19829,10.511555
+store_sales_50_items,full,1602,Chronos-2,item_47,3.828465,5.306683
+store_sales_50_items,full,1602,Chronos-2,item_48,5.886835,9.834478
+store_sales_50_items,full,1602,Chronos-2,item_49,4.584293,6.626483
+store_sales_50_items,full,1602,Chronos-2,item_5,3.313295,4.928795
+store_sales_50_items,full,1602,Chronos-2,item_50,6.590025,11.326046
+store_sales_50_items,full,1602,Chronos-2,item_6,6.574752,10.538413
+store_sales_50_items,full,1602,Chronos-2,item_7,7.039323,10.667083
+store_sales_50_items,full,1602,Chronos-2,item_8,7.849553,12.53529
+store_sales_50_items,full,1602,Chronos-2,item_9,6.394874,9.454716
+store_sales_50_items,full,1602,Chronos-2 base,item_1,3.911979,5.392879
+store_sales_50_items,full,1602,Chronos-2 base,item_10,8.040912,12.299188
+store_sales_50_items,full,1602,Chronos-2 base,item_11,7.018809,11.347908
+store_sales_50_items,full,1602,Chronos-2 base,item_12,7.059393,11.763898
+store_sales_50_items,full,1602,Chronos-2 base,item_13,7.615417,13.309182
+store_sales_50_items,full,1602,Chronos-2 base,item_14,6.503159,10.169894
+store_sales_50_items,full,1602,Chronos-2 base,item_15,8.38627,14.286071
+store_sales_50_items,full,1602,Chronos-2 base,item_16,4.715953,6.049344
+store_sales_50_items,full,1602,Chronos-2 base,item_17,4.734691,7.078076
+store_sales_50_items,full,1602,Chronos-2 base,item_18,8.299407,13.640849
+store_sales_50_items,full,1602,Chronos-2 base,item_19,5.549977,8.269831
+store_sales_50_items,full,1602,Chronos-2 base,item_2,6.58937,10.49594
+store_sales_50_items,full,1602,Chronos-2 base,item_20,6.476842,8.8401
+store_sales_50_items,full,1602,Chronos-2 base,item_21,5.292209,7.940662
+store_sales_50_items,full,1602,Chronos-2 base,item_22,7.638563,13.341037
+store_sales_50_items,full,1602,Chronos-2 base,item_23,4.390561,6.910681
+store_sales_50_items,full,1602,Chronos-2 base,item_24,7.657873,11.492817
+store_sales_50_items,full,1602,Chronos-2 base,item_25,7.619678,13.224859
+store_sales_50_items,full,1602,Chronos-2 base,item_26,5.889076,9.078701
+store_sales_50_items,full,1602,Chronos-2 base,item_27,3.969517,5.640849
+store_sales_50_items,full,1602,Chronos-2 base,item_28,8.060708,14.078076
+store_sales_50_items,full,1602,Chronos-2 base,item_29,7.243523,11.591505
+store_sales_50_items,full,1602,Chronos-2 base,item_3,5.489255,7.435353
+store_sales_50_items,full,1602,Chronos-2 base,item_30,5.176224,8.318551
+store_sales_50_items,full,1602,Chronos-2 base,item_31,6.326893,10.534666
+store_sales_50_items,full,1602,Chronos-2 base,item_32,5.690409,8.498438
+store_sales_50_items,full,1602,Chronos-2 base,item_33,7.180396,11.60837
+store_sales_50_items,full,1602,Chronos-2 base,item_34,4.04843,6.097439
+store_sales_50_items,full,1602,Chronos-2 base,item_35,6.735963,11.294191
+store_sales_50_items,full,1602,Chronos-2 base,item_36,8.749444,12.259838
+store_sales_50_items,full,1602,Chronos-2 base,item_37,5.238087,6.640849
+store_sales_50_items,full,1602,Chronos-2 base,item_38,8.514491,12.822611
+store_sales_50_items,full,1602,Chronos-2 base,item_39,6.133543,8.376015
+store_sales_50_items,full,1602,Chronos-2 base,item_4,4.080748,5.675203
+store_sales_50_items,full,1602,Chronos-2 base,item_40,4.37303,6.41599
+store_sales_50_items,full,1602,Chronos-2 base,item_41,3.956602,5.700812
+store_sales_50_items,full,1602,Chronos-2 base,item_42,5.015312,7.101811
+store_sales_50_items,full,1602,Chronos-2 base,item_43,6.316876,9.169894
+store_sales_50_items,full,1602,Chronos-2 base,item_44,4.820293,6.778264
+store_sales_50_items,full,1602,Chronos-2 base,item_45,8.053195,13.209869
+store_sales_50_items,full,1602,Chronos-2 base,item_46,6.0262,10.511555
+store_sales_50_items,full,1602,Chronos-2 base,item_47,3.905015,5.306683
+store_sales_50_items,full,1602,Chronos-2 base,item_48,5.646329,9.834478
+store_sales_50_items,full,1602,Chronos-2 base,item_49,4.557538,6.626483
+store_sales_50_items,full,1602,Chronos-2 base,item_5,3.313055,4.928795
+store_sales_50_items,full,1602,Chronos-2 base,item_50,6.529861,11.326046
+store_sales_50_items,full,1602,Chronos-2 base,item_6,6.426035,10.538413
+store_sales_50_items,full,1602,Chronos-2 base,item_7,6.99539,10.667083
+store_sales_50_items,full,1602,Chronos-2 base,item_8,7.81334,12.53529
+store_sales_50_items,full,1602,Chronos-2 base,item_9,6.341312,9.454716
+store_sales_50_items,full,1602,Chronos-2 synth,item_1,3.907912,5.392879
+store_sales_50_items,full,1602,Chronos-2 synth,item_10,8.143999,12.299188
+store_sales_50_items,full,1602,Chronos-2 synth,item_11,7.09306,11.347908
+store_sales_50_items,full,1602,Chronos-2 synth,item_12,7.005098,11.763898
+store_sales_50_items,full,1602,Chronos-2 synth,item_13,7.614583,13.309182
+store_sales_50_items,full,1602,Chronos-2 synth,item_14,6.526627,10.169894
+store_sales_50_items,full,1602,Chronos-2 synth,item_15,8.366367,14.286071
+store_sales_50_items,full,1602,Chronos-2 synth,item_16,4.749896,6.049344
+store_sales_50_items,full,1602,Chronos-2 synth,item_17,4.840825,7.078076
+store_sales_50_items,full,1602,Chronos-2 synth,item_18,8.115035,13.640849
+store_sales_50_items,full,1602,Chronos-2 synth,item_19,5.514132,8.269831
+store_sales_50_items,full,1602,Chronos-2 synth,item_2,6.58077,10.49594
+store_sales_50_items,full,1602,Chronos-2 synth,item_20,6.497879,8.8401
+store_sales_50_items,full,1602,Chronos-2 synth,item_21,5.321427,7.940662
+store_sales_50_items,full,1602,Chronos-2 synth,item_22,7.704334,13.341037
+store_sales_50_items,full,1602,Chronos-2 synth,item_23,4.425512,6.910681
+store_sales_50_items,full,1602,Chronos-2 synth,item_24,7.594013,11.492817
+store_sales_50_items,full,1602,Chronos-2 synth,item_25,7.660214,13.224859
+store_sales_50_items,full,1602,Chronos-2 synth,item_26,5.941815,9.078701
+store_sales_50_items,full,1602,Chronos-2 synth,item_27,3.972859,5.640849
+store_sales_50_items,full,1602,Chronos-2 synth,item_28,8.11762,14.078076
+store_sales_50_items,full,1602,Chronos-2 synth,item_29,7.198925,11.591505
+store_sales_50_items,full,1602,Chronos-2 synth,item_3,5.566113,7.435353
+store_sales_50_items,full,1602,Chronos-2 synth,item_30,5.112,8.318551
+store_sales_50_items,full,1602,Chronos-2 synth,item_31,6.400636,10.534666
+store_sales_50_items,full,1602,Chronos-2 synth,item_32,5.761749,8.498438
+store_sales_50_items,full,1602,Chronos-2 synth,item_33,7.223019,11.60837
+store_sales_50_items,full,1602,Chronos-2 synth,item_34,4.154317,6.097439
+store_sales_50_items,full,1602,Chronos-2 synth,item_35,6.886276,11.294191
+store_sales_50_items,full,1602,Chronos-2 synth,item_36,8.804491,12.259838
+store_sales_50_items,full,1602,Chronos-2 synth,item_37,5.299356,6.640849
+store_sales_50_items,full,1602,Chronos-2 synth,item_38,8.375713,12.822611
+store_sales_50_items,full,1602,Chronos-2 synth,item_39,6.140176,8.376015
+store_sales_50_items,full,1602,Chronos-2 synth,item_4,4.077639,5.675203
+store_sales_50_items,full,1602,Chronos-2 synth,item_40,4.353971,6.41599
+store_sales_50_items,full,1602,Chronos-2 synth,item_41,3.93124,5.700812
+store_sales_50_items,full,1602,Chronos-2 synth,item_42,5.111238,7.101811
+store_sales_50_items,full,1602,Chronos-2 synth,item_43,6.350868,9.169894
+store_sales_50_items,full,1602,Chronos-2 synth,item_44,4.79537,6.778264
+store_sales_50_items,full,1602,Chronos-2 synth,item_45,8.068,13.209869
+store_sales_50_items,full,1602,Chronos-2 synth,item_46,6.108533,10.511555
+store_sales_50_items,full,1602,Chronos-2 synth,item_47,3.8961,5.306683
+store_sales_50_items,full,1602,Chronos-2 synth,item_48,5.732546,9.834478
+store_sales_50_items,full,1602,Chronos-2 synth,item_49,4.55033,6.626483
+store_sales_50_items,full,1602,Chronos-2 synth,item_5,3.247425,4.928795
+store_sales_50_items,full,1602,Chronos-2 synth,item_50,6.604364,11.326046
+store_sales_50_items,full,1602,Chronos-2 synth,item_6,6.460679,10.538413
+store_sales_50_items,full,1602,Chronos-2 synth,item_7,7.002856,10.667083
+store_sales_50_items,full,1602,Chronos-2 synth,item_8,7.873048,12.53529
+store_sales_50_items,full,1602,Chronos-2 synth,item_9,6.324676,9.454716
+store_sales_50_items,full,1602,LightGBM,item_1,4.177223,5.392879
+store_sales_50_items,full,1602,LightGBM,item_10,9.172117,12.299188
+store_sales_50_items,full,1602,LightGBM,item_11,8.371616,11.347908
+store_sales_50_items,full,1602,LightGBM,item_12,8.01393,11.763898
+store_sales_50_items,full,1602,LightGBM,item_13,9.331206,13.309182
+store_sales_50_items,full,1602,LightGBM,item_14,7.034881,10.169894
+store_sales_50_items,full,1602,LightGBM,item_15,9.670437,14.286071
+store_sales_50_items,full,1602,LightGBM,item_16,4.895275,6.049344
+store_sales_50_items,full,1602,LightGBM,item_17,5.076909,7.078076
+store_sales_50_items,full,1602,LightGBM,item_18,9.718145,13.640849
+store_sales_50_items,full,1602,LightGBM,item_19,5.961707,8.269831
+store_sales_50_items,full,1602,LightGBM,item_2,7.160849,10.49594
+store_sales_50_items,full,1602,LightGBM,item_20,6.72123,8.8401
+store_sales_50_items,full,1602,LightGBM,item_21,5.625806,7.940662
+store_sales_50_items,full,1602,LightGBM,item_22,9.296165,13.341037
+store_sales_50_items,full,1602,LightGBM,item_23,4.74762,6.910681
+store_sales_50_items,full,1602,LightGBM,item_24,8.223656,11.492817
+store_sales_50_items,full,1602,LightGBM,item_25,8.717207,13.224859
+store_sales_50_items,full,1602,LightGBM,item_26,6.443536,9.078701
+store_sales_50_items,full,1602,LightGBM,item_27,4.072749,5.640849
+store_sales_50_items,full,1602,LightGBM,item_28,9.783917,14.078076
+store_sales_50_items,full,1602,LightGBM,item_29,8.436131,11.591505
+store_sales_50_items,full,1602,LightGBM,item_3,5.877131,7.435353
+store_sales_50_items,full,1602,LightGBM,item_30,5.642205,8.318551
+store_sales_50_items,full,1602,LightGBM,item_31,7.102687,10.534666
+store_sales_50_items,full,1602,LightGBM,item_32,6.311193,8.498438
+store_sales_50_items,full,1602,LightGBM,item_33,8.184083,11.60837
+store_sales_50_items,full,1602,LightGBM,item_34,4.449318,6.097439
+store_sales_50_items,full,1602,LightGBM,item_35,7.62911,11.294191
+store_sales_50_items,full,1602,LightGBM,item_36,9.213822,12.259838
+store_sales_50_items,full,1602,LightGBM,item_37,5.546403,6.640849
+store_sales_50_items,full,1602,LightGBM,item_38,9.816498,12.822611
+store_sales_50_items,full,1602,LightGBM,item_39,6.727745,8.376015
+store_sales_50_items,full,1602,LightGBM,item_4,4.156935,5.675203
+store_sales_50_items,full,1602,LightGBM,item_40,4.46491,6.41599
+store_sales_50_items,full,1602,LightGBM,item_41,4.161339,5.700812
+store_sales_50_items,full,1602,LightGBM,item_42,4.935838,7.101811
+store_sales_50_items,full,1602,LightGBM,item_43,6.875049,9.169894
+store_sales_50_items,full,1602,LightGBM,item_44,5.069503,6.778264
+store_sales_50_items,full,1602,LightGBM,item_45,9.41272,13.209869
+store_sales_50_items,full,1602,LightGBM,item_46,6.734625,10.511555
+store_sales_50_items,full,1602,LightGBM,item_47,4.035258,5.306683
+store_sales_50_items,full,1602,LightGBM,item_48,6.674166,9.834478
+store_sales_50_items,full,1602,LightGBM,item_49,4.716708,6.626483
+store_sales_50_items,full,1602,LightGBM,item_5,3.355947,4.928795
+store_sales_50_items,full,1602,LightGBM,item_50,7.743286,11.326046
+store_sales_50_items,full,1602,LightGBM,item_6,6.94718,10.538413
+store_sales_50_items,full,1602,LightGBM,item_7,7.721368,10.667083
+store_sales_50_items,full,1602,LightGBM,item_8,9.136669,12.53529
+store_sales_50_items,full,1602,LightGBM,item_9,6.633455,9.454716
+store_sales_50_items,full,1602,LightGBM (diff),item_1,4.406192,5.392879
+store_sales_50_items,full,1602,LightGBM (diff),item_10,9.586238,12.299188
+store_sales_50_items,full,1602,LightGBM (diff),item_11,7.655807,11.347908
+store_sales_50_items,full,1602,LightGBM (diff),item_12,8.5301,11.763898
+store_sales_50_items,full,1602,LightGBM (diff),item_13,8.718455,13.309182
+store_sales_50_items,full,1602,LightGBM (diff),item_14,7.395244,10.169894
+store_sales_50_items,full,1602,LightGBM (diff),item_15,9.771097,14.286071
+store_sales_50_items,full,1602,LightGBM (diff),item_16,5.172246,6.049344
+store_sales_50_items,full,1602,LightGBM (diff),item_17,4.885785,7.078076
+store_sales_50_items,full,1602,LightGBM (diff),item_18,10.660883,13.640849
+store_sales_50_items,full,1602,LightGBM (diff),item_19,5.998331,8.269831
+store_sales_50_items,full,1602,LightGBM (diff),item_2,8.578721,10.49594
+store_sales_50_items,full,1602,LightGBM (diff),item_20,6.972716,8.8401
+store_sales_50_items,full,1602,LightGBM (diff),item_21,6.094869,7.940662
+store_sales_50_items,full,1602,LightGBM (diff),item_22,9.370891,13.341037
+store_sales_50_items,full,1602,LightGBM (diff),item_23,4.800883,6.910681
+store_sales_50_items,full,1602,LightGBM (diff),item_24,9.126909,11.492817
+store_sales_50_items,full,1602,LightGBM (diff),item_25,9.096827,13.224859
+store_sales_50_items,full,1602,LightGBM (diff),item_26,7.022242,9.078701
+store_sales_50_items,full,1602,LightGBM (diff),item_27,4.180578,5.640849
+store_sales_50_items,full,1602,LightGBM (diff),item_28,9.839385,14.078076
+store_sales_50_items,full,1602,LightGBM (diff),item_29,8.740358,11.591505
+store_sales_50_items,full,1602,LightGBM (diff),item_3,6.400941,7.435353
+store_sales_50_items,full,1602,LightGBM (diff),item_30,6.145961,8.318551
+store_sales_50_items,full,1602,LightGBM (diff),item_31,7.132225,10.534666
+store_sales_50_items,full,1602,LightGBM (diff),item_32,6.62895,8.498438
+store_sales_50_items,full,1602,LightGBM (diff),item_33,7.898838,11.60837
+store_sales_50_items,full,1602,LightGBM (diff),item_34,4.37816,6.097439
+store_sales_50_items,full,1602,LightGBM (diff),item_35,8.109722,11.294191
+store_sales_50_items,full,1602,LightGBM (diff),item_36,9.784268,12.259838
+store_sales_50_items,full,1602,LightGBM (diff),item_37,5.808185,6.640849
+store_sales_50_items,full,1602,LightGBM (diff),item_38,10.14628,12.822611
+store_sales_50_items,full,1602,LightGBM (diff),item_39,6.704004,8.376015
+store_sales_50_items,full,1602,LightGBM (diff),item_4,4.237738,5.675203
+store_sales_50_items,full,1602,LightGBM (diff),item_40,4.997541,6.41599
+store_sales_50_items,full,1602,LightGBM (diff),item_41,4.257449,5.700812
+store_sales_50_items,full,1602,LightGBM (diff),item_42,5.590376,7.101811
+store_sales_50_items,full,1602,LightGBM (diff),item_43,7.601808,9.169894
+store_sales_50_items,full,1602,LightGBM (diff),item_44,6.041445,6.778264
+store_sales_50_items,full,1602,LightGBM (diff),item_45,9.196274,13.209869
+store_sales_50_items,full,1602,LightGBM (diff),item_46,7.78939,10.511555
+store_sales_50_items,full,1602,LightGBM (diff),item_47,4.40134,5.306683
+store_sales_50_items,full,1602,LightGBM (diff),item_48,6.972449,9.834478
+store_sales_50_items,full,1602,LightGBM (diff),item_49,4.951717,6.626483
+store_sales_50_items,full,1602,LightGBM (diff),item_5,3.573924,4.928795
+store_sales_50_items,full,1602,LightGBM (diff),item_50,7.777879,11.326046
+store_sales_50_items,full,1602,LightGBM (diff),item_6,7.302134,10.538413
+store_sales_50_items,full,1602,LightGBM (diff),item_7,7.816912,10.667083
+store_sales_50_items,full,1602,LightGBM (diff),item_8,9.10017,12.53529
+store_sales_50_items,full,1602,LightGBM (diff),item_9,7.026404,9.454716
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_1,4.401259,5.392879
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_10,9.545207,12.299188
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_11,7.617566,11.347908
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_12,8.599853,11.763898
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_13,9.001145,13.309182
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_14,7.280173,10.169894
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_15,10.140696,14.286071
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_16,5.215523,6.049344
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_17,4.964602,7.078076
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_18,10.524542,13.640849
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_19,5.920581,8.269831
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_2,8.691539,10.49594
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_20,6.968246,8.8401
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_21,6.041564,7.940662
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_22,9.409821,13.341037
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_23,4.785041,6.910681
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_24,8.984294,11.492817
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_25,8.98806,13.224859
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_26,7.072221,9.078701
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_27,4.218521,5.640849
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_28,10.013404,14.078076
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_29,8.54921,11.591505
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_3,6.403571,7.435353
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_30,6.119273,8.318551
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_31,7.08544,10.534666
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_32,6.6884,8.498438
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_33,7.869732,11.60837
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_34,4.419677,6.097439
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_35,8.141727,11.294191
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_36,9.760799,12.259838
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_37,5.800595,6.640849
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_38,10.198335,12.822611
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_39,6.656504,8.376015
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_4,4.295896,5.675203
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_40,4.992364,6.41599
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_41,4.302031,5.700812
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_42,5.563408,7.101811
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_43,7.58541,9.169894
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_44,5.972238,6.778264
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_45,9.288227,13.209869
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_46,7.712954,10.511555
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_47,4.442344,5.306683
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_48,6.789054,9.834478
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_49,4.975202,6.626483
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_5,3.523661,4.928795
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_50,7.857353,11.326046
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_6,7.322988,10.538413
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_7,7.828013,10.667083
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_8,9.132329,12.53529
+store_sales_50_items,full,1602,LightGBM (diff) [refit],item_9,7.100869,9.454716
+store_sales_50_items,full,1602,LightGBM [refit],item_1,4.21712,5.392879
+store_sales_50_items,full,1602,LightGBM [refit],item_10,8.997442,12.299188
+store_sales_50_items,full,1602,LightGBM [refit],item_11,8.052941,11.347908
+store_sales_50_items,full,1602,LightGBM [refit],item_12,7.715873,11.763898
+store_sales_50_items,full,1602,LightGBM [refit],item_13,8.982573,13.309182
+store_sales_50_items,full,1602,LightGBM [refit],item_14,6.925038,10.169894
+store_sales_50_items,full,1602,LightGBM [refit],item_15,9.405981,14.286071
+store_sales_50_items,full,1602,LightGBM [refit],item_16,4.91706,6.049344
+store_sales_50_items,full,1602,LightGBM [refit],item_17,5.108652,7.078076
+store_sales_50_items,full,1602,LightGBM [refit],item_18,9.548869,13.640849
+store_sales_50_items,full,1602,LightGBM [refit],item_19,5.859731,8.269831
+store_sales_50_items,full,1602,LightGBM [refit],item_2,7.036382,10.49594
+store_sales_50_items,full,1602,LightGBM [refit],item_20,6.628979,8.8401
+store_sales_50_items,full,1602,LightGBM [refit],item_21,5.485373,7.940662
+store_sales_50_items,full,1602,LightGBM [refit],item_22,9.049843,13.341037
+store_sales_50_items,full,1602,LightGBM [refit],item_23,4.647638,6.910681
+store_sales_50_items,full,1602,LightGBM [refit],item_24,8.10738,11.492817
+store_sales_50_items,full,1602,LightGBM [refit],item_25,8.549513,13.224859
+store_sales_50_items,full,1602,LightGBM [refit],item_26,6.310968,9.078701
+store_sales_50_items,full,1602,LightGBM [refit],item_27,4.054276,5.640849
+store_sales_50_items,full,1602,LightGBM [refit],item_28,9.466899,14.078076
+store_sales_50_items,full,1602,LightGBM [refit],item_29,8.24121,11.591505
+store_sales_50_items,full,1602,LightGBM [refit],item_3,5.895476,7.435353
+store_sales_50_items,full,1602,LightGBM [refit],item_30,5.612065,8.318551
+store_sales_50_items,full,1602,LightGBM [refit],item_31,6.881986,10.534666
+store_sales_50_items,full,1602,LightGBM [refit],item_32,6.228605,8.498438
+store_sales_50_items,full,1602,LightGBM [refit],item_33,8.040409,11.60837
+store_sales_50_items,full,1602,LightGBM [refit],item_34,4.39192,6.097439
+store_sales_50_items,full,1602,LightGBM [refit],item_35,7.398234,11.294191
+store_sales_50_items,full,1602,LightGBM [refit],item_36,9.013534,12.259838
+store_sales_50_items,full,1602,LightGBM [refit],item_37,5.490108,6.640849
+store_sales_50_items,full,1602,LightGBM [refit],item_38,9.520985,12.822611
+store_sales_50_items,full,1602,LightGBM [refit],item_39,6.695068,8.376015
+store_sales_50_items,full,1602,LightGBM [refit],item_4,4.150992,5.675203
+store_sales_50_items,full,1602,LightGBM [refit],item_40,4.467192,6.41599
+store_sales_50_items,full,1602,LightGBM [refit],item_41,4.176523,5.700812
+store_sales_50_items,full,1602,LightGBM [refit],item_42,4.944192,7.101811
+store_sales_50_items,full,1602,LightGBM [refit],item_43,6.81191,9.169894
+store_sales_50_items,full,1602,LightGBM [refit],item_44,5.054416,6.778264
+store_sales_50_items,full,1602,LightGBM [refit],item_45,9.17354,13.209869
+store_sales_50_items,full,1602,LightGBM [refit],item_46,6.670688,10.511555
+store_sales_50_items,full,1602,LightGBM [refit],item_47,3.980885,5.306683
+store_sales_50_items,full,1602,LightGBM [refit],item_48,6.508757,9.834478
+store_sales_50_items,full,1602,LightGBM [refit],item_49,4.692978,6.626483
+store_sales_50_items,full,1602,LightGBM [refit],item_5,3.380931,4.928795
+store_sales_50_items,full,1602,LightGBM [refit],item_50,7.532233,11.326046
+store_sales_50_items,full,1602,LightGBM [refit],item_6,6.809024,10.538413
+store_sales_50_items,full,1602,LightGBM [refit],item_7,7.597283,10.667083
+store_sales_50_items,full,1602,LightGBM [refit],item_8,8.995266,12.53529
+store_sales_50_items,full,1602,LightGBM [refit],item_9,6.583412,9.454716
+store_sales_50_items,full,1602,LightGBM snippet,item_1,4.325774,5.392879
+store_sales_50_items,full,1602,LightGBM snippet,item_10,8.415619,12.299188
+store_sales_50_items,full,1602,LightGBM snippet,item_11,7.516217,11.347908
+store_sales_50_items,full,1602,LightGBM snippet,item_12,7.10498,11.763898
+store_sales_50_items,full,1602,LightGBM snippet,item_13,9.015017,13.309182
+store_sales_50_items,full,1602,LightGBM snippet,item_14,6.783855,10.169894
+store_sales_50_items,full,1602,LightGBM snippet,item_15,10.539503,14.286071
+store_sales_50_items,full,1602,LightGBM snippet,item_16,5.120245,6.049344
+store_sales_50_items,full,1602,LightGBM snippet,item_17,5.187437,7.078076
+store_sales_50_items,full,1602,LightGBM snippet,item_18,9.586386,13.640849
+store_sales_50_items,full,1602,LightGBM snippet,item_19,5.638506,8.269831
+store_sales_50_items,full,1602,LightGBM snippet,item_2,7.312962,10.49594
+store_sales_50_items,full,1602,LightGBM snippet,item_20,6.700886,8.8401
+store_sales_50_items,full,1602,LightGBM snippet,item_21,5.657137,7.940662
+store_sales_50_items,full,1602,LightGBM snippet,item_22,8.71046,13.341037
+store_sales_50_items,full,1602,LightGBM snippet,item_23,4.865269,6.910681
+store_sales_50_items,full,1602,LightGBM snippet,item_24,8.386536,11.492817
+store_sales_50_items,full,1602,LightGBM snippet,item_25,8.499647,13.224859
+store_sales_50_items,full,1602,LightGBM snippet,item_26,6.536395,9.078701
+store_sales_50_items,full,1602,LightGBM snippet,item_27,4.144683,5.640849
+store_sales_50_items,full,1602,LightGBM snippet,item_28,10.124736,14.078076
+store_sales_50_items,full,1602,LightGBM snippet,item_29,7.79578,11.591505
+store_sales_50_items,full,1602,LightGBM snippet,item_3,6.18471,7.435353
+store_sales_50_items,full,1602,LightGBM snippet,item_30,5.810774,8.318551
+store_sales_50_items,full,1602,LightGBM snippet,item_31,6.634775,10.534666
+store_sales_50_items,full,1602,LightGBM snippet,item_32,6.240503,8.498438
+store_sales_50_items,full,1602,LightGBM snippet,item_33,7.705888,11.60837
+store_sales_50_items,full,1602,LightGBM snippet,item_34,4.474863,6.097439
+store_sales_50_items,full,1602,LightGBM snippet,item_35,6.806339,11.294191
+store_sales_50_items,full,1602,LightGBM snippet,item_36,9.067277,12.259838
+store_sales_50_items,full,1602,LightGBM snippet,item_37,5.73608,6.640849
+store_sales_50_items,full,1602,LightGBM snippet,item_38,9.584379,12.822611
+store_sales_50_items,full,1602,LightGBM snippet,item_39,6.714866,8.376015
+store_sales_50_items,full,1602,LightGBM snippet,item_4,4.242134,5.675203
+store_sales_50_items,full,1602,LightGBM snippet,item_40,4.74887,6.41599
+store_sales_50_items,full,1602,LightGBM snippet,item_41,4.442174,5.700812
+store_sales_50_items,full,1602,LightGBM snippet,item_42,5.219159,7.101811
+store_sales_50_items,full,1602,LightGBM snippet,item_43,7.457192,9.169894
+store_sales_50_items,full,1602,LightGBM snippet,item_44,5.815141,6.778264
+store_sales_50_items,full,1602,LightGBM snippet,item_45,9.485572,13.209869
+store_sales_50_items,full,1602,LightGBM snippet,item_46,6.430242,10.511555
+store_sales_50_items,full,1602,LightGBM snippet,item_47,4.073257,5.306683
+store_sales_50_items,full,1602,LightGBM snippet,item_48,6.529505,9.834478
+store_sales_50_items,full,1602,LightGBM snippet,item_49,4.762118,6.626483
+store_sales_50_items,full,1602,LightGBM snippet,item_5,3.423833,4.928795
+store_sales_50_items,full,1602,LightGBM snippet,item_50,7.410934,11.326046
+store_sales_50_items,full,1602,LightGBM snippet,item_6,6.717805,10.538413
+store_sales_50_items,full,1602,LightGBM snippet,item_7,7.574634,10.667083
+store_sales_50_items,full,1602,LightGBM snippet,item_8,9.08797,12.53529
+store_sales_50_items,full,1602,LightGBM snippet,item_9,6.957759,9.454716
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_1,4.285086,5.392879
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_10,8.365628,12.299188
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_11,7.487213,11.347908
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_12,7.086373,11.763898
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_13,8.986152,13.309182
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_14,6.812041,10.169894
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_15,10.320849,14.286071
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_16,5.123386,6.049344
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_17,5.295869,7.078076
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_18,9.740323,13.640849
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_19,5.687885,8.269831
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_2,7.334543,10.49594
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_20,6.793995,8.8401
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_21,5.76,7.940662
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_22,9.014442,13.341037
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_23,4.857787,6.910681
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_24,8.398124,11.492817
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_25,8.722274,13.224859
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_26,6.61894,9.078701
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_27,4.211462,5.640849
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_28,10.007164,14.078076
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_29,7.755929,11.591505
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_3,6.262339,7.435353
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_30,5.964151,8.318551
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_31,6.725207,10.534666
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_32,6.300665,8.498438
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_33,7.714563,11.60837
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_34,4.50095,6.097439
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_35,6.747949,11.294191
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_36,8.906503,12.259838
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_37,5.684732,6.640849
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_38,9.649343,12.822611
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_39,6.870102,8.376015
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_4,4.249146,5.675203
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_40,4.699015,6.41599
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_41,4.426879,5.700812
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_42,5.156288,7.101811
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_43,7.463705,9.169894
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_44,5.874342,6.778264
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_45,9.720869,13.209869
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_46,6.569525,10.511555
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_47,4.079692,5.306683
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_48,6.491266,9.834478
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_49,4.925775,6.626483
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_5,3.428143,4.928795
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_50,7.4378,11.326046
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_6,6.902749,10.538413
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_7,7.683165,10.667083
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_8,9.411646,12.53529
+store_sales_50_items,full,1602,LightGBM snippet [refit],item_9,6.934153,9.454716
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_1,4.12371,5.392879
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_10,8.772074,12.299188
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_11,7.259006,11.347908
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_12,7.654678,11.763898
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_13,8.300903,13.309182
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_14,6.654533,10.169894
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_15,9.020715,14.286071
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_16,5.035059,6.049344
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_17,4.972214,7.078076
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_18,9.772895,13.640849
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_19,5.526267,8.269831
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_2,7.274715,10.49594
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_20,6.814661,8.8401
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_21,5.507759,7.940662
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_22,8.434553,13.341037
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_23,4.537111,6.910681
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_24,8.39209,11.492817
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_25,8.036815,13.224859
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_26,6.477059,9.078701
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_27,4.070349,5.640849
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_28,9.049979,14.078076
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_29,7.841186,11.591505
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_3,5.894232,7.435353
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_30,5.558627,8.318551
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_31,6.863615,10.534666
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_32,6.133674,8.498438
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_33,7.372972,11.60837
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_34,4.347487,6.097439
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_35,7.172771,11.294191
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_36,8.979914,12.259838
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_37,5.564117,6.640849
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_38,9.021762,12.822611
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_39,6.351955,8.376015
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_4,4.060803,5.675203
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_40,4.468564,6.41599
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_41,4.158243,5.700812
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_42,5.3647,7.101811
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_43,6.889917,9.169894
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_44,5.278284,6.778264
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_45,8.094484,13.209869
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_46,6.812822,10.511555
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_47,4.073467,5.306683
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_48,6.230108,9.834478
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_49,4.497189,6.626483
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_5,3.482625,4.928795
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_50,7.070354,11.326046
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_6,6.543502,10.538413
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_7,7.37505,10.667083
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_8,8.433142,12.53529
+store_sales_50_items,full,1602,LightGBM+ (diff) [refit],item_9,6.583515,9.454716
+store_sales_50_items,full,1602,LightGBM+ [refit],item_1,4.019657,5.392879
+store_sales_50_items,full,1602,LightGBM+ [refit],item_10,8.062338,12.299188
+store_sales_50_items,full,1602,LightGBM+ [refit],item_11,7.541986,11.347908
+store_sales_50_items,full,1602,LightGBM+ [refit],item_12,7.015106,11.763898
+store_sales_50_items,full,1602,LightGBM+ [refit],item_13,7.812686,13.309182
+store_sales_50_items,full,1602,LightGBM+ [refit],item_14,6.230946,10.169894
+store_sales_50_items,full,1602,LightGBM+ [refit],item_15,8.724198,14.286071
+store_sales_50_items,full,1602,LightGBM+ [refit],item_16,4.718431,6.049344
+store_sales_50_items,full,1602,LightGBM+ [refit],item_17,4.857221,7.078076
+store_sales_50_items,full,1602,LightGBM+ [refit],item_18,8.666589,13.640849
+store_sales_50_items,full,1602,LightGBM+ [refit],item_19,5.476066,8.269831
+store_sales_50_items,full,1602,LightGBM+ [refit],item_2,6.500716,10.49594
+store_sales_50_items,full,1602,LightGBM+ [refit],item_20,6.402696,8.8401
+store_sales_50_items,full,1602,LightGBM+ [refit],item_21,5.117907,7.940662
+store_sales_50_items,full,1602,LightGBM+ [refit],item_22,7.970585,13.341037
+store_sales_50_items,full,1602,LightGBM+ [refit],item_23,4.484576,6.910681
+store_sales_50_items,full,1602,LightGBM+ [refit],item_24,7.42538,11.492817
+store_sales_50_items,full,1602,LightGBM+ [refit],item_25,7.840156,13.224859
+store_sales_50_items,full,1602,LightGBM+ [refit],item_26,6.131932,9.078701
+store_sales_50_items,full,1602,LightGBM+ [refit],item_27,3.926603,5.640849
+store_sales_50_items,full,1602,LightGBM+ [refit],item_28,8.245248,14.078076
+store_sales_50_items,full,1602,LightGBM+ [refit],item_29,7.470905,11.591505
+store_sales_50_items,full,1602,LightGBM+ [refit],item_3,5.628578,7.435353
+store_sales_50_items,full,1602,LightGBM+ [refit],item_30,5.24267,8.318551
+store_sales_50_items,full,1602,LightGBM+ [refit],item_31,6.260614,10.534666
+store_sales_50_items,full,1602,LightGBM+ [refit],item_32,5.823082,8.498438
+store_sales_50_items,full,1602,LightGBM+ [refit],item_33,7.399342,11.60837
+store_sales_50_items,full,1602,LightGBM+ [refit],item_34,4.212582,6.097439
+store_sales_50_items,full,1602,LightGBM+ [refit],item_35,6.694588,11.294191
+store_sales_50_items,full,1602,LightGBM+ [refit],item_36,8.280999,12.259838
+store_sales_50_items,full,1602,LightGBM+ [refit],item_37,5.30713,6.640849
+store_sales_50_items,full,1602,LightGBM+ [refit],item_38,8.685281,12.822611
+store_sales_50_items,full,1602,LightGBM+ [refit],item_39,6.082844,8.376015
+store_sales_50_items,full,1602,LightGBM+ [refit],item_4,4.024166,5.675203
+store_sales_50_items,full,1602,LightGBM+ [refit],item_40,4.220449,6.41599
+store_sales_50_items,full,1602,LightGBM+ [refit],item_41,4.0244,5.700812
+store_sales_50_items,full,1602,LightGBM+ [refit],item_42,4.823882,7.101811
+store_sales_50_items,full,1602,LightGBM+ [refit],item_43,6.355971,9.169894
+store_sales_50_items,full,1602,LightGBM+ [refit],item_44,4.904661,6.778264
+store_sales_50_items,full,1602,LightGBM+ [refit],item_45,8.024137,13.209869
+store_sales_50_items,full,1602,LightGBM+ [refit],item_46,6.197484,10.511555
+store_sales_50_items,full,1602,LightGBM+ [refit],item_47,3.885468,5.306683
+store_sales_50_items,full,1602,LightGBM+ [refit],item_48,5.951294,9.834478
+store_sales_50_items,full,1602,LightGBM+ [refit],item_49,4.454239,6.626483
+store_sales_50_items,full,1602,LightGBM+ [refit],item_5,3.272535,4.928795
+store_sales_50_items,full,1602,LightGBM+ [refit],item_50,6.792584,11.326046
+store_sales_50_items,full,1602,LightGBM+ [refit],item_6,6.335976,10.538413
+store_sales_50_items,full,1602,LightGBM+ [refit],item_7,7.064938,10.667083
+store_sales_50_items,full,1602,LightGBM+ [refit],item_8,7.977828,12.53529
+store_sales_50_items,full,1602,LightGBM+ [refit],item_9,6.329746,9.454716
+store_sales_50_items,full,1602,ML selected on validation (4),item_1,4.401259,5.392879
+store_sales_50_items,full,1602,ML selected on validation (4),item_10,9.545207,12.299188
+store_sales_50_items,full,1602,ML selected on validation (4),item_11,7.617566,11.347908
+store_sales_50_items,full,1602,ML selected on validation (4),item_12,8.599853,11.763898
+store_sales_50_items,full,1602,ML selected on validation (4),item_13,9.001145,13.309182
+store_sales_50_items,full,1602,ML selected on validation (4),item_14,7.280173,10.169894
+store_sales_50_items,full,1602,ML selected on validation (4),item_15,10.140696,14.286071
+store_sales_50_items,full,1602,ML selected on validation (4),item_16,5.215523,6.049344
+store_sales_50_items,full,1602,ML selected on validation (4),item_17,4.964602,7.078076
+store_sales_50_items,full,1602,ML selected on validation (4),item_18,10.524542,13.640849
+store_sales_50_items,full,1602,ML selected on validation (4),item_19,5.920581,8.269831
+store_sales_50_items,full,1602,ML selected on validation (4),item_2,8.691539,10.49594
+store_sales_50_items,full,1602,ML selected on validation (4),item_20,6.968246,8.8401
+store_sales_50_items,full,1602,ML selected on validation (4),item_21,6.041564,7.940662
+store_sales_50_items,full,1602,ML selected on validation (4),item_22,9.409821,13.341037
+store_sales_50_items,full,1602,ML selected on validation (4),item_23,4.785041,6.910681
+store_sales_50_items,full,1602,ML selected on validation (4),item_24,8.984294,11.492817
+store_sales_50_items,full,1602,ML selected on validation (4),item_25,8.98806,13.224859
+store_sales_50_items,full,1602,ML selected on validation (4),item_26,7.072221,9.078701
+store_sales_50_items,full,1602,ML selected on validation (4),item_27,4.218521,5.640849
+store_sales_50_items,full,1602,ML selected on validation (4),item_28,10.013404,14.078076
+store_sales_50_items,full,1602,ML selected on validation (4),item_29,8.54921,11.591505
+store_sales_50_items,full,1602,ML selected on validation (4),item_3,6.403571,7.435353
+store_sales_50_items,full,1602,ML selected on validation (4),item_30,6.119273,8.318551
+store_sales_50_items,full,1602,ML selected on validation (4),item_31,7.08544,10.534666
+store_sales_50_items,full,1602,ML selected on validation (4),item_32,6.6884,8.498438
+store_sales_50_items,full,1602,ML selected on validation (4),item_33,7.869732,11.60837
+store_sales_50_items,full,1602,ML selected on validation (4),item_34,4.419677,6.097439
+store_sales_50_items,full,1602,ML selected on validation (4),item_35,8.141727,11.294191
+store_sales_50_items,full,1602,ML selected on validation (4),item_36,9.760799,12.259838
+store_sales_50_items,full,1602,ML selected on validation (4),item_37,5.800595,6.640849
+store_sales_50_items,full,1602,ML selected on validation (4),item_38,10.198335,12.822611
+store_sales_50_items,full,1602,ML selected on validation (4),item_39,6.656504,8.376015
+store_sales_50_items,full,1602,ML selected on validation (4),item_4,4.295896,5.675203
+store_sales_50_items,full,1602,ML selected on validation (4),item_40,4.992364,6.41599
+store_sales_50_items,full,1602,ML selected on validation (4),item_41,4.302031,5.700812
+store_sales_50_items,full,1602,ML selected on validation (4),item_42,5.563408,7.101811
+store_sales_50_items,full,1602,ML selected on validation (4),item_43,7.58541,9.169894
+store_sales_50_items,full,1602,ML selected on validation (4),item_44,5.972238,6.778264
+store_sales_50_items,full,1602,ML selected on validation (4),item_45,9.288227,13.209869
+store_sales_50_items,full,1602,ML selected on validation (4),item_46,7.712954,10.511555
+store_sales_50_items,full,1602,ML selected on validation (4),item_47,4.442344,5.306683
+store_sales_50_items,full,1602,ML selected on validation (4),item_48,6.789054,9.834478
+store_sales_50_items,full,1602,ML selected on validation (4),item_49,4.975202,6.626483
+store_sales_50_items,full,1602,ML selected on validation (4),item_5,3.523661,4.928795
+store_sales_50_items,full,1602,ML selected on validation (4),item_50,7.857353,11.326046
+store_sales_50_items,full,1602,ML selected on validation (4),item_6,7.322988,10.538413
+store_sales_50_items,full,1602,ML selected on validation (4),item_7,7.828013,10.667083
+store_sales_50_items,full,1602,ML selected on validation (4),item_8,9.132329,12.53529
+store_sales_50_items,full,1602,ML selected on validation (4),item_9,7.100869,9.454716
+store_sales_50_items,full,1602,ML selected on validation (6),item_1,4.12371,5.392879
+store_sales_50_items,full,1602,ML selected on validation (6),item_10,8.772074,12.299188
+store_sales_50_items,full,1602,ML selected on validation (6),item_11,7.259006,11.347908
+store_sales_50_items,full,1602,ML selected on validation (6),item_12,7.654678,11.763898
+store_sales_50_items,full,1602,ML selected on validation (6),item_13,8.300903,13.309182
+store_sales_50_items,full,1602,ML selected on validation (6),item_14,6.654533,10.169894
+store_sales_50_items,full,1602,ML selected on validation (6),item_15,9.020715,14.286071
+store_sales_50_items,full,1602,ML selected on validation (6),item_16,5.035059,6.049344
+store_sales_50_items,full,1602,ML selected on validation (6),item_17,4.972214,7.078076
+store_sales_50_items,full,1602,ML selected on validation (6),item_18,9.772895,13.640849
+store_sales_50_items,full,1602,ML selected on validation (6),item_19,5.526267,8.269831
+store_sales_50_items,full,1602,ML selected on validation (6),item_2,7.274715,10.49594
+store_sales_50_items,full,1602,ML selected on validation (6),item_20,6.814661,8.8401
+store_sales_50_items,full,1602,ML selected on validation (6),item_21,5.507759,7.940662
+store_sales_50_items,full,1602,ML selected on validation (6),item_22,8.434553,13.341037
+store_sales_50_items,full,1602,ML selected on validation (6),item_23,4.537111,6.910681
+store_sales_50_items,full,1602,ML selected on validation (6),item_24,8.39209,11.492817
+store_sales_50_items,full,1602,ML selected on validation (6),item_25,8.036815,13.224859
+store_sales_50_items,full,1602,ML selected on validation (6),item_26,6.477059,9.078701
+store_sales_50_items,full,1602,ML selected on validation (6),item_27,4.070349,5.640849
+store_sales_50_items,full,1602,ML selected on validation (6),item_28,9.049979,14.078076
+store_sales_50_items,full,1602,ML selected on validation (6),item_29,7.841186,11.591505
+store_sales_50_items,full,1602,ML selected on validation (6),item_3,5.894232,7.435353
+store_sales_50_items,full,1602,ML selected on validation (6),item_30,5.558627,8.318551
+store_sales_50_items,full,1602,ML selected on validation (6),item_31,6.863615,10.534666
+store_sales_50_items,full,1602,ML selected on validation (6),item_32,6.133674,8.498438
+store_sales_50_items,full,1602,ML selected on validation (6),item_33,7.372972,11.60837
+store_sales_50_items,full,1602,ML selected on validation (6),item_34,4.347487,6.097439
+store_sales_50_items,full,1602,ML selected on validation (6),item_35,7.172771,11.294191
+store_sales_50_items,full,1602,ML selected on validation (6),item_36,8.979914,12.259838
+store_sales_50_items,full,1602,ML selected on validation (6),item_37,5.564117,6.640849
+store_sales_50_items,full,1602,ML selected on validation (6),item_38,9.021762,12.822611
+store_sales_50_items,full,1602,ML selected on validation (6),item_39,6.351955,8.376015
+store_sales_50_items,full,1602,ML selected on validation (6),item_4,4.060803,5.675203
+store_sales_50_items,full,1602,ML selected on validation (6),item_40,4.468564,6.41599
+store_sales_50_items,full,1602,ML selected on validation (6),item_41,4.158243,5.700812
+store_sales_50_items,full,1602,ML selected on validation (6),item_42,5.3647,7.101811
+store_sales_50_items,full,1602,ML selected on validation (6),item_43,6.889917,9.169894
+store_sales_50_items,full,1602,ML selected on validation (6),item_44,5.278284,6.778264
+store_sales_50_items,full,1602,ML selected on validation (6),item_45,8.094484,13.209869
+store_sales_50_items,full,1602,ML selected on validation (6),item_46,6.812822,10.511555
+store_sales_50_items,full,1602,ML selected on validation (6),item_47,4.073467,5.306683
+store_sales_50_items,full,1602,ML selected on validation (6),item_48,6.230108,9.834478
+store_sales_50_items,full,1602,ML selected on validation (6),item_49,4.497189,6.626483
+store_sales_50_items,full,1602,ML selected on validation (6),item_5,3.482625,4.928795
+store_sales_50_items,full,1602,ML selected on validation (6),item_50,7.070354,11.326046
+store_sales_50_items,full,1602,ML selected on validation (6),item_6,6.543502,10.538413
+store_sales_50_items,full,1602,ML selected on validation (6),item_7,7.37505,10.667083
+store_sales_50_items,full,1602,ML selected on validation (6),item_8,8.433142,12.53529
+store_sales_50_items,full,1602,ML selected on validation (6),item_9,6.583515,9.454716
+store_sales_50_items,full,1602,Ridge,item_1,4.827546,5.392879
+store_sales_50_items,full,1602,Ridge,item_10,9.547957,12.299188
+store_sales_50_items,full,1602,Ridge,item_11,7.9417,11.347908
+store_sales_50_items,full,1602,Ridge,item_12,8.256098,11.763898
+store_sales_50_items,full,1602,Ridge,item_13,9.032868,13.309182
+store_sales_50_items,full,1602,Ridge,item_14,7.030731,10.169894
+store_sales_50_items,full,1602,Ridge,item_15,9.429066,14.286071
+store_sales_50_items,full,1602,Ridge,item_16,5.378906,6.049344
+store_sales_50_items,full,1602,Ridge,item_17,5.55472,7.078076
+store_sales_50_items,full,1602,Ridge,item_18,10.893347,13.640849
+store_sales_50_items,full,1602,Ridge,item_19,5.720865,8.269831
+store_sales_50_items,full,1602,Ridge,item_2,7.728854,10.49594
+store_sales_50_items,full,1602,Ridge,item_20,6.800532,8.8401
+store_sales_50_items,full,1602,Ridge,item_21,5.685404,7.940662
+store_sales_50_items,full,1602,Ridge,item_22,9.889727,13.341037
+store_sales_50_items,full,1602,Ridge,item_23,5.098035,6.910681
+store_sales_50_items,full,1602,Ridge,item_24,9.013957,11.492817
+store_sales_50_items,full,1602,Ridge,item_25,8.887021,13.224859
+store_sales_50_items,full,1602,Ridge,item_26,6.696557,9.078701
+store_sales_50_items,full,1602,Ridge,item_27,5.085602,5.640849
+store_sales_50_items,full,1602,Ridge,item_28,10.323403,14.078076
+store_sales_50_items,full,1602,Ridge,item_29,8.40286,11.591505
+store_sales_50_items,full,1602,Ridge,item_3,6.362387,7.435353
+store_sales_50_items,full,1602,Ridge,item_30,5.798476,8.318551
+store_sales_50_items,full,1602,Ridge,item_31,6.956962,10.534666
+store_sales_50_items,full,1602,Ridge,item_32,6.281787,8.498438
+store_sales_50_items,full,1602,Ridge,item_33,8.028861,11.60837
+store_sales_50_items,full,1602,Ridge,item_34,5.072654,6.097439
+store_sales_50_items,full,1602,Ridge,item_35,8.051034,11.294191
+store_sales_50_items,full,1602,Ridge,item_36,10.185149,12.259838
+store_sales_50_items,full,1602,Ridge,item_37,6.049322,6.640849
+store_sales_50_items,full,1602,Ridge,item_38,10.076132,12.822611
+store_sales_50_items,full,1602,Ridge,item_39,6.736357,8.376015
+store_sales_50_items,full,1602,Ridge,item_4,4.821906,5.675203
+store_sales_50_items,full,1602,Ridge,item_40,4.914277,6.41599
+store_sales_50_items,full,1602,Ridge,item_41,4.8385,5.700812
+store_sales_50_items,full,1602,Ridge,item_42,5.461952,7.101811
+store_sales_50_items,full,1602,Ridge,item_43,7.238886,9.169894
+store_sales_50_items,full,1602,Ridge,item_44,6.105651,6.778264
+store_sales_50_items,full,1602,Ridge,item_45,9.658081,13.209869
+store_sales_50_items,full,1602,Ridge,item_46,6.92531,10.511555
+store_sales_50_items,full,1602,Ridge,item_47,4.943641,5.306683
+store_sales_50_items,full,1602,Ridge,item_48,6.82279,9.834478
+store_sales_50_items,full,1602,Ridge,item_49,5.193866,6.626483
+store_sales_50_items,full,1602,Ridge,item_5,4.876559,4.928795
+store_sales_50_items,full,1602,Ridge,item_50,7.700234,11.326046
+store_sales_50_items,full,1602,Ridge,item_6,7.03813,10.538413
+store_sales_50_items,full,1602,Ridge,item_7,8.008193,10.667083
+store_sales_50_items,full,1602,Ridge,item_8,9.507903,12.53529
+store_sales_50_items,full,1602,Ridge,item_9,7.109937,9.454716
+store_sales_50_items,full,1602,Ridge [refit],item_1,4.986269,5.392879
+store_sales_50_items,full,1602,Ridge [refit],item_10,9.505927,12.299188
+store_sales_50_items,full,1602,Ridge [refit],item_11,7.903308,11.347908
+store_sales_50_items,full,1602,Ridge [refit],item_12,8.277426,11.763898
+store_sales_50_items,full,1602,Ridge [refit],item_13,8.996073,13.309182
+store_sales_50_items,full,1602,Ridge [refit],item_14,7.078628,10.169894
+store_sales_50_items,full,1602,Ridge [refit],item_15,9.439666,14.286071
+store_sales_50_items,full,1602,Ridge [refit],item_16,5.47632,6.049344
+store_sales_50_items,full,1602,Ridge [refit],item_17,5.712375,7.078076
+store_sales_50_items,full,1602,Ridge [refit],item_18,10.95367,13.640849
+store_sales_50_items,full,1602,Ridge [refit],item_19,5.830459,8.269831
+store_sales_50_items,full,1602,Ridge [refit],item_2,7.742083,10.49594
+store_sales_50_items,full,1602,Ridge [refit],item_20,6.912925,8.8401
+store_sales_50_items,full,1602,Ridge [refit],item_21,5.76511,7.940662
+store_sales_50_items,full,1602,Ridge [refit],item_22,9.916165,13.341037
+store_sales_50_items,full,1602,Ridge [refit],item_23,5.207291,6.910681
+store_sales_50_items,full,1602,Ridge [refit],item_24,9.025611,11.492817
+store_sales_50_items,full,1602,Ridge [refit],item_25,8.91356,13.224859
+store_sales_50_items,full,1602,Ridge [refit],item_26,6.76508,9.078701
+store_sales_50_items,full,1602,Ridge [refit],item_27,5.227044,5.640849
+store_sales_50_items,full,1602,Ridge [refit],item_28,10.319361,14.078076
+store_sales_50_items,full,1602,Ridge [refit],item_29,8.421368,11.591505
+store_sales_50_items,full,1602,Ridge [refit],item_3,6.535503,7.435353
+store_sales_50_items,full,1602,Ridge [refit],item_30,5.908053,8.318551
+store_sales_50_items,full,1602,Ridge [refit],item_31,7.00557,10.534666
+store_sales_50_items,full,1602,Ridge [refit],item_32,6.403782,8.498438
+store_sales_50_items,full,1602,Ridge [refit],item_33,8.084696,11.60837
+store_sales_50_items,full,1602,Ridge [refit],item_34,5.232389,6.097439
+store_sales_50_items,full,1602,Ridge [refit],item_35,8.013611,11.294191
+store_sales_50_items,full,1602,Ridge [refit],item_36,10.203239,12.259838
+store_sales_50_items,full,1602,Ridge [refit],item_37,6.207268,6.640849
+store_sales_50_items,full,1602,Ridge [refit],item_38,10.079012,12.822611
+store_sales_50_items,full,1602,Ridge [refit],item_39,6.800259,8.376015
+store_sales_50_items,full,1602,Ridge [refit],item_4,4.934222,5.675203
+store_sales_50_items,full,1602,Ridge [refit],item_40,5.055543,6.41599
+store_sales_50_items,full,1602,Ridge [refit],item_41,4.951713,5.700812
+store_sales_50_items,full,1602,Ridge [refit],item_42,5.577889,7.101811
+store_sales_50_items,full,1602,Ridge [refit],item_43,7.307923,9.169894
+store_sales_50_items,full,1602,Ridge [refit],item_44,6.236481,6.778264
+store_sales_50_items,full,1602,Ridge [refit],item_45,9.691532,13.209869
+store_sales_50_items,full,1602,Ridge [refit],item_46,6.943212,10.511555
+store_sales_50_items,full,1602,Ridge [refit],item_47,5.070766,5.306683
+store_sales_50_items,full,1602,Ridge [refit],item_48,6.935478,9.834478
+store_sales_50_items,full,1602,Ridge [refit],item_49,5.329773,6.626483
+store_sales_50_items,full,1602,Ridge [refit],item_5,5.043692,4.928795
+store_sales_50_items,full,1602,Ridge [refit],item_50,7.712076,11.326046
+store_sales_50_items,full,1602,Ridge [refit],item_6,7.067151,10.538413
+store_sales_50_items,full,1602,Ridge [refit],item_7,8.096564,10.667083
+store_sales_50_items,full,1602,Ridge [refit],item_8,9.559658,12.53529
+store_sales_50_items,full,1602,Ridge [refit],item_9,7.150087,9.454716
+store_sales_50_items,full,1602,Seasonal naive,item_1,5.924107,5.392879
+store_sales_50_items,full,1602,Seasonal naive,item_10,12.866071,12.299188
+store_sales_50_items,full,1602,Seasonal naive,item_11,10.571429,11.347908
+store_sales_50_items,full,1602,Seasonal naive,item_12,10.517857,11.763898
+store_sales_50_items,full,1602,Seasonal naive,item_13,12.928571,13.309182
+store_sales_50_items,full,1602,Seasonal naive,item_14,9.303571,10.169894
+store_sales_50_items,full,1602,Seasonal naive,item_15,11.879464,14.286071
+store_sales_50_items,full,1602,Seasonal naive,item_16,7.366071,6.049344
+store_sales_50_items,full,1602,Seasonal naive,item_17,6.90625,7.078076
+store_sales_50_items,full,1602,Seasonal naive,item_18,12.90625,13.640849
+store_sales_50_items,full,1602,Seasonal naive,item_19,7.758929,8.269831
+store_sales_50_items,full,1602,Seasonal naive,item_2,10.678571,10.49594
+store_sales_50_items,full,1602,Seasonal naive,item_20,8.861607,8.8401
+store_sales_50_items,full,1602,Seasonal naive,item_21,7.799107,7.940662
+store_sales_50_items,full,1602,Seasonal naive,item_22,12.71875,13.341037
+store_sales_50_items,full,1602,Seasonal naive,item_23,6.683036,6.910681
+store_sales_50_items,full,1602,Seasonal naive,item_24,11.522321,11.492817
+store_sales_50_items,full,1602,Seasonal naive,item_25,12.78125,13.224859
+store_sales_50_items,full,1602,Seasonal naive,item_26,8.875,9.078701
+store_sales_50_items,full,1602,Seasonal naive,item_27,5.848214,5.640849
+store_sales_50_items,full,1602,Seasonal naive,item_28,12.611607,14.078076
+store_sales_50_items,full,1602,Seasonal naive,item_29,11.5625,11.591505
+store_sales_50_items,full,1602,Seasonal naive,item_3,8.611607,7.435353
+store_sales_50_items,full,1602,Seasonal naive,item_30,8.098214,8.318551
+store_sales_50_items,full,1602,Seasonal naive,item_31,8.955357,10.534666
+store_sales_50_items,full,1602,Seasonal naive,item_32,8.566964,8.498438
+store_sales_50_items,full,1602,Seasonal naive,item_33,11.379464,11.60837
+store_sales_50_items,full,1602,Seasonal naive,item_34,5.683036,6.097439
+store_sales_50_items,full,1602,Seasonal naive,item_35,10.59375,11.294191
+store_sales_50_items,full,1602,Seasonal naive,item_36,12.875,12.259838
+store_sales_50_items,full,1602,Seasonal naive,item_37,7.883929,6.640849
+store_sales_50_items,full,1602,Seasonal naive,item_38,14.933036,12.822611
+store_sales_50_items,full,1602,Seasonal naive,item_39,9.044643,8.376015
+store_sales_50_items,full,1602,Seasonal naive,item_4,5.848214,5.675203
+store_sales_50_items,full,1602,Seasonal naive,item_40,6.392857,6.41599
+store_sales_50_items,full,1602,Seasonal naive,item_41,6.361607,5.700812
+store_sales_50_items,full,1602,Seasonal naive,item_42,7.482143,7.101811
+store_sales_50_items,full,1602,Seasonal naive,item_43,9.428571,9.169894
+store_sales_50_items,full,1602,Seasonal naive,item_44,8.017857,6.778264
+store_sales_50_items,full,1602,Seasonal naive,item_45,12.040179,13.209869
+store_sales_50_items,full,1602,Seasonal naive,item_46,10.232143,10.511555
+store_sales_50_items,full,1602,Seasonal naive,item_47,6.03125,5.306683
+store_sales_50_items,full,1602,Seasonal naive,item_48,9.433036,9.834478
+store_sales_50_items,full,1602,Seasonal naive,item_49,6.633929,6.626483
+store_sales_50_items,full,1602,Seasonal naive,item_5,5.066964,4.928795
+store_sales_50_items,full,1602,Seasonal naive,item_50,10.357143,11.326046
+store_sales_50_items,full,1602,Seasonal naive,item_6,9.544643,10.538413
+store_sales_50_items,full,1602,Seasonal naive,item_7,10.790179,10.667083
+store_sales_50_items,full,1602,Seasonal naive,item_8,12.625,12.53529
+store_sales_50_items,full,1602,Seasonal naive,item_9,10.410714,9.454716

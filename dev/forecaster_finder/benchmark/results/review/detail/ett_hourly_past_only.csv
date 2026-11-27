@@ -1,0 +1,393 @@
+case,history,history_obs,model,level,fold,mae,scale
+ett_hourly_past_only,full,8928,Seasonal naive,OT,0,0.938474,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,1,2.3255,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,2,5.279068,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,3,3.025365,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,4,1.744057,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,5,1.233719,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,6,2.973208,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,7,3.087672,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,8,3.275286,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,9,2.54063,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,10,7.278494,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,11,5.774802,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,12,3.794885,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,13,3.877302,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,14,0.90411,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,15,0.789625,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,16,0.862917,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,17,2.101177,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,18,2.178943,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,19,2.66876,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,20,4.969037,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,21,6.298828,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,22,2.307125,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,23,6.831891,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,24,6.891505,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,25,3.128709,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,26,5.80214,0.874883
+ett_hourly_past_only,full,8928,Seasonal naive,OT,27,4.149641,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,0,1.061981,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,1,2.565023,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,2,3.050543,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,3,0.671648,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,4,1.458419,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,5,2.366609,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,6,0.739376,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,7,2.850182,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,8,1.377348,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,9,0.837972,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,10,4.095174,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,11,0.974987,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,12,3.497154,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,13,2.626593,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,14,2.168336,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,15,2.130968,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,16,1.076247,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,17,0.710284,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,18,1.407448,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,19,1.72169,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,20,2.989059,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,21,2.617297,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,22,1.780742,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,23,6.848679,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,24,0.630489,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,25,1.365593,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,26,4.52516,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog),OT,27,0.665463,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,0,1.205128,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,1,2.525377,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,2,3.575109,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,3,0.999985,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,4,1.462263,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,5,2.524855,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,6,1.387294,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,7,3.164268,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,8,3.271676,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,9,1.94553,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,10,2.8578,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,11,1.93621,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,12,3.251704,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,13,3.762345,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,14,1.907674,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,15,3.02261,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,16,1.80854,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,17,1.314853,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,18,2.501009,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,19,3.689468,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,20,2.823899,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,21,2.300312,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,22,1.806817,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,23,4.96005,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,24,1.783244,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,25,2.198843,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,26,6.195014,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),OT,27,0.819234,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,0,1.061981,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,1,2.233488,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,2,2.600193,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,3,0.669714,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,4,1.614823,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,5,2.419156,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,6,0.535031,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,7,2.913319,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,8,1.968878,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,9,1.897894,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,10,4.083731,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,11,0.719504,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,12,3.549249,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,13,2.760143,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,14,2.639492,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,15,2.147973,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,16,0.935358,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,17,1.416955,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,18,1.352647,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,19,1.758815,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,20,3.513868,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,21,2.189567,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,22,1.563416,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,23,6.972535,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,24,0.713241,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,25,1.564363,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,26,3.819407,0.874883
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],OT,27,0.656768,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,0,1.205128,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,1,2.624669,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,2,3.795831,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,3,1.089326,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,4,1.562951,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,5,2.676833,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,6,1.408924,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,7,3.352707,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,8,3.305505,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,9,1.416834,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,10,3.182044,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,11,1.913483,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,12,3.062973,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,13,3.614556,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,14,1.859511,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,15,2.582281,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,16,1.710053,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,17,1.440604,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,18,2.353672,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,19,2.614228,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,20,3.58833,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,21,1.673072,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,22,0.943863,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,23,6.228769,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,24,0.918808,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,25,2.214231,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,26,4.645979,0.874883
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],OT,27,0.922987,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,0,0.692909,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,1,2.020362,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,2,4.738503,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,3,1.226916,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,4,1.780656,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,5,2.073146,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,6,2.278937,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,7,2.521734,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,8,1.55916,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,9,1.708729,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,10,4.655363,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,11,1.7321,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,12,3.643898,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,13,1.59817,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,14,1.110137,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,15,0.884636,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,16,0.442723,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,17,0.903506,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,18,0.837566,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,19,1.764926,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,20,4.010093,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,21,3.010449,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,22,1.858668,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,23,6.583993,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,24,2.563998,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,25,0.837828,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,26,4.160455,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),OT,27,1.48981,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,0,0.692909,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,1,2.020362,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,2,4.738503,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,3,1.226916,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,4,1.780656,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,5,2.073146,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,6,2.278937,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,7,2.521734,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,8,1.55916,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,9,1.708729,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,10,4.655363,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,11,1.7321,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,12,3.643898,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,13,1.59817,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,14,1.110137,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,15,0.884636,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,16,0.442723,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,17,0.903506,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,18,0.837566,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,19,1.764926,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,20,4.010093,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,21,3.010449,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,22,1.858668,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,23,6.583993,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,24,2.563998,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,25,0.837828,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,26,4.160455,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",OT,27,1.48981,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,0,0.63808,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,1,2.001987,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,2,4.907584,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,3,0.640184,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,4,2.136126,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,5,2.299392,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,6,1.854688,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,7,2.185544,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,8,1.839446,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,9,1.638408,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,10,4.418553,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,11,2.374556,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,12,3.780997,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,13,1.852708,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,14,1.291805,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,15,1.355924,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,16,0.515691,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,17,0.790502,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,18,0.927702,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,19,2.030127,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,20,3.969917,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,21,2.617357,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,22,1.795285,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,23,6.560133,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,24,2.57446,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,25,0.903811,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,26,3.730528,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),OT,27,1.139133,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,0,0.636431,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,1,2.344599,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,2,4.047784,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,3,1.468303,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,4,1.486764,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,5,1.467207,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,6,1.811595,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,7,2.666906,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,8,1.288811,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,9,1.401935,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,10,4.559733,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,11,1.079527,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,12,3.350714,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,13,1.65249,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,14,1.636058,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,15,1.026999,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,16,0.820961,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,17,1.778929,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,18,1.276263,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,19,1.059492,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,20,3.602874,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,21,2.437451,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,22,1.444896,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,23,6.516508,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,24,2.233709,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,25,1.104937,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,26,4.019452,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),OT,27,1.191584,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,0,0.636431,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,1,2.344599,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,2,4.047784,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,3,1.468303,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,4,1.486764,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,5,1.467207,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,6,1.811595,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,7,2.666906,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,8,1.288811,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,9,1.401935,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,10,4.559733,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,11,1.079527,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,12,3.350714,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,13,1.65249,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,14,1.636058,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,15,1.026999,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,16,0.820961,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,17,1.778929,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,18,1.276263,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,19,1.059492,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,20,3.602874,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,21,2.437451,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,22,1.444896,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,23,6.516508,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,24,2.233709,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,25,1.104937,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,26,4.019452,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",OT,27,1.191584,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,0,0.857206,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,1,2.010708,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,2,4.48931,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,3,1.212162,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,4,1.836785,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,5,1.874517,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,6,2.150299,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,7,2.871838,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,8,1.272396,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,9,1.515523,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,10,4.45584,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,11,2.201944,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,12,3.888257,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,13,1.901688,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,14,1.383247,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,15,0.869493,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,16,0.583141,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,17,1.661593,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,18,1.143794,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,19,1.219623,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,20,3.839334,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,21,2.287773,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,22,1.723772,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,23,6.207222,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,24,2.593953,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,25,0.900368,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,26,3.853725,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),OT,27,1.203626,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,0,0.838957,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,1,2.31456,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,2,4.724471,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,3,1.861812,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,4,1.610643,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,5,1.952737,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,6,2.071583,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,7,2.422608,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,8,0.731068,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,9,2.493601,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,10,4.79784,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,11,3.083293,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,12,3.8437,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,13,1.431348,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,14,2.077499,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,15,1.085901,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,16,0.369096,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,17,1.963622,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,18,1.119236,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,19,1.53886,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,20,4.394086,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,21,4.012551,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,22,1.443352,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,23,6.636431,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,24,2.60375,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,25,1.007422,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,26,4.314045,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),OT,27,1.710964,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,0,0.838957,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,1,2.31456,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,2,4.724471,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,3,1.861812,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,4,1.610643,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,5,1.952737,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,6,2.071583,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,7,2.422608,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,8,0.731068,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,9,2.493601,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,10,4.79784,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,11,3.083293,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,12,3.8437,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,13,1.431348,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,14,2.077499,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,15,1.085901,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,16,0.369096,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,17,1.963622,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,18,1.119236,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,19,1.53886,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,20,4.394086,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,21,4.012551,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,22,1.443352,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,23,6.636431,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,24,2.60375,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,25,1.007422,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,26,4.314045,0.874883
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",OT,27,1.710964,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,0,0.60903,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,1,2.306721,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,2,4.608146,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,3,1.23187,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,4,1.712532,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,5,1.988349,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,6,2.096098,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,7,1.975308,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,8,0.945602,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,9,2.018559,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,10,4.953436,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,11,2.729511,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,12,3.384265,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,13,1.661065,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,14,1.885949,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,15,1.137146,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,16,0.391148,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,17,2.009525,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,18,0.920197,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,19,1.364634,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,20,4.260112,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,21,3.450481,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,22,1.00899,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,23,6.441896,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,24,2.201959,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,25,0.994185,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,26,4.045894,0.874883
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),OT,27,1.687116,0.874883

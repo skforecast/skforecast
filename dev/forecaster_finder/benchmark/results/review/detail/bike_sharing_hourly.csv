@@ -1,0 +1,953 @@
+case,history,history_obs,model,level,fold,mae,scale
+bike_sharing_hourly,2160,2160,Seasonal naive,users,0,25.083333,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,1,44.875,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,2,24.333333,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,3,36.375,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,4,132.916667,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,5,101.916667,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,6,142.916667,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,7,28.291667,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,8,16.75,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,9,25.875,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,10,23.375,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,11,112.666667,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,12,57.625,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,13,137.708333,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,14,41.333333,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,15,20.25,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,16,50.541667,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,17,43.041667,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,18,83.416667,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,19,14.0,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,20,42.583333,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,21,27.708333,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,22,30.875,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,23,70.458333,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,24,40.875,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,25,77.0,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,26,24.875,78.103506
+bike_sharing_hourly,2160,2160,Seasonal naive,users,27,42.791667,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,0,46.151666,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,1,39.251098,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,2,24.290588,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,3,35.028279,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,4,54.427611,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,5,37.099439,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,6,51.18146,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,7,18.251796,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,8,18.464189,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,9,14.372269,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,10,44.759823,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,11,27.666209,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,12,37.823138,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,13,49.587904,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,14,20.589384,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,15,31.767904,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,16,59.609989,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,17,60.705602,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,18,81.489901,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,19,44.80909,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,20,120.165337,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,21,120.783794,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,22,111.762102,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,23,51.055583,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,24,36.68489,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,25,122.359017,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,26,27.610631,78.103506
+bike_sharing_hourly,2160,2160,LightGBM,users,27,38.746162,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,0,46.151666,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,1,38.891476,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,2,22.839711,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,3,26.928228,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,4,75.745685,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,5,19.309308,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,6,52.63546,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,7,20.903254,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,8,19.672715,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,9,23.653491,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,10,37.110404,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,11,30.542242,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,12,37.735978,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,13,61.76372,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,14,22.161473,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,15,27.374777,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,16,59.366614,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,17,43.06338,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,18,74.02961,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,19,36.234308,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,20,120.947994,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,21,115.183385,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,22,84.254257,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,23,36.287736,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,24,25.485764,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,25,86.115953,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,26,27.638389,78.103506
+bike_sharing_hourly,2160,2160,LightGBM [refit],users,27,37.069842,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,0,84.624819,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,1,47.010559,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,2,44.535552,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,3,43.656261,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,4,95.535891,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,5,48.82368,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,6,86.164488,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,7,49.004304,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,8,50.841703,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,9,41.752434,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,10,47.526636,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,11,38.155015,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,12,45.18598,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,13,64.621739,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,14,52.284096,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,15,47.237692,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,16,53.662085,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,17,46.443162,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,18,80.869817,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,19,42.846079,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,20,75.039252,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,21,96.201158,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,22,72.93713,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,23,58.403127,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,24,32.971715,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,25,38.706674,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,26,47.934155,78.103506
+bike_sharing_hourly,2160,2160,Ridge,users,27,70.710006,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,0,84.624819,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,1,47.761416,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,2,43.871909,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,3,43.79572,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,4,93.228113,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,5,47.914432,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,6,80.394582,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,7,48.691391,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,8,48.48517,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,9,38.880273,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,10,46.090065,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,11,37.919915,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,12,36.440881,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,13,55.743287,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,14,48.005869,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,15,45.122941,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,16,54.292917,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,17,44.012517,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,18,82.401653,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,19,40.991022,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,20,80.440431,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,21,95.458541,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,22,75.06949,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,23,69.685128,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,24,40.837525,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,25,39.281917,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,26,55.439126,78.103506
+bike_sharing_hourly,2160,2160,Ridge [refit],users,27,75.811131,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,0,36.949352,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,1,44.092786,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,2,55.943133,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,3,63.740845,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,4,36.745421,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,5,52.928637,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,6,90.229822,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,7,55.080474,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,8,27.732598,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,9,14.692511,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,10,39.024815,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,11,22.627606,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,12,47.81489,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,13,74.700656,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,14,51.650823,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,15,34.597875,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,16,97.26106,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,17,61.457919,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,18,108.656178,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,19,53.028254,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,20,147.408974,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,21,112.372399,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,22,129.109139,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,23,66.713167,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,24,70.169009,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,25,96.770686,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,26,41.623805,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff),users,27,82.729562,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,0,36.949352,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,1,53.259665,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,2,28.156895,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,3,69.988872,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,4,54.905991,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,5,82.443893,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,6,60.063436,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,7,43.868878,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,8,32.957474,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,9,18.654205,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,10,46.272068,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,11,35.359109,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,12,52.696842,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,13,72.832147,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,14,44.984154,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,15,20.479612,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,16,64.126343,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,17,52.868309,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,18,91.947019,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,19,49.446916,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,20,153.173562,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,21,123.733647,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,22,109.022386,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,23,30.977785,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,24,18.602767,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,25,64.103344,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,26,45.435819,78.103506
+bike_sharing_hourly,2160,2160,LightGBM (diff) [refit],users,27,95.490519,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,0,47.378435,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,1,48.319095,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,2,32.49321,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,3,35.804881,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,4,76.984219,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,5,58.655126,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,6,91.907496,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,7,23.820111,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,8,29.54449,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,9,26.430158,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,10,26.629618,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,11,30.313668,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,12,35.893349,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,13,61.4665,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,14,41.249079,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,15,34.944593,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,16,64.290733,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,17,48.600765,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,18,85.359742,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,19,37.807777,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,20,87.668016,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,21,81.188322,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,22,88.820129,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,23,77.426494,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,24,30.323575,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,25,48.365854,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,26,29.915213,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff),users,27,37.830586,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,0,47.378435,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,1,48.100691,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,2,30.783749,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,3,36.059243,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,4,73.415442,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,5,67.03955,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,6,88.475509,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,7,23.463526,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,8,26.638754,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,9,23.28399,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,10,26.977394,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,11,31.848756,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,12,36.533577,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,13,55.432896,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,14,38.473608,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,15,33.48713,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,16,62.774269,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,17,49.546652,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,18,81.618751,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,19,37.703681,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,20,88.725054,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,21,80.892509,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,22,83.961213,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,23,86.364137,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,24,34.305601,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,25,52.952839,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,26,36.015175,78.103506
+bike_sharing_hourly,2160,2160,Ridge (diff) [refit],users,27,41.323322,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,0,32.21131,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,1,33.141477,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,2,32.503172,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,3,22.962408,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,4,74.266808,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,5,61.442803,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,6,47.468171,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,7,23.802665,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,8,19.055866,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,9,21.017097,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,10,31.343841,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,11,17.073309,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,12,33.825271,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,13,42.791307,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,14,18.492286,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,15,20.112859,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,16,63.109099,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,17,36.769019,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,18,44.296123,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,19,23.9236,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,20,129.392093,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,21,75.69235,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,22,26.143987,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,23,58.652236,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,24,27.43295,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,25,54.013504,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,26,21.041852,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ [refit],users,27,34.570761,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,0,26.974833,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,1,31.518008,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,2,94.541368,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,3,78.858902,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,4,79.94659,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,5,51.522983,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,6,46.246648,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,7,36.133836,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,8,23.624967,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,9,26.996255,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,10,42.262571,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,11,26.691317,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,12,56.955387,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,13,44.866334,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,14,32.36843,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,15,20.322092,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,16,54.103581,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,17,45.233005,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,18,87.75068,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,19,24.757896,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,20,123.63359,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,21,74.058654,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,22,92.526132,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,23,23.65308,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,24,29.060803,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,25,47.845438,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,26,13.726086,78.103506
+bike_sharing_hourly,2160,2160,LightGBM+ (diff) [refit],users,27,27.975433,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,0,55.422279,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,1,39.740118,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,2,33.698744,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,3,25.500185,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,4,49.741036,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,5,61.076051,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,6,52.002864,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,7,22.31397,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,8,26.175708,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,9,35.064235,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,10,34.706902,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,11,30.531942,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,12,47.450479,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,13,56.105364,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,14,21.629402,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,15,26.371183,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,16,60.056723,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,17,33.589356,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,18,35.331898,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,19,51.803533,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,20,116.168978,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,21,145.916682,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,22,108.133766,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,23,40.917363,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,24,29.180337,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,25,85.203534,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,26,31.860521,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet,users,27,41.651733,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,0,55.422279,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,1,35.622769,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,2,27.732999,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,3,42.116581,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,4,69.231623,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,5,35.678153,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,6,53.308152,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,7,20.736345,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,8,14.238635,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,9,33.593528,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,10,34.842086,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,11,35.648383,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,12,36.10145,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,13,62.500167,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,14,24.420733,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,15,17.036303,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,16,55.312741,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,17,52.548475,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,18,76.279794,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,19,48.904175,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,20,104.930758,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,21,140.662948,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,22,86.21883,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,23,38.296761,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,24,23.174139,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,25,63.194972,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,26,19.606163,78.103506
+bike_sharing_hourly,2160,2160,LightGBM snippet [refit],users,27,39.992824,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,0,47.378435,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,1,48.100691,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,2,30.783749,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,3,36.059243,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,4,73.415442,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,5,67.03955,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,6,88.475509,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,7,23.463526,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,8,26.638754,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,9,23.28399,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,10,26.977394,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,11,31.848756,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,12,36.533577,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,13,55.432896,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,14,38.473608,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,15,33.48713,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,16,62.774269,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,17,49.546652,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,18,81.618751,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,19,37.703681,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,20,88.725054,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,21,80.892509,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,22,83.961213,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,23,86.364137,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,24,34.305601,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,25,52.952839,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,26,36.015175,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (4),users,27,41.323322,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,0,26.974833,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,1,31.518008,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,2,94.541368,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,3,78.858902,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,4,79.94659,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,5,51.522983,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,6,46.246648,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,7,36.133836,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,8,23.624967,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,9,26.996255,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,10,42.262571,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,11,26.691317,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,12,56.955387,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,13,44.866334,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,14,32.36843,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,15,20.322092,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,16,54.103581,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,17,45.233005,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,18,87.75068,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,19,24.757896,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,20,123.63359,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,21,74.058654,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,22,92.526132,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,23,23.65308,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,24,29.060803,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,25,47.845438,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,26,13.726086,78.103506
+bike_sharing_hourly,2160,2160,ML selected on validation (6),users,27,27.975433,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,0,21.508539,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,1,47.071683,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,2,14.72603,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,3,25.086259,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,4,38.392107,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,5,65.302867,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,6,24.311928,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,7,29.980051,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,8,12.554803,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,9,27.00378,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,10,17.947941,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,11,21.324846,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,12,21.56227,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,13,19.367875,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,14,20.443512,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,15,15.499801,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,16,46.517514,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,17,26.158171,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,18,39.416274,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,19,9.726451,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,20,109.308444,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,21,54.160199,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,22,14.597819,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,23,66.839095,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,24,34.843087,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,25,64.744279,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,26,19.286612,78.103506
+bike_sharing_hourly,2160,2160,Chronos-2,users,27,44.726816,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,0,25.083333,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,1,44.875,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,2,24.333333,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,3,36.375,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,4,132.916667,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,5,101.916667,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,6,142.916667,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,7,28.291667,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,8,16.75,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,9,25.875,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,10,23.375,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,11,112.666667,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,12,57.625,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,13,137.708333,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,14,41.333333,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,15,20.25,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,16,50.541667,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,17,43.041667,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,18,83.416667,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,19,14.0,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,20,42.583333,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,21,27.708333,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,22,30.875,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,23,70.458333,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,24,40.875,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,25,77.0,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,26,24.875,78.103506
+bike_sharing_hourly,full,8928,Seasonal naive,users,27,42.791667,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,0,48.195325,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,1,28.215459,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,2,29.026687,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,3,27.433364,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,4,64.445756,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,5,24.894918,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,6,35.907715,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,7,22.104862,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,8,13.97934,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,9,21.969018,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,10,31.801458,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,11,17.72643,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,12,28.848956,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,13,36.360031,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,14,25.719283,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,15,17.830124,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,16,47.030254,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,17,39.743949,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,18,57.077801,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,19,28.507542,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,20,88.941629,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,21,110.424961,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,22,76.515932,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,23,26.017195,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,24,26.799213,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,25,41.281475,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,26,21.604189,78.103506
+bike_sharing_hourly,full,8928,LightGBM,users,27,45.659229,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,0,48.195325,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,1,27.025265,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,2,26.473607,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,3,24.306135,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,4,80.617707,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,5,32.248976,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,6,28.170507,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,7,23.788102,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,8,14.722381,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,9,24.819147,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,10,34.220088,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,11,16.076293,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,12,27.417927,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,13,35.062196,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,14,20.575259,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,15,17.640408,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,16,47.656226,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,17,37.272517,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,18,68.104097,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,19,30.37925,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,20,93.44098,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,21,83.436519,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,22,49.237217,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,23,16.840254,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,24,26.232739,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,25,42.490334,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,26,30.124276,78.103506
+bike_sharing_hourly,full,8928,LightGBM [refit],users,27,39.635021,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,0,89.927975,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,1,43.508943,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,2,40.489994,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,3,37.773619,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,4,72.128364,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,5,47.042096,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,6,59.133816,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,7,46.05037,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,8,43.307511,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,9,40.404259,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,10,45.381666,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,11,34.687576,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,12,33.950531,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,13,50.183926,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,14,46.538893,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,15,43.010613,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,16,58.348566,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,17,55.242194,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,18,104.551724,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,19,59.187107,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,20,92.272489,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,21,116.825786,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,22,102.151876,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,23,42.1411,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,24,22.064823,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,25,32.842785,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,26,17.520361,78.103506
+bike_sharing_hourly,full,8928,Ridge,users,27,57.201612,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,0,89.927975,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,1,43.805883,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,2,40.425831,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,3,37.783303,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,4,72.07177,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,5,47.45334,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,6,58.705033,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,7,46.144923,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,8,43.201812,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,9,40.018355,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,10,45.083991,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,11,34.598069,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,12,33.075971,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,13,49.275191,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,14,45.526465,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,15,42.570576,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,16,58.259716,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,17,55.02337,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,18,104.11628,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,19,58.407643,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,20,93.219243,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,21,115.739508,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,22,99.88985,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,23,41.021855,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,24,23.305328,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,25,32.901951,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,26,20.684937,78.103506
+bike_sharing_hourly,full,8928,Ridge [refit],users,27,61.109575,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,0,25.950907,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,1,43.123359,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,2,25.00224,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,3,31.168471,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,4,68.009293,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,5,63.028411,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,6,66.256138,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,7,25.295464,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,8,24.093311,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,9,24.375204,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,10,23.624586,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,11,41.192003,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,12,48.343402,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,13,27.612938,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,14,28.943085,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,15,19.697346,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,16,54.978471,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,17,41.953255,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,18,79.739196,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,19,42.238263,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,20,88.461912,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,21,71.360123,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,22,79.934473,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,23,37.012176,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,24,22.423259,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,25,77.210353,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,26,17.620011,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff),users,27,35.153228,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,0,25.950907,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,1,51.015443,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,2,21.267991,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,3,30.2091,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,4,50.814585,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,5,81.094422,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,6,59.638771,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,7,24.432774,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,8,15.11679,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,9,20.870761,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,10,24.192671,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,11,34.053403,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,12,48.043625,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,13,25.831331,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,14,23.656713,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,15,15.684525,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,16,58.520861,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,17,43.988589,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,18,79.693494,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,19,47.858899,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,20,96.530445,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,21,72.402766,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,22,75.931316,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,23,28.976509,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,24,25.92389,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,25,62.958561,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,26,18.719711,78.103506
+bike_sharing_hourly,full,8928,LightGBM (diff) [refit],users,27,65.664293,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,0,45.787014,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,1,42.180745,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,2,28.957995,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,3,32.644694,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,4,68.375544,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,5,66.944653,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,6,82.508497,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,7,24.118331,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,8,25.770702,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,9,20.728105,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,10,27.719584,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,11,28.530351,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,12,40.700366,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,13,53.48137,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,14,39.791277,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,15,29.952253,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,16,59.78057,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,17,48.354913,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,18,86.492241,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,19,39.032914,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,20,88.74787,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,21,83.338784,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,22,86.495345,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,23,88.822904,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,24,39.661125,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,25,52.015443,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,26,33.9263,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff),users,27,41.835525,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,0,45.787014,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,1,42.186958,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,2,28.676618,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,3,32.806153,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,4,67.972855,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,5,68.400406,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,6,82.193743,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,7,24.206275,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,8,25.296701,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,9,20.305713,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,10,27.700601,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,11,28.712871,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,12,40.779933,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,13,52.6475,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,14,39.051725,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,15,29.813051,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,16,59.33873,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,17,48.333234,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,18,85.869686,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,19,39.071354,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,20,89.084856,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,21,83.144753,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,22,85.309056,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,23,90.591977,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,24,40.348403,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,25,52.641172,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,26,34.835515,78.103506
+bike_sharing_hourly,full,8928,Ridge (diff) [refit],users,27,42.284203,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,0,28.510324,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,1,33.496784,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,2,21.114767,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,3,24.713478,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,4,62.398834,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,5,40.470498,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,6,26.819203,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,7,20.63455,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,8,15.896264,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,9,24.475997,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,10,26.050425,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,11,15.600998,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,12,30.732293,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,13,24.08349,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,14,17.438452,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,15,12.488728,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,16,52.799154,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,17,37.845648,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,18,64.726389,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,19,30.939468,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,20,108.718539,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,21,64.274678,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,22,41.338952,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,23,25.199852,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,24,39.44254,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,25,53.073972,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,26,13.900429,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ [refit],users,27,34.029718,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,0,36.554417,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,1,27.909828,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,2,29.020451,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,3,53.414828,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,4,56.939288,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,5,51.685747,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,6,44.164489,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,7,25.301104,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,8,19.990185,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,9,23.625217,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,10,25.60418,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,11,39.691661,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,12,41.009001,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,13,16.755989,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,14,30.613631,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,15,13.745918,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,16,56.320432,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,17,55.353814,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,18,84.087352,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,19,42.42332,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,20,119.866605,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,21,94.308444,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,22,87.688804,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,23,52.950332,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,24,35.484244,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,25,57.743508,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,26,14.503787,78.103506
+bike_sharing_hourly,full,8928,LightGBM+ (diff) [refit],users,27,38.922781,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,0,43.737662,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,1,27.895897,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,2,18.299244,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,3,27.652693,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,4,77.742419,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,5,16.581693,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,6,42.023811,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,7,24.922029,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,8,14.157127,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,9,21.887628,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,10,24.308499,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,11,20.037999,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,12,25.702383,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,13,41.577903,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,14,19.908283,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,15,12.850848,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,16,47.334135,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,17,46.969947,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,18,66.118255,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,19,23.908571,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,20,88.789293,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,21,116.646519,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,22,68.221159,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,23,46.158399,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,24,31.360849,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,25,38.144771,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,26,26.295491,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet,users,27,37.300209,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,0,43.737662,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,1,24.063815,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,2,22.813917,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,3,19.574844,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,4,67.602395,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,5,17.061324,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,6,39.361519,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,7,30.053276,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,8,13.576058,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,9,23.258187,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,10,29.449202,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,11,25.229528,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,12,25.979397,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,13,34.727199,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,14,19.978376,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,15,13.710039,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,16,51.424518,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,17,40.637207,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,18,86.338931,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,19,28.245743,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,20,90.158507,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,21,107.117241,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,22,45.968089,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,23,36.339919,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,24,27.129105,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,25,52.148026,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,26,19.572158,78.103506
+bike_sharing_hourly,full,8928,LightGBM snippet [refit],users,27,41.897163,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,0,25.950907,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,1,51.015443,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,2,21.267991,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,3,30.2091,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,4,50.814585,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,5,81.094422,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,6,59.638771,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,7,24.432774,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,8,15.11679,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,9,20.870761,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,10,24.192671,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,11,34.053403,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,12,48.043625,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,13,25.831331,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,14,23.656713,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,15,15.684525,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,16,58.520861,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,17,43.988589,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,18,79.693494,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,19,47.858899,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,20,96.530445,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,21,72.402766,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,22,75.931316,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,23,28.976509,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,24,25.92389,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,25,62.958561,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,26,18.719711,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (4),users,27,65.664293,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,0,28.510324,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,1,33.496784,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,2,21.114767,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,3,24.713478,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,4,62.398834,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,5,40.470498,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,6,26.819203,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,7,20.63455,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,8,15.896264,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,9,24.475997,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,10,26.050425,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,11,15.600998,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,12,30.732293,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,13,24.08349,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,14,17.438452,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,15,12.488728,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,16,52.799154,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,17,37.845648,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,18,64.726389,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,19,30.939468,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,20,108.718539,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,21,64.274678,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,22,41.338952,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,23,25.199852,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,24,39.44254,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,25,53.073972,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,26,13.900429,78.103506
+bike_sharing_hourly,full,8928,ML selected on validation (6),users,27,34.029718,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,0,27.182055,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,1,39.09845,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,2,14.287097,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,3,21.308613,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,4,43.493242,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,5,72.598963,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,6,30.929606,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,7,33.777079,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,8,12.602299,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,9,27.422749,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,10,20.075562,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,11,21.781535,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,12,25.31405,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,13,18.726706,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,14,20.02802,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,15,17.645376,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,16,46.805097,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,17,29.748444,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,18,39.830504,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,19,10.860432,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,20,103.143809,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,21,47.569874,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,22,14.573694,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,23,67.949437,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,24,36.707562,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,25,59.055991,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,26,18.221172,78.103506
+bike_sharing_hourly,full,8928,Chronos-2,users,27,42.772012,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,0,20.983465,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,1,27.608116,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,2,14.277453,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,3,26.396885,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,4,41.025801,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,5,54.746515,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,6,27.099395,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,7,21.525902,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,8,11.86038,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,9,23.82725,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,10,17.980697,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,11,28.055494,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,12,20.672673,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,13,17.973545,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,14,18.814295,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,15,15.003434,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,16,44.629331,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,17,45.376637,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,18,34.984868,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,19,22.15861,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,20,81.816868,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,21,104.108335,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,22,24.842522,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,23,32.988103,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,24,31.801899,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,25,34.378574,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,26,15.706826,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 base,users,27,40.090191,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,0,26.290802,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,1,32.028681,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,2,28.951839,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,3,33.257317,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,4,70.109232,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,5,60.135413,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,6,41.711554,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,7,29.938388,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,8,18.990294,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,9,24.534431,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,10,29.234224,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,11,31.312851,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,12,26.025308,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,13,25.980238,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,14,34.20934,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,15,27.799406,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,16,42.261481,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,17,63.800239,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,18,28.947232,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,19,16.229643,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,20,43.286652,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,21,102.064333,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,22,11.183437,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,23,46.527411,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,24,40.91412,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,25,69.635405,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,26,19.84133,78.103506
+bike_sharing_hourly,full,8928,Chronos-2 synth,users,27,49.742575,78.103506

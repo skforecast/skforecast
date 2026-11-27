@@ -1,475 +1,485 @@
-# Selector de forecaster ("Not sure where to start?"): hallazgos y plan
+# Selector de forecaster ("Not sure where to start?"): plan de desarrollo
 
 ## 1. Estado
 
-- Fecha: 2026-11-27. Base: skforecast 0.28.0, `origin/0.28.x` en `ca0f2f4`.
-- No hay nada implementado en `skforecast/`, `docs/` ni `skills/`: este documento, los
-  scripts y los resultados de `benchmark/` son todo lo que existe.
-- Informe visual con el gráfico del estudio y una maqueta del test que se puede usar
-  (Artifact privado, se comparte desde su menú Share):
-  https://claude.ai/artifact/LdLnbpz9LXdJ4rqPaocysX. Este documento es la referencia: el
-  informe resume lo mismo.
-- Fila del roadmap: `DOC-choosing-forecaster-evidence` (fase 0), `FEAT-forecaster-finder`
-  (fase 1) y `FEAT-finder-probabilistic` (fase 2 del test), sección 8.
+- Versión 2, del 2026-11-27. Sustituye a la versión 1 (commit `407746d`) después de la
+  revisión independiente de `REVISION.md`. Base: skforecast 0.28.0.
+- No hay nada implementado en `skforecast/`, `docs/` ni `skills/`.
+- Las cifras de este documento salen de `benchmark/review.py` (protocolo justo, sección 4).
+  Las de la versión 1 (ML congelado) no se citan en ninguna página: ver `REVISION.md` H1.
+- Filas del roadmap: `DOC-choosing-forecaster-evidence` (fase 0), `FEAT-forecaster-finder`
+  (fases 1 a 3), `FEAT-finder-probabilistic` (fase 4), y dos fallos de `Ets` que salieron de
+  la revisión: `BUG-ets-freeze-params` y `QW-ets-m-over-24-silent`.
+- Informe visual de la versión 1 (no actualizado):
+  https://claude.ai/artifact/LdLnbpz9LXdJ4rqPaocysX.
 
 Contenido de la carpeta:
 
 | Ruta | Qué es |
 |:--|:--|
 | `PLAN.md` | Este documento |
-| `benchmark/benchmark.py` | El estudio: 16 casos sobre 13 datasets, mismo backtesting para todos |
-| `benchmark/summarize.py`, `evidence.py`, `report_data.py` | Resúmenes: por familia, cifras de cada regla, datos del informe |
-| `benchmark/finder_tree.py` | Prototipo de la fuente única: preguntas, reglas y plantillas de código |
-| `benchmark/build.py` | Genera todas las combinaciones de respuestas, ejecuta cada fragmento distinto con datos sintéticos y escribe `finder.json` |
-| `benchmark/results/` | CSV de cada caso y `environment.json` de la ejecución citada aquí |
+| `REVISION.md` | Revisión independiente: hallazgos por gravedad, con evidencia y propuesta |
+| `benchmark/benchmark.py` | Estudio original (ML congelado). Define los casos; se conserva porque reproduce las cifras de la versión 1 |
+| `benchmark/review.py` | **Estudio de referencia**: mismos casos y bloques, ML reentrenado, `LightGBM+`, el LightGBM del fragmento, selección en validación, Chronos-2 small, base y synth; `--extra` y `--horizon` para los controles |
+| `benchmark/recount.py` | Recuentos por ejecución, por dataset y por tipo de datos |
+| `benchmark/finder_tree.py`, `build.py` | Prototipo de la versión 1 de la fuente única (5 preguntas, 100 fragmentos). No refleja todavía la sección 6 |
+| `benchmark/check_snippets.py` | Avisos e historia mínima de los fragmentos |
+| `benchmark/repro_ets_freeze_params.py` | Reproducción de `BUG-ets-freeze-params` |
+| `benchmark/summarize.py`, `evidence.py`, `report_data.py` | Resúmenes de la versión 1 (leen `results/*.csv`) |
+| `benchmark/results/` | CSV del estudio original |
+| `benchmark/results/review/` | CSV del estudio de referencia, controles (`extra_*`), recuentos, fragmentos y `environment.json`; el error por serie y por bloque, en `detail/` |
 
-Reproducir (desde `dev/forecaster_finder/benchmark/`, con `chronos-forecasting` instalado):
+Reproducir (desde `benchmark/`, con `uv pip install chronos-forecasting`):
 
 ```bash
-python -I benchmark.py            # todos los casos, unos 4 minutos de cómputo en 4 núcleos
-python -I benchmark.py vic h2o    # solo los casos cuyo nombre contiene una de las palabras
-python -I evidence.py             # cifras de cada regla
-python -I build.py                # 105 combinaciones, 100 fragmentos, minuto y medio
+python -I review.py              # unos 35 minutos en 4 núcleos sin GPU
+python -I review.py --extra      # otros sitios de bdg2, otras series de M4, clasificación (15 min)
+python -I review.py --horizon    # horizonte cuatro veces más corto (7 min)
+python -I recount.py             # cifras de las secciones 4 y 6
+python -I build.py               # 105 combinaciones, 100 fragmentos (versión 1)
+python -I check_snippets.py      # avisos e historia mínima de los fragmentos
 ```
 
-Entorno de la ejecución citada: Python 3.12.3, skforecast 0.28.0, numpy 2.5.5, pandas 3.1.1,
-scikit-learn 1.9.1, LightGBM 4.7.0, PyTorch 2.15.0 (CPU), Chronos-2 small.
+Entorno: Python 3.12.3, skforecast 0.28.0, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1,
+scipy 1.18.1, numba 0.68.1, LightGBM 4.7.0, PyTorch 2.15.0 (CPU), chronos-forecasting 2.3.2.
 
-## 2. Objetivo
+## 2. Objetivo y alcance
 
-Un test interactivo en la documentación: unas pocas preguntas en inglés, en vocabulario
-cotidiano, y al final un punto de partida concreto (qué forecasters probar, en qué orden,
-contra qué baseline, con el código listo para copiar y un prompt para el asistente de IA).
-Es en parte marketing: debe atraer y llevar a la siguiente acción (guías, skforecast-ai,
-Studio, consultoría) sin captar datos personales.
+Un bloque en la documentación que, con unas pocas respuestas en inglés cotidiano, da un punto
+de partida concreto: qué forecasters probar, cuál primero, contra qué baseline, con el código
+listo para copiar y un prompt para el asistente de IA. Es en parte marketing: debe atraer y
+llevar a la siguiente acción (guías, skforecast-ai, Studio, consultoría) sin captar datos
+personales.
 
-Principio de diseño, que sale del estudio: **cada regla del test está medida**. Una pregunta
-solo se queda si su respuesta cambia lo que funciona mejor o el código que hay que escribir.
+**Alcance: un árbol de decisión sencillo.** Decide qué forecasters probar, en qué orden y
+contra qué baseline. No decide la configuración: lags, diferenciación, hiperparámetros o qué
+variables crear siguen en las guías y en las skills. El fragmento de código es un punto de
+partida que funciona, con valores fijos según la frecuencia; no se presenta como
+recomendación y enlaza a las guías. El resultado no da consejos de configuración.
 
-**Alcance: un árbol de decisión sencillo.** El test decide qué forecasters probar, en qué
-orden y contra qué baseline. No decide la configuración: lags, diferenciación,
-hiperparámetros o qué variables crear siguen en las guías y en las skills
-(`feature-engineering`, `hyperparameter-optimization`...). El fragmento de código del
-resultado es un punto de partida que funciona, con valores fijos según la frecuencia, y no se
-presenta como recomendación: enlaza a las guías para ajustarlo. Por la misma razón, el
-resultado no da consejos de configuración (la maqueta del informe tenía uno sobre
-`differentiation=1` que sobra). Las configuraciones del estudio solo tienen que ser
-razonables para que la comparación entre familias sea justa.
+Principio: **cada regla lleva a la vista su respaldo** (ejecuciones y datasets). Una pregunta
+se queda solo si su respuesta cambia lo que se recomienda o el código.
 
-## 3. Referentes (resumen)
+## 3. Referentes
 
-El detalle, con enlaces y la distinción entre lo verificado y lo que es opinión, está en el
-informe (parte 1). Lo que se lleva al diseño:
+Sin cambios respecto a la versión 1 (el detalle, en el informe visual). Lo que se lleva al
+diseño:
 
-- **ilustradas.news/#test** (recorrido completo con Playwright): el porqué después de cada
-  respuesta, la métrica del resultado explicada, salidas de escape ("ninguna me convence"),
-  progreso reanudable y resultado que lleva al contenido completo. No se lleva: la longitud
-  (de 20 a 100 preguntas), la ficha de identidad para redes y el ranking agregado, que
-  necesita backend.
-- **PyTorch "Start locally"**: el resultado es un comando listo para copiar y se actualiza con
-  cada clic. Contraejemplo de privacidad (HubSpot, Segment, Facebook, ZoomInfo...).
+- **PyTorch "Start locally"**: todas las opciones a la vista y un resultado que es código y
+  cambia con cada clic. Es el patrón que se adopta (sección 6). Contraejemplo de privacidad.
 - **scikit-learn "Choosing the right estimator", guías de Azure y AWS**: humildad explícita
   ("es un punto de partida") y "si no funciona, prueba X".
-- **Comparadores de voto** (Wahl-O-Mat, 26 millones de usos en 2025; StemWijzer; smartvote):
-  pocas preguntas, respuestas visibles y explicadas. El metaanálisis de Munzert y Ramirez Ruiz
-  muestra que el efecto observacional (OR 1,87) desaparece en experimentos (OR 1,04): medir
-  el embudo, no atribuir causalidad.
-- **No encaja**: email antes del resultado, resultados de identidad ("eres un
-  ForecasterRecursive"), más de 5 o 6 preguntas, rastreo de terceros.
-- **Hueco**: ninguna librería de forecasting en Python (Darts, sktime, Nixtla) tiene una guía
-  de elección con evidencia propia y un baseline obligatorio.
+- **ilustradas.news/#test y comparadores de voto**: el porqué de cada respuesta y la métrica
+  explicada. No se lleva el formato de test largo con revelado final.
+- **No encaja**: email antes del resultado, resultados de identidad, rastreo de terceros.
+- **Hueco**: ninguna librería de forecasting en Python tiene una guía de elección con
+  evidencia propia y un baseline obligatorio.
 
-Medición disponible hoy: GA4 de Material (`mkdocs.yml:354-356`) con un aviso de
-consentimiento sin `actions` (`mkdocs.yml:357-363`); no hay widget de feedback, eventos
+Medición disponible hoy: GA4 de Material (`mkdocs.yml:353-355`) con un aviso de
+consentimiento sin `actions` (`mkdocs.yml:356-362`); no hay widget de feedback, eventos
 propios ni UTM en los enlaces a Studio y skforecast-ai.
 
-## 4. Estudio medido
+## 4. Estudio de referencia
 
 ### 4.1 Método
 
-- Mismos bloques de test para todos los modelos de un caso (`TimeSeriesFold`); ML entrenado
-  una vez (`refit=False`); Chronos-2 con todo lo anterior a cada bloque como contexto
-  (`backtesting_foundation`), como en *Comparing forecasting models*.
+- Mismos bloques de test para todos los modelos de un caso (`TimeSeriesFold`).
+- **Todos los modelos usan lo anterior a cada bloque**: ML se reentrena en cada bloque con
+  ventana creciente (`refit=True`, `fixed_train_size=False`); AutoETS y AutoARIMA se
+  reajustan en cada bloque (lo hace siempre `backtesting_stats`); Chronos-2 recibe todo lo
+  anterior como contexto.
 - Configuración fija, sin ajustar en test:
-  - LightGBM (300 árboles, `learning_rate=0.05`, 15 hojas) y Ridge, con lags, media móvil,
-    `calendar_features` y `exog` cuando hay, con y sin `differentiation=1`;
-  - Chronos-2 small zero-shot (`autogluon/chronos-2-small`, Apache-2.0);
+  - LightGBM (300 árboles, `learning_rate=0.05`, 15 hojas) con lags, media móvil,
+    `calendar_features`, `StandardScaler` y `exog` cuando hay;
+  - `LightGBM+` (más lags, dos medias móviles, 500 árboles, regularización suave), como
+    control de que el LightGBM anterior no es demasiado flojo;
+  - Chronos-2 small zero-shot (`autogluon/chronos-2-small`, Apache-2.0); base y synth, como
+    controles de tamaño y de contaminación;
   - naive estacional (`ForecasterEquivalentDate(offset=periodo)`);
   - AutoETS y AutoARIMA en los casos de una serie.
-- Métrica: MASE con escala fija (naive de un paso sobre toda la historia previa al test),
-  media entre series, expresada relativa al naive estacional: menos de 1 lo mejora.
-- Tiempo: backtest completo en CPU.
-- Historia: en 10 casos se repite entrenando con historias truncadas (de 90 días a toda la
-  serie; de 3 años a toda la serie en los mensuales).
-- Variables solo hasta hoy en Chronos-2: con un bucle propio (`fit` con `exog` y `predict`
-  sin `exog` futuro), porque `backtesting_foundation` aún no las admite (fila FE-02 del
-  roadmap).
+- Métrica: MASE con escala fija (naive de un paso sobre la historia previa al test), media
+  entre series, relativa al naive estacional: menos de 1 lo mejora.
+- Recuento: por ejecución, por dataset (un voto por dataset) y por tipo de datos. Las cifras
+  que se publican son por dataset.
+- 12 datasets de regresión en 15 casos, 41 ejecuciones con las historias truncadas, y un
+  dataset de clasificación.
 
-### 4.2 Casos
+### 4.2 Resultados con toda la historia (MASE relativo al naive estacional)
 
-| Pregunta que pone a prueba | Casos | Test |
-|:--|:--|:--|
-| Una serie, variables conocidas a futuro | `vic_electricity` diario (temperatura, festivos); `bike_sharing` diario y horario (meteorología) | 6 × 28 días; 28 × 24 h |
-| Una serie, sin variables | `public_transport_madrid` diario; `bicimad` semanal; `h2o`, `fuel_consumption`, `expenditures_australia` mensuales | 6 × 28 días; 6 × 8 semanas; 3 a 5 × 12 meses |
-| Variables conocidas solo hasta hoy | `vic_electricity` diario (temperatura); `bike_sharing` horario (meteorología); `ett_m2` horario (6 series de carga) | 6 × 28 días; 28 × 24 h |
-| Varias series | `store_sales` (50 productos, diario); `bdg2_daily` (40 edificios del sitio Fox, con temperatura); `m4_hourly` (50 series); `australia_tourism` (304 series trimestrales) | 8 × 28 días; 6 × 28 días; 4 × 48 h; 3 × 4 trimestres |
-| Una categoría | `vic_electricity_classification` (bajo, medio, alto; horario) | 28 × 24 h |
+| Caso | Series | Historia | Chronos-2 | LightGBM congelado (v1) | LightGBM | `LightGBM+` | Mejor estadístico |
+|:--|--:|--:|--:|--:|--:|--:|:--|
+| *Una serie, nada conocido a futuro* | | | | | | | |
+| `public_transport_madrid` | 1 | 547 | 0,40 | 1,39 | 1,25 | 1,06 | 0,97 (AutoETS) |
+| `bicimad_weekly` | 1 | 382 | 0,59 | 0,75 | 0,73 | 0,75 | 0,93 (AutoARIMA) |
+| `h2o_monthly` | 1 | 168 | 0,81 | 0,94 | 0,97 | 0,96 | 0,97 (AutoETS) |
+| `fuel_gasoline_monthly` | 1 | 552 | 0,70 | 1,08 | 0,93 | 0,86 | 0,87 (AutoETS) |
+| `expenditures_australia_monthly` | 1 | 393 | 0,69 | 2,10 | 0,93 | 0,81 | 0,62 (AutoARIMA) |
+| `vic_electricity_daily_past_only` | 1 | 927 | 0,61 | 0,79 | 0,83 | n/a | n/a |
+| `bike_sharing_hourly_past_only` | 1 | 8928 | 0,68 | 0,86 | 0,78 | n/a | n/a |
+| `ett_hourly_past_only` | 1 | 8928 | 0,65 | 0,61 | 0,62 | n/a | n/a |
+| *Una serie, variables conocidas a futuro* | | | | | | | |
+| `vic_electricity_daily` | 1 | 927 | 0,49 | 0,38 | 0,39 | 0,43 | 1,18 (AutoETS) |
+| `bike_sharing_daily` | 1 | 563 | 0,69 | 0,78 | 0,68 | 0,65 | 0,81 (AutoETS) |
+| `bike_sharing_hourly` | 1 | 8928 | 0,63 | 0,71 | 0,69 | 0,65 | n/a |
+| *Varias series* | | | | | | | |
+| `store_sales_50_items` | 50 | 1602 | 0,66 | 0,71 | 0,70 | 0,66 | n/a |
+| `bdg2_buildings_energy` | 40 | 563 | 0,80 | 0,92 | 0,90 | 0,89 | n/a |
+| `m4_hourly_50_series` | 50 | 816 | 0,61 | 0,76 | 0,50 | 0,40 | n/a |
+| `australia_tourism_quarterly` | 304 | 68 | 0,87 | 0,98 | 0,93 | 0,89 | n/a |
 
-### 4.3 Resultados con toda la historia (MASE relativo al naive estacional)
+Clasificación (`vic_electricity_classification`): clasificador LightGBM reentrenado, accuracy
+0,897 y balanced accuracy 0,739; "misma hora ayer", 0,836 y 0,752.
 
-| Caso | Series | Variables | Historia | Chronos-2 | LightGBM | Mejor ML (variante) | Mejor estadístico | Tiempo Chronos-2 / LightGBM (s) |
-|:--|--:|:--|--:|--:|--:|:--|:--|--:|
-| `vic_electricity_daily` | 1 | a futuro | 927 | 0.49 | 0.38 | 0.38 (LightGBM) | 1.18 (AutoETS) | 1.1 / 0.2 |
-| `bike_sharing_daily` | 1 | a futuro | 563 | 0.69 | 0.78 | 0.74 (Ridge diff) | 0.80 (AutoETS) | 0.6 / 0.2 |
-| `bike_sharing_hourly` | 1 | a futuro | 8928 | 0.63 | 0.71 | 0.71 (LightGBM) | n/a | 12.1 / 0.4 |
-| `public_transport_madrid` | 1 | ninguna | 547 | 0.40 | 1.39 | 1.07 (Ridge diff) | 0.98 (AutoETS) | 0.5 / 0.2 |
-| `bicimad_weekly` | 1 | ninguna | 382 | 0.59 | 0.75 | 0.69 (LightGBM diff) | 1.05 (AutoETS) | 0.5 / 0.2 |
-| `h2o_monthly` | 1 | ninguna | 168 | 0.81 | 0.94 | 0.94 (LightGBM) | 0.97 (AutoETS) | 0.4 / 0.1 |
-| `fuel_gasoline_monthly` | 1 | ninguna | 552 | 0.70 | 1.08 | 0.85 (Ridge diff) | 0.87 (AutoETS) | 0.4 / 0.1 |
-| `expenditures_australia_monthly` | 1 | ninguna | 393 | 0.69 | 2.10 | 0.78 (LightGBM diff) | 0.62 (AutoARIMA) | 0.4 / 0.1 |
-| `vic_electricity_daily_past_only` | 1 | solo hasta hoy | 927 | 0.61 | 0.79 | 0.78 (DirectMultiVariate) | n/a | 0.5 / 0.1 |
-| `bike_sharing_hourly_past_only` | 1 | solo hasta hoy | 8928 | 0.68 | 0.86 | 0.80 (DirectMultiVariate) | n/a | 3.8 / 0.4 |
-| `ett_hourly_past_only` | 1 | solo hasta hoy | 8928 | 0.65 | 0.61 | 0.61 (LightGBM sin exog) | n/a | 3.2 / 0.6 |
-| `store_sales_50_items` | 50 | ninguna | 1602 | 0.66 | 0.71 | 0.71 (LightGBM) | n/a | 9.6 / 0.9 |
-| `bdg2_buildings_energy` | 40 | a futuro | 563 | 0.80 | 0.92 | 0.92 (LightGBM) | n/a | 4.4 / 0.5 |
-| `m4_hourly_50_series` | 50 | ninguna | 816 | 0.61 | 0.76 | 0.46 (LightGBM diff) | n/a | 5.3 / 0.5 |
-| `australia_tourism_quarterly` | 304 | ninguna | 68 | 0.87 | 0.98 | 0.84 (LightGBM diff) | n/a | 2.4 / 1.2 |
+### 4.3 Cifras por tipo de datos (todas las historias; `recount.py`)
 
-Clasificación (`vic_electricity_classification`): clasificador LightGBM, accuracy 0,874 y
-balanced accuracy 0,736; "misma hora ayer", 0,836 y 0,752; "misma hora la semana anterior",
-0,747 y 0,565; clase más frecuente, 0,649 y 0,333.
+| Tipo de datos | Ejecuciones (datasets) | LightGBM menor que Chronos-2 | LightGBM peor que el naive | Chronos-2 peor que el naive | Mediana Chronos-2 / LightGBM |
+|:--|--:|--:|--:|--:|:--|
+| Una serie, nada conocido a futuro | 22 (8) | 3 | 11 | 1 | 0,69 / 1,00 |
+| Una serie, variables conocidas a futuro | 11 (2) | 9 | 0 | 0 | 0,67 / 0,66 |
+| Varias series | 8 (4) | 3 | 0 | 0 | 0,79 / 0,82 |
+| Total | 41 (12) | 15 | 11 | 1 | 0,69 / 0,91 |
 
-Las tablas con cada modelo y cada historia salen de `summarize.py`.
+- Por dataset: Chronos-2 por delante de LightGBM en 8 de 12 (10 de 12 con toda la
+  historia); mejora al naive en 12 de 12, y LightGBM, en 9.
+- Estadísticos en mensual (12 ejecuciones, 3 datasets): menos error que Chronos-2 en 6 y que
+  LightGBM en 12; AutoETS nunca quedó peor que el naive. En diario (13 ejecuciones), AutoETS
+  no ganó nunca a Chronos-2. En semanal, `Ets(m=52)` no es estacional.
+- Controles (detalle en `REVISION.md`): Chronos-2 synth mejora al naive en 15 de 15 y a
+  LightGBM en 10 de 15; el modelo base no mejora al small de forma consistente (8 de 15);
+  un horizonte 4 veces más corto no cambia el orden (9 de 12 en los dos); `LightGBM+` no
+  cambia el orden (Chronos-2 gana en 27 de 38); en `bdg2`, Chronos-2 gana en los 9 sitios o
+  muestras probados.
+- Variables solo hasta hoy (3 casos, 3 tamaños de Chronos-2): de un 14 % menos de error a un
+  4 % más. No hay regla.
 
-### 4.4 Cifras globales (todas las historias; `evidence.py`)
-
-- **Una serie** (33 ejecuciones): Chronos-2 tuvo menos error que LightGBM en 26 y que la
-  mejor variante de ML en 26; mejoró al naive en 32. LightGBM por defecto mejoró al naive en
-  18. Mediana del MASE relativo: Chronos-2 0,68, LightGBM 0,94, mejor ML 0,86. Mediana del
-  tiempo: 0,5 s y 0,1 s.
-- **Varias series** (8 ejecuciones): Chronos-2 ganó a LightGBM por defecto en 7 y a la mejor
-  variante de ML en 5; Chronos-2 mejoró al naive en las 8 y LightGBM por defecto, en 6. LightGBM fue
-  de 2 a 11 veces más rápido (mediana 0,5 s frente a 3,5 s).
-- **En total** (41 ejecuciones): Chronos-2 mejoró al naive en 40 (falla en `bicimad` con 2
-  años de datos semanales); LightGBM por defecto, en 24.
-- **Semanal, mensual y trimestral de una serie** (15 ejecuciones): AutoETS o AutoARIMA ganaron
-  a Chronos-2 en 8 y a LightGBM por defecto en 12. En los 3 casos diarios con estadísticos
-  quedaron por detrás de Chronos-2.
-- **Variables solo hasta hoy**: Chronos-2 con ellas, 0,619, 0,700 y 0,647; sin ellas, 0,606,
-  0,683 y 0,646. `ForecasterDirectMultiVariate` con esas series como predictores mejoró algo a
-  LightGBM sin variables en 2 de 3 casos (0,778 frente a 0,793; 0,797 frente a 0,856), empeoró
-  en el tercero (0,732 frente a 0,606) y nunca superó a Chronos-2 sin variables.
-- **Historia**: solo en `vic_electricity` invierte el orden de forma consistente (LightGBM
-  gana a partir de 6 meses y claramente desde un año; pierde con 3 meses). En `store_sales`
-  alterna sin patrón; en el resto no cambia.
-
-### 4.5 Qué decide cada pregunta
+### 4.4 Qué decide cada pregunta
 
 | Pregunta | Resultado medido | Decisión |
 |:--|:--|:--|
-| Qué te importa más | Chronos-2 más preciso en la mayoría; LightGBM de 2 a 11 veces más rápido con varias series y único con importancias | Se queda y decide el orden |
-| Cuántas series | No cambia el ganador con la configuración por defecto | Se queda: cambia la clase, el baseline (uno por serie) y el aviso de coste |
-| Cuánta historia | No invierte el orden salvo en un caso | **Se elimina**; el resultado avisa de que ML necesita más historia |
-| Cada cuánto se registran | Estadísticos competitivos en semanal, mensual y trimestral; no en diario | **Pregunta nueva**: lags, calendario, horizonte, baseline y AutoETS en baja frecuencia |
-| Qué más sabes, a futuro | LightGBM gana en `vic_electricity`; Chronos-2 en `bike_sharing` (2) y `bdg2` | Se queda: añade `exog` a los dos candidatos, no cambia el orden |
-| Qué más sabes, solo hasta hoy | No mejoran ningún modelo | Se queda la opción, pero el resultado dice que empiece sin ellas |
-| Qué quieres predecir | El clasificador gana en accuracy y empata en balanced accuracy con "misma hora ayer" | Se queda: clasificador + regla estacional como baseline |
+| Qué quieres predecir | Solo el clasificador predice categorías; no supera a "misma hora ayer" en balanced accuracy (1 dataset) | Se queda, por capacidad |
+| Cuántas series | Con varias series no hay favorito claro | Se queda: cambia la clase, el baseline y **el mensaje** |
+| Cada cuánto se registran | AutoETS empata con Chronos-2 en mensual y no sirve en diario ni semanal | Se queda: constantes del código y referencia estadística en mensual y trimestral |
+| Qué más sabes, a futuro | Con variables conocidas a futuro, LightGBM alcanza o supera a Chronos-2 (2 datasets) | Se queda: añade `exog` y **cambia el mensaje** |
+| Qué más sabes, solo hasta hoy | Sin ganancia consistente | Se funde con "No", con una nota |
+| Qué te importa más | No ordena por precisión; el coste de producción no está medido; la explicabilidad es una capacidad | Se quita (decisión D3) |
+| Cuánta historia | No cambia el orden dentro de cada tipo de datos | Sin pregunta |
+| Qué horizonte | No cambia el orden | Sin pregunta |
 
-### 4.6 Límites
+### 4.5 Límites
 
-- Una configuración por modelo, sin ajuste: un LightGBM con variables de dominio y ajuste
-  puede ganar en un dataset concreto.
-- Datasets públicos: pueden estar en el preentrenamiento de Chronos-2 y favorecerlo.
-- Solo Chronos-2 small, en CPU. Los otros 10 modelos fundacionales no están medidos.
-- ML tiene cuatro variantes por caso y Chronos-2 una: "frente a la mejor variante de ML"
-  favorece a ML.
-- Las fechas de `m4_hourly` son artificiales; se alinearon en un índice común y ese caso no
-  usa variables de calendario.
-- Diferencias de pocas centésimas no son significativas.
+- Pocos datasets por tipo: 8, 2 y 4. La regla con variables conocidas a futuro es la más
+  débil, y sus variables son valores observados, no pronósticos.
+- Una configuración por modelo, sin ajuste: no dice cuánto se acerca un LightGBM trabajado.
+- Chronos-2 en CPU; el coste de producción no está medido.
+- AutoETS y AutoARIMA medidos con `freeze_params=True` (`BUG-ets-freeze-params`).
+- Diferencias de pocas centésimas no son significativas: en varios casos Chronos-2 gana la
+  mitad de los bloques.
 
-## 5. Revisión de la base
+## 5. Correcciones de la base
 
 Hallazgos sobre `skills/choosing-a-forecaster/SKILL.md` (S), `tools/ai/llms-base.txt` (L) y
-las skills relacionadas, verificados contra el código (C) y contra el estudio (E). Por
-gravedad. Las líneas son las del 2026-11-27.
+relacionados, verificados contra el código el 2026-11-27 (`REVISION.md` H11).
 
-| # | Dónde | Qué está mal | Base | Corrección |
-|--:|:--|:--|:--|:--|
-| 1 | S:50, 60, 74, 84, 92-93; L:720 | Fundacionales solo para "zero-shot / no training data / cold-start", fuera del árbol; "START HERE" en `ForecasterRecursive` y "Start simple: Begin with ForecasterRecursive" | C, E | "Two candidates and a baseline": Chronos-2 y LightGBM siempre, ordenados por prioridad |
-| 2 | S:170, 74 | "LightGBM is the best starting point": por defecto quedó peor que el naive en 17 de 38 ejecuciones (mensuales con tendencia, diarios sin variables) | E | Candidato fuerte con buenas variables; comprobar contra el baseline; `differentiation=1` si hay tendencia |
-| 3 | S:49, 130; `statistical-models/SKILL.md:15` | "Short series (< 200 obs) → statistical": lo que decide es la frecuencia, no la longitud | E | En semanal, mensual y trimestral sin variables, AutoETS o AutoARIMA como referencia; quitar el umbral |
-| 4 | S:29, 50, 60, 93 | 11 modelos fundacionales sin distinguir licencias; 5 restringen el uso comercial (`commercial_use_restricted=True`: TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL, Timestral) | C | Recomendar `autogluon/chronos-2-small` y avisar del resto |
-| 5 | S:146 | No distingue variables conocidas a futuro de las conocidas solo hasta hoy; medido, las segundas no ayudan | C, E | "ML needs the future values of `exog`; variables known only up to today rarely help, start without them" |
-| 6 | S:36-41, 58, 69 | El paso 1 mezcla número de series y tipo de objetivo; DirectMultiVariate dos veces; varias series categóricas sin hoja (`ForecasterRecursiveClassifier` es `single-series`) | C | Primera pregunta: tipo de objetivo; un clasificador por serie |
-| 7 | S:77-79, 176; `baseline-forecasting` | Sin baseline para varias series (EquivalentDate y Stats solo aceptan `pandas.Series`) ni para clasificación | C, E | Bucle por serie y regla estacional (`y.shift(periodo)`), como en los fragmentos |
-| 8 | S:59-60, 89-93 | RNN antes que Foundation, contra la regla "Foundation before RNN" de `.claude/rules/docs.md` | C | Foundation dentro y antes; RNN como nota |
-| 9 | S:151-157 | Matriz: `ForecasterStats` sin intervalos ni importancias (tiene `predict_interval` y `get_feature_importances`); Foundation sin `predict_interval`; falta la fila de valores ausentes | C | Añadir filas o generar la matriz desde `get_tags()` |
-| 10 | S:176 | `Arima(order=None)` sin `m`: con `m=1`, `auto_arima` no busca términos estacionales | C | `Arima(order=None, seasonal_order=None, m=periodo)`; `estimator=[Arima(...), Ets(...)]` |
-| 11 | `statistical-models/SKILL.md:24` | Cita un argumento `interval_method` que no existe en `ForecasterStats` ni en `backtesting_stats` | C | "via `interval` or `alpha`" |
-| 12 | S:123, 147 | "Per-series differentiation" en DirectMultiVariate: solo acepta `int` | C | "Same order for all series" |
-| 13 | S:48, 73; L:67-81; `introduction-forecasting.md:162-183`; `home.html:189` | Jerga ("Does the forecast relationship change across the horizon?") y cinco fuentes distintas para la misma decisión; skforecast-ai tiene su propio motor de reglas (no revisado) | C | Una fuente que genere la skill y el test |
-| 14 | S:171, 175, 50 | Calendario como exógena manual (existe `calendar_features`); intervalos con residuos in-sample; "no training data" | C | Corregir redacción |
-
-## 6. Diseño del test (fase 1)
-
-### 6.1 Preguntas
-
-En el orden de crear un forecaster: objetivo, forma de los datos, frecuencia, exógenas y,
-al final, la elección del modelo.
-
-| # | Question | Options (hint) | Shown if |
+| # | Dónde | Qué está mal | Corrección |
 |--:|:--|:--|:--|
-| 1 | What do you want to forecast? | **A number** (sales, energy demand, website visits, temperature) · **A category** (low, medium or high demand; failure or no failure) | Always |
-| 2 | How many time series do you want to forecast? *A time series is one column of values recorded over time, such as the daily sales of one store.* | **One** (the total sales of a company) · **Several** (the sales of each store or each product) | A number |
-| 3 | How often are the values recorded? | Every hour (or more often) · Every day · Every week · Every month · Every quarter (or every year) | Always |
-| 4 | Do you know other things that affect the values? *In skforecast these are called exogenous variables.* | **Yes, and I know their future values** (holidays, planned promotions, prices, weather forecasts) · **Yes, but only up to today** (sensor readings, measured weather, sales of other products) · **No, only the dates** | Always |
-| 5 | What matters most to you? | **The most accurate forecast** · **Speed and low cost** (many series, frequent forecasts, no GPU) · **Understanding what drives the forecast** (which variables matter and how much) | A number |
+| 1 | S:50, 60, 74, 84, 92-93; L:724 | Fundacionales solo para "zero-shot / no training data / cold-start", fuera del árbol; "START HERE" en `ForecasterRecursive`; "Start simple: Begin with ForecasterRecursive" | Las reglas de 6.2: dos candidatos y un baseline, con el mensaje según el tipo de datos |
+| 2 | S:170, 74 | "LightGBM is the best starting point" | "LightGBM is the ML candidate; with a single series and no variables known in advance it did worse than the seasonal naive in 11 of 22 runs: always compare it with the baseline" |
+| 3 | S:49, 130; `statistical-models/SKILL.md:15` | "Short series (< 200 obs) → statistical" | "For a monthly series without extra variables, AutoETS is hard to beat as a reference"; quitar el umbral; no extenderlo a semanal ni diario |
+| 4 | S:29, 50, 60, 93 | 11 modelos fundacionales sin distinguir licencias; 5 restringen el uso comercial (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL, Timestral) | Recomendar `autogluon/chronos-2-small` y avisar del resto |
+| 5 | S:146 | No distingue variables conocidas a futuro de las conocidas solo hasta hoy | "ML needs the future values of `exog`. Chronos-2 also accepts variables known only up to today; in our tests they gave no consistent gain" |
+| 6 | S:36-41, 58, 69 | El paso 1 mezcla número de series y tipo de objetivo; DirectMultiVariate dos veces; varias series categóricas sin hoja | Primera pregunta: tipo de objetivo; un clasificador por serie |
+| 7 | S:77-79, 176; `baseline-forecasting` | Sin baseline para varias series ni para clasificación | Bucle por serie y regla estacional (`y.shift(periodo)`) |
+| 8 | S:59-60, 89-93 | RNN antes que Foundation | Foundation dentro y antes; RNN como nota |
+| 9 | S:151-157 | Matriz: Stats sin intervalos paramétricos ni importancias; Foundation sin `predict_interval`; **el clasificador sin importancias**; faltan las filas de valores ausentes y de `calendar_features` | Corregir a mano. Generarla desde `get_tags()` no es posible: Stats y Foundation no lo tienen |
+| 10 | S:176 | `Arima(order=None)` sin `m`: no busca términos estacionales | `Arima(order=None, seasonal_order=None, m=periodo)` |
+| 11 | `statistical-models/SKILL.md:24` | Cita `interval_method`, que no existe en Stats | "via `interval` or `alpha`" |
+| 12 | S:123, 147 | "Per-series differentiation" en DirectMultiVariate: solo acepta `int` | "Same order for all series" |
+| 13 | S:48, 73; L:67-81; `docs/introduction-forecasting/introduction-forecasting.md:168-184`; `home.html:189` | Jerga y cinco fuentes para la misma decisión | Una fuente que genere la skill y la página |
+| 14 | S:171, 175, 50 | Calendario como exógena manual; intervalos con residuos in-sample; "no training data" | Corregir redacción |
+| 15 | `docs/user_guides/comparing-forecasting-models.ipynb`, "How the models are compared" | "trained once [...] without refitting between folds": AutoARIMA y AutoETS sí se reajustan | Decirlo, o reentrenar también ML y volver a ejecutar la guía |
 
-### 6.2 Reglas (`finder_tree.decide`)
+## 6. Diseño (fases 1 y 2)
 
-- Categoría → `ForecasterRecursiveClassifier` con LightGBM; baseline "la categoría del mismo
-  periodo una estación antes" (`y.shift(periodo)`), con el horizonte igual a la estación.
-- Número:
-  - precisión → 1. Chronos-2, 2. LightGBM;
-  - coste o explicabilidad → 1. LightGBM, 2. Chronos-2 (con explicabilidad, el código añade
-    `get_feature_importances()`);
-  - siempre el naive estacional (uno por serie si son varias);
-  - una serie semanal, mensual o trimestral → además AutoETS como referencia estadística.
-- Las preguntas 2 a 4 cambian el código (clase, lags, calendario, horizonte, `exog`,
-  baseline), no las familias recomendadas. Si un estudio futuro encuentra una regla de datos
-  fiable (por ejemplo, "variables fuertes conocidas a futuro y un año de historia → ML
-  primero"), se añade como pregunta.
+### 6.1 Formato y preguntas
 
-Ajustes por frecuencia de los fragmentos (`finder_tree.FREQ`):
+Un selector de una pantalla, no un test por pasos: cuatro filas de opciones con una
+selección por defecto, y debajo el resultado, que cambia con cada clic. Título del bloque:
+"Build your first comparison"; "Not sure where to start?" queda como gancho en la portada.
 
-| Frecuencia | Horizonte × bloques | Lags | Media móvil | Calendario | Baseline |
-|:--|:--|:--|:--|:--|:--|
-| Hourly | 24 × 8 | `[1, 2, 3, 24, 48, 168]` | 24 | hour, day_of_week | misma hora del día anterior (24) |
-| Daily | 14 × 8 | 14 | 7 | day_of_week, month | mismo día de la semana anterior (7) |
-| Weekly | 8 × 6 | `[1, 2, 3, 4, 52]` | 4 | month | misma semana del año anterior (52) |
-| Monthly | 12 × 3 | 12 | | month | mismo mes del año anterior (12) |
-| Quarterly | 4 × 3 | 4 | | quarter | mismo trimestre del año anterior (4) |
+| # | Row | Options (hint) | Shown if |
+|--:|:--|:--|:--|
+| 1 | What do you want to forecast? | **A number** (sales, energy demand, website visits) · **A category** (low, medium or high demand; failure or no failure) | Always |
+| 2 | How many time series? *A time series is one column of values recorded over time, such as the daily sales of one store.* | **One** · **Several** (each store, each product) | A number |
+| 3 | How often are the values recorded? | Every hour · Every day · Every week · Every month · Every quarter · Something else | Always |
+| 4 | Will you know anything else in advance? *Things that affect the values and that you know for future dates. skforecast calls them exogenous variables.* | **Yes** (holidays, planned promotions, prices, weather forecasts) · **No** (also if you only know them up to today, like sensor readings) | Always |
 
-### 6.3 Pantalla de resultado
+Selección por defecto: un número, una serie, cada día, no.
 
-1. Titular con el orden: "Start with Chronos-2, race it against LightGBM, and compare both
-   with a baseline".
-2. Respuestas como chips editables: cambiar una recalcula el resultado sin repetir el test.
-3. Alineación: primer candidato, segundo, referencia estadística si aplica, baseline, cada uno
-   con su clase de skforecast.
-4. Por qué, con las cifras del estudio que corresponden a esas respuestas.
-5. Ventana de código con el estilo de la portada: barra con tres puntos, `forecast.py`,
-   Ubuntu Mono, la paleta de tokens de `docs/stylesheets/home.css` y el resaltador `hl()` de
-   `docs/javascripts/home.js` (conviene sacarlo a un módulo compartido); botón Copy y la nota
-   "This code runs as is: it is executed on sample data every time the docs are built".
-   Nota de licencias: Chronos-2 es Apache-2.0; otros modelos restringen el uso comercial.
-6. Acciones: "Copy prompt for your AI assistant" (respuestas, plan, enlace a
-   `llms-full.txt` y "ask me for my data first"); "Run it on your own data with
-   skforecast-ai"; guías siguientes según las respuestas; consultoría discreta.
-7. Enlace compartible con las respuestas en el `#` (sin backend).
+### 6.2 Reglas
 
-### 6.4 Ubicación y enlaces
+| Respuestas | Titular | Candidatos | Respaldo que se muestra |
+|:--|:--|:--|:--|
+| Una categoría | "Start with a machine learning classifier and compare it with a simple rule" | `ForecasterRecursiveClassifier` con LightGBM; baseline: la categoría del mismo periodo una estación antes | "On one dataset the classifier was right more often (90% vs 84%) but did not beat the rule on balanced accuracy" |
+| Un número, una serie, No | "Start with Chronos-2, then try to beat it with LightGBM" (decisión D2) | 1. Chronos-2, 2. LightGBM, baseline | "Lower error than LightGBM in 7 of 8 datasets; LightGBM did worse than the baseline in 11 of 22 runs" |
+| Un número, una serie, Sí | "Race LightGBM against Chronos-2" | Los dos con `exog`, baseline | "No clear winner: LightGBM ahead in one dataset, level in the other" |
+| Un número, varias series | "Race Chronos-2 against LightGBM" | `ForecasterRecursiveMultiSeries` y Chronos-2; baseline por serie | "Chronos-2 ahead in 3 of 4 datasets with the full history (2 of 4 over all histories), by small margins" |
+| Además: una serie, mensual o trimestral | "...and keep AutoETS as a statistical reference" | `ForecasterStats(Ets(m=...))` | "On monthly data AutoETS matched Chronos-2 (3 datasets)" |
+| Something else (frecuencia) | Los mismos candidatos | Código con `SEASON` y `STEPS` por editar | Enlace a la guía |
+
+Notas fijas en el resultado (sustituyen a la pregunta de prioridad): "Need to explain the
+forecast? LightGBM gives feature importances; foundation models do not" y "Forecasting many
+series often? Chronos-2 needs PyTorch and, at scale, a GPU". Nota de licencias: Chronos-2 es
+Apache-2.0; otros modelos fundacionales de skforecast restringen el uso comercial.
+
+Las cifras del respaldo se generan de los CSV del estudio, no se escriben a mano.
+
+### 6.3 Requisitos del fragmento
+
+1. **Es lo que se midió**: el bloque de ML del fragmento y el del estudio salen de la misma
+   función. Hoy no es así (`REVISION.md` H3).
+2. `TimeSeriesFold(..., refit=True, fixed_train_size=False)`: todos los modelos usan lo
+   anterior a cada bloque.
+3. **Sin avisos**: CI ejecuta cada fragmento con los avisos como errores (hoy avisan 72 de
+   100).
+4. **Historia mínima razonable y escrita en la página**: debe ejecutarse con 2 semanas de
+   datos horarios, 3 meses de diarios, 2 años de semanales, 3 años de mensuales y 4 años de
+   trimestrales (hoy: 21 días, 150 días, 2 años, 5 años y 5 años).
+5. Constantes por frecuencia (estación, horizonte, lags), con una línea de cabecera: "Example
+   settings so the script runs; they are not tuned" y el enlace a la guía. Sin consejos de
+   configuración en el resultado.
+6. Sin AutoETS en semanal. AutoETS en mensual y trimestral solo cuando esté cerrado
+   `BUG-ets-freeze-params`.
+7. Línea de instalación (`pip install skforecast lightgbm chronos-forecasting`) y aviso de
+   que la primera ejecución descarga los pesos.
+8. Todo lo que se calcula se imprime (hoy `get_feature_importances()` es una expresión
+   suelta).
+9. Con 4 filas quedan 30 fragmentos distintos como mucho (20 de número y 10 de categoría),
+   más los de "Something else".
+
+### 6.4 Pantalla de resultado
+
+1. Titular (6.2) y la alineación: candidatos, referencia estadística si aplica y baseline,
+   cada uno con su clase.
+2. Por qué, con el respaldo de la regla y el enlace a "How we chose these rules".
+3. Ventana de código con el estilo de la portada (`docs/stylesheets/home.css`, resaltador de
+   `docs/javascripts/home.js` como módulo compartido), botón Copy y la nota "This code is run
+   on sample data every time the docs are built".
+4. Acciones: "Copy prompt for your AI assistant" (respuestas, plan, enlace a `llms-full.txt`
+   y "ask me for my data first"); "Compare models on your own data with skforecast-ai" (sin
+   prometer la misma comparación mientras sus reglas difieran: `REVISION.md` H12); guías
+   siguientes; consultoría discreta.
+5. Enlace compartible con las respuestas en el `#`.
+6. Sin JavaScript se ve la página estática completa (tabla de reglas y fragmentos).
+
+### 6.5 Ubicación y enlaces
 
 - Página `docs/user_guides/choose-a-forecaster.md`, primera de *Choosing a model*
-  (`mkdocs.yml:44`), antes de *Comparing forecasting models*, con una sección "How we chose
-  these rules" que resume el estudio.
-- Portada: "Not sure which one to use?" (`docs/overrides/home.html:189`) apunta hoy a la tabla
-  de la introducción; cambiar el destino. Valorar un tercer botón en el hero
-  (`home.html:68-70`).
+  (`mkdocs.yml:44`), antes de *Comparing forecasting models*, con la sección "How we chose
+  these rules".
+- Portada: "Not sure which one to use?" (`docs/overrides/home.html:189`) cambia de destino.
 - Quick start, introducción (bajo la tabla de forecasters) y *AI-assisted forecasting*.
 - Entrada en `tools/docs/hooks/page_meta.yml`.
 
-### 6.5 Fuente única y validación
+### 6.6 Fuente única y validación
 
-- Fuente: `finder_tree.py` pasa a YAML (o se queda en Python) dentro de
-  `skills/choosing-a-forecaster/references/`, para que `llms-full.txt` lleve el mismo árbol a
-  los asistentes.
-- Un hook de MkDocs (como `tools/docs/hooks/examples_grid.py`) incrusta preguntas, reglas y
-  fragmentos en la página; `generate_ai_context_files.py` reescribe la sección de decisión de
-  la skill entre marcadores, y `--check` falla si alguien la edita a mano.
-- En cada PR (`--check`, que corre en PR a `*.x`): todas las combinaciones tienen hoja;
-  clases y parámetros coherentes con `get_tags()`; `get_model_info()` confirma que el
-  fundacional recomendado no restringe el uso comercial; enlaces a páginas del `nav`.
-- Ejecución de los 100 fragmentos (`build.py`, minuto y medio en CPU con Chronos-2): un job
-  propio con PyTorch, separado del de contexto de IA.
-- `benchmark.py`: en cada versión o cuando cambie un forecaster, un adaptador o una regla. Si
-  una regla deja de cumplirse, el test se actualiza con la evidencia nueva.
+- Fuente: un fichero de datos (YAML o JSON) con filas, reglas, constantes por frecuencia y
+  la referencia a las cifras, en `skills/choosing-a-forecaster/references/`, más un módulo
+  de plantillas en `tools/`. `llms-full.txt` lleva el mismo árbol a los asistentes, y
+  skforecast-ai puede leer el fichero.
+- Generación: un hook de MkDocs (como `tools/docs/hooks/examples_grid.py`) incrusta la tabla
+  de reglas, el respaldo y los fragmentos en la página; `generate_ai_context_files.py`
+  reescribe la sección de decisión de la skill entre marcadores, y `--check` falla si alguien
+  la edita a mano.
+- En cada PR (`--check`): todas las combinaciones tienen hoja; cada clase y cada argumento
+  de los fragmentos existe (import y firma; `get_tags()` no sirve para Stats ni Foundation);
+  `get_model_info()` confirma que el fundacional no restringe el uso comercial; los enlaces
+  son páginas del `nav`.
+- Ejecución de los fragmentos: workflow propio con PyTorch y `chronos-forecasting`, lanzado
+  solo cuando cambian la fuente, las plantillas o `skforecast/foundation/` (filtro de
+  rutas) y antes de cada publicación. Avisos como errores e historia mínima de 6.3.
+- Estudio: se vuelve a ejecutar en cada versión menor y cuando cambie la versión de
+  `chronos-forecasting` o de LightGBM. Si una cifra del respaldo cambia, la página cambia
+  con ella; si una regla deja de cumplirse (el candidato que va primero deja de ganar en la
+  mayoría de los datasets de su tipo), se rebaja a "sin favorito" en esa misma PR.
 
-### 6.6 Qué medir
+### 6.7 Qué medir
 
 Eventos con consentimiento (`__md_get("__consent")?.analytics`), solo identificadores
-cerrados: `finder_start`, `finder_answer {q, a}`, `finder_result {leaf}`,
-`finder_copy {kind}`, `finder_cta {target}`; widget de feedback de Material; UTM en los
-enlaces salientes.
+cerrados: `finder_change {row, option}`, `finder_copy {kind}`, `finder_cta {target}`; widget
+de feedback de Material en la página; UTM en los enlaces salientes.
 
-| Pregunta | Señal | Umbral orientativo |
+Antes de publicar, anotar las visitas de 4 semanas de *Comparing forecasting models* y de la
+tabla de la introducción: son la referencia. Sin ella no hay umbrales.
+
+| Pregunta | Señal | Criterio a las 8 semanas |
 |:--|:--|:--|
-| ¿Lo terminan? | inicio → resultado; abandono por pregunta | más del 60 % |
-| ¿Les sirve? | copias de código y prompt, clics en guías | 1 de cada 3 resultados |
-| ¿Convierte? | clics a skforecast-ai, Studio, consultoría | frente a los mismos enlaces de la portada |
-| ¿Acierta? | "Was this useful?" y distribución de hojas | una hoja con más del 50 % indica una pregunta que no discrimina |
+| ¿Llegan? | Visitas de la página | Al menos las de la tabla de la introducción a la que sustituye como destino |
+| ¿Les sirve? | Copias de código o de prompt por visita | 1 de cada 5 visitas |
+| ¿Convierte? | Clics a skforecast-ai, Studio y consultoría | Más que los mismos enlaces en la portada, por visita |
+| ¿Acierta? | "Was this useful?" | Mayoría de respuestas positivas; revisar los comentarios |
 
-### 6.7 Riesgos
+### 6.8 Riesgos
 
-- Autoridad prestada: dos candidatos + baseline y las cifras a la vista.
-- Evidencia que caduca: validación periódica con `benchmark.py`.
-- Datasets públicos que favorecen a los fundacionales.
-- Chronos-2 en producción: PyTorch y GPU recomendada a escala; el resultado lo dice.
-- Divergencia con las reglas de skforecast-ai.
+- Reglas con pocos datasets: cada regla con su respaldo a la vista y "no clear winner" donde
+  lo hay; ampliar el estudio (decisión D4).
+- Evidencia que caduca: 6.6, con criterio de rebaja.
+- Primera ejecución decepcionante de ML: requisitos 1 a 3 de 6.3.
+- Dependencia de PyTorch para Chronos-2: el fragmento lo dice; el workflow de CI es aparte.
+- Divergencia con skforecast-ai: fuente legible por máquina e incidencia en su repositorio.
+- Coste de mantenimiento del JavaScript: sin dependencias, y la página funciona sin él.
 
-## 7. Plan por fases
+## 7. Plan de desarrollo
 
-### Fase 0: corregir la base (independiente del test)
+### 7.1 Decisiones cerradas
 
-- Corregir `skills/choosing-a-forecaster/SKILL.md` con los hallazgos 1 a 14, citando el
-  estudio; `skills/statistical-models/SKILL.md:15` y `:24`; el consejo 6 de
-  `tools/ai/llms-base.txt` ("Start with two candidates and a baseline").
-- Añadir a `baseline-forecasting` el baseline por serie y el de clasificación.
-- Llevar `benchmark/` a `benchmarks/forecaster_finder/` con sus requisitos fijados (las
-  cifras de la skill deben ser reproducibles).
-- Cierre: skill y `llms-base.txt` regenerados (`ai-context-sync`), `verify` en verde, nota en
+1. Alineación: Chronos-2 small y LightGBM más un baseline estacional; clasificador más regla
+   estacional para categorías. Solo se nombra Chronos-2 (único medido y Apache-2.0).
+2. El mensaje depende del tipo de datos (6.2), no de la prioridad del usuario.
+3. Cuatro filas. Sin preguntas de historia ni de horizonte. "Solo hasta hoy" se funde con
+   "No".
+4. AutoETS como referencia solo en mensual y trimestral de una serie.
+5. Estudio de referencia: el de protocolo justo. Cifras por dataset, nunca "frente a la mejor
+   variante de ML".
+6. Requisitos del fragmento de 6.3.
+7. Página estática primero; el bloque interactivo se monta encima y la página funciona sin
+   JavaScript.
+8. El estudio vive en `benchmarks/forecaster_finder/`, con requisitos fijados, desde la fase
+   0; esta carpeta de `dev/` se borra al cerrar la última fila.
+9. Analítica: GA4 con el consentimiento que ya existe. Sin migración.
+10. Fase probabilística: una fila opcional, no una extensión con tres preguntas (sección 8).
+
+### 7.2 Decisiones que necesitan respuesta
+
+| ID | Decisión | Opciones | Recomendación |
+|:--|:--|:--|:--|
+| D1 | Formato del bloque interactivo | (a) selector de una pantalla; (b) test por pasos con resultado al final; (c) solo la página estática | (a). Es el formato honrado cuando 3 de 4 respuestas cambian sobre todo el código, da valor desde el primer clic y se puede reutilizar en la portada. (c) es el mínimo: se hace igualmente como fase 1 |
+| D2 | Titular con una serie y nada conocido a futuro | (a) "Start with Chronos-2, then try to beat it with LightGBM"; (b) "Race Chronos-2 against LightGBM", como en el resto | (a). Es la única regla fuerte (7 de 8 datasets, y el control sintético descarta la contaminación). (b) es más cómodo para el posicionamiento "machine learning-first", pero esconde lo que más ayuda a quien empieza |
+| D3 | Pregunta "What matters most to you?" | (a) quitarla y dejar dos notas fijas; (b) mantenerla como quinta fila que reordena y añade importancias | (a). No cambia ninguna recomendación medida |
+| D4 | Ampliar el estudio antes de publicar cifras | (a) añadir datasets hasta 6 o más por tipo de datos, con variables a futuro como pronósticos donde se pueda (`h2o_exog`, `m5`, `ashrae_daily`, `bdg2_hourly`, `m4_daily`, `items_sales`, `website_visits`, `uk_daily_flights`, `air_quality_valencia`); (b) publicar con los 12 datasets y los avisos | (a), dentro de la fase 0: de 1 a 2 días más |
+| D5 | Nivel de `BUG-ets-freeze-params` | P1 (resultado erróneo sin aviso con la configuración por defecto de `backtesting_stats` y AutoETS) u otro | P1. Bloquea el fragmento con AutoETS, no el resto |
+
+### 7.3 Fases
+
+**Fase 0. Estudio de referencia y base** (`DOC-choosing-forecaster-evidence`, P2)
+
+- Entregables:
+  1. `benchmarks/forecaster_finder/`: un solo script con el protocolo justo (sale de
+     `review.py` y `recount.py`), requisitos fijados, los CSV y un README. Con D4 (a), los
+     datasets nuevos.
+  2. Correcciones 1 a 15 de la sección 5 en `skills/choosing-a-forecaster/SKILL.md`,
+     `skills/statistical-models/SKILL.md`, `skills/baseline-forecasting/SKILL.md` (baseline
+     por serie y de clasificación), el consejo 6 de `tools/ai/llms-base.txt` y la frase de
+     *Comparing forecasting models*.
+  3. Incidencia en skforecast-ai con H1, H4 y H12 de `REVISION.md`.
+- Terminado cuando: las cifras de la skill coinciden con los CSV y son por dataset; `python
+  tools/ai/generate_ai_context_files.py --check` y `verify` en verde; nota en
   `docs/releases/releases.md`.
+- Esfuerzo: M (3 a 4 días; 5 con D4 (a)).
+- No requiere los fallos de Ets: la skill puede citar AutoETS en mensual con el aviso.
 
-### Fase 1: test de elección de forecaster
+**Fase 1. Fuente única y página estática** (`FEAT-forecaster-finder`, P3, parte 1)
 
-1. **Fuente única y validación** (6.5): reglas, plantillas, checks en `--check` y job de
-   ejecución de fragmentos.
-2. **Página estática** `choose-a-forecaster`: diagrama y tabla de reglas generados de la
-   fuente, sección "How we chose these rules", enlaces (6.4). Útil por sí sola, indexable.
-3. **Capa interactiva** sobre la misma página: preguntas, resultado (6.3), copiar código y
-   prompt, enlace compartible. JavaScript propio sin dependencias; el resaltador de
-   `home.js` como módulo compartido.
-4. **Medición** (6.6) y revisión a las 8 semanas: si no supera los umbrales, se queda la
-   página estática.
+- Entregables: fichero de reglas y módulo de plantillas (6.6); página
+  `choose-a-forecaster` con la tabla de reglas, el respaldo generado, un fragmento por
+  combinación representativa (una serie y varias, con y sin `exog`, categoría) con la tabla
+  de constantes por frecuencia, y "How we chose these rules"; sección de la skill generada
+  entre marcadores; enlaces de 6.5; workflow de ejecución de fragmentos; widget de feedback.
+- Terminado cuando: página, skill y `llms-full.txt` salen de la misma fuente y `--check` lo
+  comprueba; todos los fragmentos pasan con avisos como errores y con la historia mínima de
+  6.3; la página se lee completa sin JavaScript; `verify` en verde y nota de versión.
+- Esfuerzo: M (4 a 5 días).
+- Requiere: fase 0. Para el fragmento con AutoETS, `BUG-ets-freeze-params`.
 
-### Fase 2 del test: probabilistic (más adelante)
+**Fase 2. Bloque interactivo** (`FEAT-forecaster-finder`, parte 2; según D1)
 
-Ver la sección 8. Empieza cuando la fase 1 esté publicada y su medición diga que se usa.
+- Entregables: selector de 4 filas sobre la misma página (JavaScript propio, sin
+  dependencias, datos generados por el hook), ventana de código, copiar código y prompt,
+  enlace compartible, eventos con consentimiento, UTM, y el bloque enlazado desde la portada.
+- Terminado cuando: cada combinación muestra exactamente el fragmento que ejecuta CI; se
+  maneja con teclado y lector de pantalla (grupos de opciones con `role="radiogroup"`); sin
+  consentimiento no se envía ningún evento; funciona en móvil (360 px) y en los dos temas.
+- Esfuerzo: M (3 a 5 días).
+- Requiere: fase 1.
 
-### Después
+**Fase 3. Medición y decisión** (`FEAT-forecaster-finder`, parte 3)
 
-Otros tests con el mismo mecanismo, si la medición lo justifica: métrica de evaluación
-(`metric-selection` ya tiene un árbol) y configuración del backtesting (depende mucho del
-caso; dudoso).
+- Entregables: referencia de visitas previa (6.7) y una nota a las 8 semanas con las cuatro
+  señales y la decisión: mantener, simplificar a la página estática o ampliar.
+- Terminado cuando: la decisión está escrita en el roadmap.
+- Esfuerzo: S.
 
-## 8. Fase 2 del test: probabilistic (más adelante)
+**Fase 4. Fila de incertidumbre** (`FEAT-finder-probabilistic`, P4)
+
+- Sección 8. Requiere la fase 3 con decisión de mantener.
+- Esfuerzo: M (estudio, 2 a 3 días; fila y fragmentos, 2 días).
+
+Orden y dependencias: fallos de Ets (aparte, P1 y P2) → fase 0 → fase 1 → fase 2 → fase 3 →
+fase 4. La fase 0 tiene valor aunque no se haga nada más: hoy la skill dice a los asistentes
+que empiecen por `ForecasterRecursive` con LightGBM y reserva los fundacionales para "sin
+datos".
+
+## 8. Fase 4: fila de incertidumbre (más adelante)
 
 ### 8.1 Qué es
 
-Una extensión que se **activa** desde el resultado de la fase 1 para elegir el método
-probabilístico (intervalos, cuantiles o escenarios) y añadirlo al código. No cambia nada de
-la fase 1 si no se activa.
+Una quinta fila opcional del selector, no una extensión con preguntas propias:
 
-- **En la página**: en el resultado aparece un bloque "Also estimate the uncertainty?" con un
-  botón; al pulsarlo se abren 2 o 3 preguntas en el mismo resultado, y la alineación, el
-  código y el prompt se amplían con el método elegido. Las respuestas van también al `#`
-  (`#finder-...-p-...`), así que el enlace compartido conserva la extensión.
-- **En la fuente**: un módulo propio (`probabilistic` dentro de la fuente única) con sus
-  preguntas, reglas y plantillas, y un interruptor (`PROBABILISTIC_ENABLED`) para publicarlo
-  cuando esté medido. `build.py` genera y ejecuta también sus combinaciones.
-- **Depende de la fase 1**: el método disponible depende del forecaster recomendado.
+| Row | Options (hint) |
+|:--|:--|
+| Do you also need the uncertainty of the forecast? | **No** · **A range** (a low and a high value for each date) · **Several percentiles** (10%, 50%, 90%, for stock or capacity planning) · **Totals or the chance of an event** (next week's total, the chance of running out) |
+
+Con "No" (por defecto) nada cambia. Las otras opciones añaden al código el método que
+corresponde a cada candidato y el backtest con cobertura y anchura.
 
 ### 8.2 Lo que hay en skforecast (verificado en el código el 2026-11-27)
 
 | Forecaster | Métodos | Salidas |
 |:--|:--|:--|
-| Recursive, Direct, RecursiveMultiSeries, DirectMultiVariate | `'bootstrapping'` y `'conformal'` (etiqueta `probabilistic_methods`); residuos in-sample (`store_in_sample_residuals` en `fit`) u out-of-sample (`set_out_sample_residuals(y_true, y_pred)`); `use_binned_residuals=True` por defecto | `predict_interval`, `predict_quantiles`, `predict_dist`, `predict_bootstrapping` (trayectorias) |
-| Foundation | Cuantiles nativos del modelo (Chronos-2: cualquier nivel; otros, un conjunto fijo) | `predict_interval`, `predict_quantiles`; **sin** trayectorias (`predict_bootstrapping` no existe) |
-| Stats | Paramétrico del modelo (`interval` o `alpha`) | `predict_interval` |
+| Recursive, Direct, RecursiveMultiSeries, DirectMultiVariate | `'bootstrapping'` y `'conformal'`; residuos in-sample u out-of-sample (`set_out_sample_residuals`); `use_binned_residuals=True` por defecto | `predict_interval`, `predict_quantiles`, `predict_dist`, `predict_bootstrapping` (trayectorias) |
+| Foundation | Cuantiles nativos (Chronos-2: cualquier nivel) | `predict_interval`, `predict_quantiles`; **sin** trayectorias. En `backtesting_foundation`, argumento `quantiles` |
+| Stats | Paramétrico (`interval` o `alpha`) | `predict_interval` |
 | EquivalentDate, Rnn | Solo `'conformal'` | `predict_interval` |
 | RecursiveClassifier | Probabilidades de clase | `predict_proba` |
-| Cualquiera | Regresión cuantil (un `ForecasterDirect` por cuantil con `objective='quantile'`, guía `probabilistic-forecasting-quantile-regression`) y recalibración con `ConformalIntervalCalibrator` | Cuantiles; intervalo recalibrado |
-
-Backtesting: `interval` acepta una cobertura (`0.8`), una lista de cuantiles,
-`'bootstrapping'` (trayectorias) o una distribución de `scipy.stats`; con un intervalo,
-`metric` devuelve `coverage` e `interval_width`. Métricas: `calculate_coverage`,
-`crps_from_predictions`, `crps_from_quantiles`, `create_mean_pinball_loss`, `winkler_score`,
-`weighted_interval_score`.
 
 Lo que ya mide la documentación (`docs/user_guides/probabilistic-forecasting-overview.md`):
+intervalo del 80 % con residuos in-sample, cobertura de alrededor del 61 %; bootstrapping en
+modelos globales, del 96 % al 98 %; conformal, alrededor del 84 %; bootstrapping con 300
+series, unas 35 veces más lento que conformal.
 
-- intervalo nominal del 80 % con residuos in-sample: cobertura empírica de alrededor del 61 %;
-- bootstrapping en modelos globales: entre el 96 % y el 98 %; conformal, alrededor del 84 %;
-- bootstrapping con 300 series, unas 35 veces más lento que conformal.
+### 8.3 Reglas (hipótesis, por capacidad; el estudio las confirma o las cambia)
 
-### 8.3 Preguntas (borrador, en inglés)
+| Opción | Chronos-2 | LightGBM | AutoETS | Baseline |
+|:--|:--|:--|:--|:--|
+| A range | Cuantiles nativos | Conformal con residuos out-of-sample | Paramétrico | Conformal |
+| Several percentiles | Cuantiles nativos | Bootstrapping con residuos out-of-sample (conformal da un solo intervalo) | No aplica | No aplica |
+| Totals or the chance of an event | No puede (sin trayectorias): el resultado lo dice | `predict_bootstrapping` | No aplica | No aplica |
+| Categoría | | `predict_proba`, sin fila | | |
 
-Se validan con el estudio de 8.5: la que no cambie el método ganador, se quita.
+Los residuos out-of-sample van en el código por defecto (un backtest de calibración antes
+del test); no se pregunta. El nivel (80 %) es una constante editable. `use_binned_residuals`
+se queda en su valor por defecto. Son configuración, fuera del alcance.
 
-| # | Question | Options (hint) | Qué cambiaría (hipótesis) |
-|--:|:--|:--|:--|
-| P1 | What do you need besides the forecast? | **A range** (a low and a high value for each date) · **Several percentiles** (e.g. 10%, 50% and 90%, for stock or capacity planning) · **Possible scenarios** (e.g. the total of next week, or the chance of running out) | Intervalo → `predict_interval`; percentiles → `predict_quantiles` o regresión cuantil; escenarios → `predict_bootstrapping`, que solo existe en ML |
-| P2 | Can you set aside a recent period to measure the model's real errors? *For example, the months just before your test period. skforecast calls them out-of-sample residuals.* | **Yes** · **No, my history is short** · **I'm not sure** | Sí → residuos out-of-sample (recomendado); no → cuantiles nativos de Chronos-2 o paramétricos de Stats, con aviso de que los residuos in-sample dan intervalos estrechos |
-| P3 | How sure do you need to be? | **80%** · **90%** · **95%** | Solo cambia `interval` en el código; quizá baste con un valor por defecto editable en vez de una pregunta |
-| (P4) | Does the uncertainty grow with the size of the values? *For example, bigger sales come with bigger errors.* | Yes · No · I'm not sure | `use_binned_residuals`. Candidata a desaparecer si el estudio muestra que el valor por defecto (`True`) nunca empeora |
+### 8.4 Estudio que la habilita
 
-Reglas iniciales (hipótesis a medir):
+Mismos casos, bloques y protocolo justo que la sección 4, más:
 
-- Candidato Chronos-2 → cuantiles nativos para intervalo y percentiles; para escenarios,
-  pasar a LightGBM con bootstrapping (Chronos-2 no da trayectorias).
-- Candidato LightGBM:
-  - intervalo → conformal con residuos out-of-sample (el más barato, cerca del nominal según
-    la documentación);
-  - percentiles → `predict_quantiles` con bootstrapping, frente a regresión cuantil con
-    `ForecasterDirect`;
-  - escenarios → bootstrapping (`predict_bootstrapping`);
-  - sin periodo de validación → avisar y proponer el candidato fundacional o el estadístico.
-- Referencia estadística → intervalos paramétricos.
-- Baseline (EquivalentDate) → conformal, para comparar también la cobertura.
-- Categoría → `predict_proba` (sin preguntas).
+- Métodos: conformal y bootstrapping con residuos out-of-sample en LightGBM, cuantiles
+  nativos de Chronos-2, paramétricos de AutoETS y conformal del naive.
+- Métricas: cobertura empírica del 80 %, anchura, WIS, cobertura por paso del horizonte y
+  tiempo. Para totales, cobertura de la suma del horizonte.
+- Criterio fijado antes de medir: un método vale si su cobertura queda a menos de 5 puntos
+  de la nominal en la mayoría de los datasets; entre los que valen, el de menor WIS.
+- Tamaño: en baja frecuencia hacen falta más bloques (36 predicciones mensuales dan un error
+  típico de unos 7 puntos en una cobertura del 80 %); usar orígenes solapados.
+- Qué debe contestar: ¿conformal o bootstrapping para "A range" en ML? ¿Los cuantiles nativos
+  de Chronos-2 están calibrados sin ajuste? ¿El coste de bootstrapping con muchas series
+  obliga a otra regla para "Several"?
 
-### 8.4 Pantalla de resultado (ampliación)
+### 8.5 Cuándo se activa
 
-- Una tarjeta más en la alineación: "Uncertainty: conformal intervals with out-of-sample
-  residuals", o "native quantiles", etc.
-- Bloques nuevos en la ventana de código:
-  - el backtest de calibración y `set_out_sample_residuals`, cuando aplique;
-  - `predict_interval` o `predict_quantiles`;
-  - el backtest con `interval=...`, que devuelve `coverage` e `interval_width`;
-  - para escenarios, `predict_bootstrapping` y la suma de las trayectorias.
-- "Por qué" con las cifras del estudio de 8.5 y la regla de oro: comprobar que la cobertura
-  empírica se acerca a la nominal.
-- Enlaces: la guía del método elegido, *Probabilistic forecasting overview*, *Prediction
-  interval metrics*.
-
-### 8.5 Estudio que la habilita
-
-Ampliar `benchmark.py` con los mismos 13 datasets y bloques de test:
-
-- **Métodos**: bootstrapping y conformal con residuos in-sample y out-of-sample, con y sin
-  bins; regresión cuantil con `ForecasterDirect`; cuantiles nativos de Chronos-2;
-  paramétricos de AutoETS y AutoARIMA; conformal del naive estacional.
-- **Métricas**: cobertura empírica de 80 % y 95 %, anchura del intervalo, WIS o CRPS, pérdida
-  pinball por cuantil y tiempo. Para escenarios, la cobertura del total del horizonte
-  (suma de cada trayectoria frente a la suma real).
-- **Preguntas que debe contestar**: ¿cambia el mejor método según lo que se pide (P1)?
-  ¿Cuánto pierden los residuos in-sample frente a out-of-sample en cada familia (P2)? ¿Los
-  bins empeoran alguna vez (P4)? ¿Los cuantiles nativos de Chronos-2 están calibrados sin
-  ajuste, y mejoran con `ConformalIntervalCalibrator`?
-- **Plantillas**: cada combinación nueva entra en `build.py` y se ejecuta con datos
-  sintéticos.
-
-### 8.6 Cuándo se activa
-
-- Fase 1 publicada y con uso medido.
-- Estudio de 8.5 hecho y reglas que lo reflejan; preguntas que no cambian el resultado,
-  quitadas.
-- Todas las combinaciones de la fase 1 por las de la fase 2 con fragmento ejecutado sin error.
-- La skill `prediction-intervals` y su `references/interval-compatibility.md` corregidas con
-  lo medido (falta `ForecasterFoundation` en la matriz de compatibilidad, y la tabla de
-  `skills/prediction-intervals/SKILL.md:16-20` no incluye los cuantiles nativos), y
-  regeneradas.
-
-## 9. Decisiones abiertas
-
-1. **ML primero o evidencia primero**: con la evidencia actual, la prioridad "precisión" pone
-   primero a Chronos-2. Si se quiere reforzar ML, el camino es medir LightGBM con
-   diferenciación, más lags y variables de dominio, no cambiar la regla sin evidencia.
-2. **Qué fundacionales recomendar**: solo Chronos-2 está medido y es Apache-2.0. ¿Medir
-   TiRex-2, TabICL o T0 (también sin restricciones comerciales) antes de mencionarlos?
-3. **Analítica**: GA4 con consentimiento (ya está) o migrar todo el sitio a una opción sin
-   cookies (Plausible, GoatCounter).
-4. **Dónde vive el estudio**: `benchmarks/forecaster_finder/` (reproducible, con requisitos
-   fijados) o solo citado por commit cuando se borre esta carpeta.
-5. **Reglas de skforecast-ai**: revisarlas contra este árbol para que el test y la
-   herramienta no recomienden cosas distintas con los mismos datos.
+- Fase 3 cerrada con decisión de mantener el selector.
+- Estudio de 8.4 hecho y reglas que lo reflejan.
+- Fragmentos nuevos ejecutados en CI con los requisitos de 6.3.
+- `skills/prediction-intervals/SKILL.md` (tabla de las líneas 16-20, sin los cuantiles
+  nativos) y `references/interval-compatibility.md` (sin `ForecasterFoundation`) corregidas
+  y regeneradas.

@@ -1,0 +1,101 @@
+target,series,freq,extra,priority,error,warning,message
+category,,hourly,future,,,,
+number,one,hourly,future,accuracy,,,
+number,one,hourly,future,cost,,,
+number,one,hourly,future,explain,,,
+number,several,hourly,future,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,hourly,future,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,hourly,future,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+category,,hourly,past,,,,
+number,one,hourly,past,accuracy,,,
+number,one,hourly,past,cost,,,
+number,one,hourly,past,explain,,,
+number,several,hourly,past,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,hourly,past,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,hourly,past,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,one,hourly,none,accuracy,,,
+number,one,hourly,none,cost,,,
+number,one,hourly,none,explain,,,
+number,several,hourly,none,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,hourly,none,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,hourly,none,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+category,,daily,future,,,,
+number,one,daily,future,accuracy,,,
+number,one,daily,future,cost,,,
+number,one,daily,future,explain,,,
+number,several,daily,future,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,daily,future,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,daily,future,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+category,,daily,past,,,,
+number,one,daily,past,accuracy,,,
+number,one,daily,past,cost,,,
+number,one,daily,past,explain,,,
+number,several,daily,past,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,daily,past,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,daily,past,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,one,daily,none,accuracy,,,
+number,one,daily,none,cost,,,
+number,one,daily,none,explain,,,
+number,several,daily,none,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,daily,none,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,daily,none,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+category,,weekly,future,,,,
+number,one,weekly,future,accuracy,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,weekly,future,cost,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,weekly,future,explain,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,several,weekly,future,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,weekly,future,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,weekly,future,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+category,,weekly,past,,,,
+number,one,weekly,past,accuracy,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,weekly,past,cost,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,weekly,past,explain,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,several,weekly,past,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,weekly,past,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,weekly,past,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,one,weekly,none,accuracy,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,weekly,none,cost,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,weekly,none,explain,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,several,weekly,none,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,weekly,none,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,weekly,none,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+category,,monthly,future,,,,
+number,one,monthly,future,accuracy,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,monthly,future,cost,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,monthly,future,explain,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,several,monthly,future,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,monthly,future,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,monthly,future,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+category,,monthly,past,,,,
+number,one,monthly,past,accuracy,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,monthly,past,cost,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,monthly,past,explain,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,several,monthly,past,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,monthly,past,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,monthly,past,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,one,monthly,none,accuracy,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,monthly,none,cost,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,monthly,none,explain,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,several,monthly,none,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,monthly,none,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,monthly,none,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+category,,quarterly,future,,,,
+number,one,quarterly,future,accuracy,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,quarterly,future,cost,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,quarterly,future,explain,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,several,quarterly,future,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,quarterly,future,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,quarterly,future,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+category,,quarterly,past,,,,
+number,one,quarterly,past,accuracy,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,quarterly,past,cost,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,quarterly,past,explain,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,several,quarterly,past,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,quarterly,past,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,quarterly,past,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,one,quarterly,none,accuracy,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,quarterly,none,cost,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,one,quarterly,none,explain,,IgnoredArgumentWarning,Estimators different from `skforecast.stats.Sarimax` require refitting since predictions must start from the end of the training set. `refit` is set t
+number,several,quarterly,none,accuracy,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,quarterly,none,cost,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"
+number,several,quarterly,none,explain,,InputTypeWarning,"Passing a DataFrame (either wide or long format) as `series` requires additional internal transformations, which can increase computational time. It i"

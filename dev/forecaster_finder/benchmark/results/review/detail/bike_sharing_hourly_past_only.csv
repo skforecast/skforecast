@@ -1,0 +1,393 @@
+case,history,history_obs,model,level,fold,mae,scale
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,0,25.083333,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,1,44.875,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,2,24.333333,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,3,36.375,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,4,132.916667,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,5,101.916667,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,6,142.916667,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,7,28.291667,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,8,16.75,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,9,25.875,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,10,23.375,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,11,112.666667,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,12,57.625,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,13,137.708333,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,14,41.333333,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,15,20.25,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,16,50.541667,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,17,43.041667,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,18,83.416667,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,19,14.0,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,20,42.583333,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,21,27.708333,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,22,30.875,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,23,70.458333,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,24,40.875,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,25,77.0,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,26,24.875,78.103506
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,users,27,42.791667,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,0,48.359995,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,1,28.299474,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,2,21.038234,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,3,15.963079,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,4,37.080256,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,5,88.260806,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,6,32.814339,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,7,41.672323,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,8,31.603961,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,9,29.042266,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,10,22.107845,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,11,38.044417,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,12,48.430069,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,13,38.078228,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,14,24.559661,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,15,17.714761,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,16,56.33197,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,17,49.941221,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,18,77.81296,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,19,27.424129,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,20,112.349182,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,21,108.173886,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,22,125.373783,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,23,45.753129,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,24,28.119074,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,25,49.014821,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,26,20.867832,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),users,27,37.825574,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,0,54.759819,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,1,39.216278,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,2,17.573328,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,3,35.486673,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,4,34.789724,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,5,121.154075,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,6,59.309609,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,7,27.141526,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,8,13.819647,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,9,30.444015,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,10,22.4722,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,11,21.382819,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,12,55.175384,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,13,47.444956,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,14,42.54618,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,15,18.236742,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,16,56.62193,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,17,27.211484,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,18,36.819591,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,19,33.602502,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,20,92.855266,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,21,72.320246,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,22,71.805374,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,23,25.586101,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,24,35.664133,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,25,50.628168,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,26,17.590871,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),users,27,49.889749,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,0,48.359995,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,1,24.690743,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,2,23.673667,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,3,21.082488,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,4,33.910031,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,5,82.558137,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,6,27.283204,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,7,39.852006,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,8,28.952058,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,9,28.933339,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,10,28.76604,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,11,25.874402,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,12,40.171687,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,13,38.336214,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,14,21.200163,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,15,17.828437,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,16,55.092241,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,17,46.249917,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,18,83.263991,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,19,28.108699,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,20,100.457321,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,21,85.018159,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,22,101.773942,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,23,18.427778,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,24,28.91492,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,25,45.506094,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,26,24.142398,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],users,27,41.742096,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,0,54.759819,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,1,42.484664,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,2,18.126996,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,3,35.997465,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,4,31.854533,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,5,127.212007,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,6,69.456731,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,7,28.823547,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,8,17.297433,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,9,30.361936,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,10,24.456867,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,11,20.272733,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,12,50.396441,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,13,47.525892,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,14,37.646617,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,15,17.102568,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,16,52.219871,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,17,27.36957,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,18,38.049604,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,19,35.053955,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,20,95.287558,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,21,72.539923,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,22,68.136857,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,23,19.560206,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,24,32.055023,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,25,50.348356,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,26,22.354213,78.103506
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],users,27,45.469277,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,0,24.957362,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,1,42.443426,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,2,16.823443,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,3,22.663484,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,4,33.589397,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,5,75.683675,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,6,34.918627,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,7,25.41149,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,8,11.567171,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,9,27.128568,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,10,20.652241,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,11,17.434246,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,12,23.105913,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,13,21.706631,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,14,32.777573,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,15,13.610138,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,16,49.714949,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,17,33.022066,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,18,63.62552,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,19,11.991691,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,20,108.881954,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,21,32.297366,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,22,54.05477,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,23,70.318935,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,24,33.657249,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,25,68.704097,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,26,21.941257,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),users,27,46.102252,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,0,24.957362,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,1,42.443426,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,2,16.823443,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,3,22.663484,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,4,33.589397,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,5,75.683675,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,6,34.918627,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,7,25.41149,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,8,11.567171,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,9,27.128568,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,10,20.652241,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,11,17.434246,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,12,23.105913,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,13,21.706631,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,14,32.777573,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,15,13.610138,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,16,49.714949,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,17,33.022066,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,18,63.62552,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,19,11.991691,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,20,108.881954,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,21,32.297366,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,22,54.05477,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,23,70.318935,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,24,33.657249,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,25,68.704097,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,26,21.941257,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",users,27,46.102252,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,0,27.140554,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,1,43.89069,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,2,13.99194,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,3,21.231299,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,4,35.149279,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,5,87.952577,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,6,38.752378,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,7,27.192776,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,8,11.439748,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,9,29.541393,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,10,20.498926,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,11,17.974293,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,12,26.666293,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,13,23.485366,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,14,29.966941,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,15,14.609959,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,16,48.378859,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,17,32.57152,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,18,54.170008,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,19,15.754075,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,20,116.495127,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,21,31.347656,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,22,44.248515,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,23,77.295462,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,24,34.398741,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,25,69.512948,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,26,32.758784,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),users,27,38.607766,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,0,24.311685,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,1,58.438327,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,2,23.908058,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,3,24.929773,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,4,36.327157,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,5,83.743396,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,6,23.217907,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,7,20.788594,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,8,14.487927,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,9,26.307723,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,10,17.39754,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,11,22.362501,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,12,31.073078,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,13,21.284742,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,14,29.718672,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,15,12.436184,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,16,50.766839,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,17,52.346294,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,18,84.59804,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,19,12.605759,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,20,120.893639,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,21,94.239368,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,22,139.523437,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,23,34.30943,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,24,39.8865,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,25,54.297923,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,26,13.644639,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),users,27,63.046572,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,0,24.311685,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,1,58.438327,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,2,23.908058,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,3,24.929773,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,4,36.327157,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,5,83.743396,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,6,23.217907,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,7,20.788594,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,8,14.487927,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,9,26.307723,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,10,17.39754,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,11,22.362501,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,12,31.073078,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,13,21.284742,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,14,29.718672,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,15,12.436184,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,16,50.766839,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,17,52.346294,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,18,84.59804,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,19,12.605759,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,20,120.893639,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,21,94.239368,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,22,139.523437,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,23,34.30943,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,24,39.8865,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,25,54.297923,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,26,13.644639,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",users,27,63.046572,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,0,23.505573,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,1,47.892115,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,2,13.348589,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,3,24.639905,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,4,28.930355,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,5,88.325689,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,6,27.133715,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,7,21.279432,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,8,12.49343,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,9,27.821947,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,10,15.452997,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,11,24.997541,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,12,28.876033,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,13,22.574341,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,14,33.233817,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,15,13.911324,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,16,50.416879,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,17,64.252645,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,18,53.771338,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,19,15.614517,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,20,105.970797,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,21,43.544757,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,22,62.424263,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,23,56.110202,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,24,42.377021,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,25,51.160409,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,26,19.821299,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),users,27,44.682024,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,0,37.887085,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,1,52.584666,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,2,23.805652,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,3,26.887302,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,4,25.253847,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,5,96.926819,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,6,54.640457,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,7,37.619021,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,8,14.887267,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,9,27.46686,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,10,27.946689,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,11,22.115702,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,12,39.329474,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,13,20.836142,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,14,50.275219,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,15,19.831551,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,16,49.71005,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,17,52.86373,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,18,67.447175,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,19,18.14806,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,20,82.68307,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,21,30.623482,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,22,24.987422,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,23,72.167872,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,24,53.678291,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,25,64.930696,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,26,34.8245,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),users,27,47.972744,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,0,37.887085,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,1,52.584666,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,2,23.805652,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,3,26.887302,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,4,25.253847,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,5,96.926819,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,6,54.640457,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,7,37.619021,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,8,14.887267,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,9,27.46686,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,10,27.946689,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,11,22.115702,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,12,39.329474,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,13,20.836142,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,14,50.275219,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,15,19.831551,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,16,49.71005,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,17,52.86373,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,18,67.447175,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,19,18.14806,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,20,82.68307,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,21,30.623482,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,22,24.987422,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,23,72.167872,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,24,53.678291,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,25,64.930696,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,26,34.8245,78.103506
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",users,27,47.972744,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,0,35.734081,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,1,47.834844,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,2,32.916589,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,3,30.664064,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,4,28.095136,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,5,88.527777,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,6,63.661679,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,7,28.400599,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,8,20.685566,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,9,30.438297,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,10,29.419074,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,11,25.891483,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,12,40.36603,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,13,25.447369,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,14,49.411686,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,15,20.263364,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,16,49.875195,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,17,41.193735,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,18,49.281319,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,19,12.966037,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,20,84.419436,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,21,30.64074,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,22,33.913545,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,23,75.154954,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,24,54.367165,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,25,58.756641,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,26,40.252906,78.103506
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),users,27,43.288356,78.103506

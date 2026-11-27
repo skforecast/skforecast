@@ -1,0 +1,1761 @@
+case,history,history_obs,model,level,mae,scale
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Adrianne,1290.131944,718.53194
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Audrey,44.033394,21.763399
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Carlos,234.166833,252.604929
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Cathy,170.999299,101.502153
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Cecelia,45.376335,29.870961
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Christie,81.227697,71.10742
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Cindy,156.815773,67.292705
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Dixie,413.861343,380.248772
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Emma,377.564,230.781423
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Gary,282.38279,63.391975
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Jerrod,14.566121,15.49452
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Johnnie,592.347926,617.554947
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Kathie,51.982111,57.21452
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Lakeisha,112.368009,67.73806
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Leeanne,73.74571,29.268986
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Renna,210.365834,279.075712
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Sheldon,102.020171,96.598167
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Terrell,127.948757,140.085747
+bdg2_buildings_energy,90,90,Chronos-2,Fox_assembly_Tony,166.54918,150.948932
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Andre,204.812205,335.207509
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Ashli,48.813046,42.373754
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Burton,127.570005,125.117865
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Carleen,423.298639,247.148986
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Charles,47.541257,33.947313
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Claire,166.781613,210.585089
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Claude,524.813951,346.266655
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Cynthia,362.712911,350.088345
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Delma,266.227496,207.132776
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Dewayne,130.078346,296.648221
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Dominique,116.678201,120.000285
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Eddy,630.834172,511.416762
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Eldon,149.129449,88.432972
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Elois,48.8168,30.228559
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Elvira,250.023259,334.77452
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Etta,761.752191,194.423025
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Geoffrey,124.048482,122.980623
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Gloria,482.565472,311.338416
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Henrietta,430.426114,60.345285
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Heriberto,40.954338,92.705053
+bdg2_buildings_energy,90,90,Chronos-2,Fox_education_Jaclyn,410.998534,190.260427
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Adrianne,1231.603322,718.53194
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Audrey,65.367024,21.763399
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Carlos,284.068399,252.604929
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Cathy,210.576093,101.502153
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Cecelia,95.134304,29.870961
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Christie,87.002783,71.10742
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Cindy,136.072231,67.292705
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Dixie,453.180318,380.248772
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Emma,391.877179,230.781423
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Gary,308.76898,63.391975
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Jerrod,14.089225,15.49452
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Johnnie,901.568131,617.554947
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Kathie,60.064129,57.21452
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Lakeisha,95.656481,67.73806
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Leeanne,90.386455,29.268986
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Renna,317.15737,279.075712
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Sheldon,149.967379,96.598167
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Terrell,256.367939,140.085747
+bdg2_buildings_energy,90,90,LightGBM,Fox_assembly_Tony,265.848354,150.948932
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Andre,349.040406,335.207509
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Ashli,79.307874,42.373754
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Burton,154.6402,125.117865
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Carleen,618.104349,247.148986
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Charles,66.195563,33.947313
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Claire,300.668372,210.585089
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Claude,674.711195,346.266655
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Cynthia,465.827346,350.088345
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Delma,293.148469,207.132776
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Dewayne,209.562968,296.648221
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Dominique,178.13241,120.000285
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Eddy,846.164369,511.416762
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Eldon,157.34293,88.432972
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Elois,52.834631,30.228559
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Elvira,535.434356,334.77452
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Etta,765.131623,194.423025
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Geoffrey,200.011797,122.980623
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Gloria,1305.097368,311.338416
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Henrietta,650.100475,60.345285
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Heriberto,66.225918,92.705053
+bdg2_buildings_energy,90,90,LightGBM,Fox_education_Jaclyn,495.5961,190.260427
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Adrianne,3590.306228,718.53194
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Audrey,43.858821,21.763399
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Carlos,252.799493,252.604929
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Cathy,196.985051,101.502153
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Cecelia,170.070829,29.870961
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Christie,166.192289,71.10742
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Cindy,195.054296,67.292705
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Dixie,540.151718,380.248772
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Emma,416.195116,230.781423
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Gary,189.281744,63.391975
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Jerrod,17.441538,15.49452
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Johnnie,721.313801,617.554947
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Kathie,89.666814,57.21452
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Lakeisha,213.817949,67.73806
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Leeanne,105.9625,29.268986
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Renna,284.465107,279.075712
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Sheldon,210.753355,96.598167
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Terrell,212.592483,140.085747
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_assembly_Tony,226.541254,150.948932
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Andre,420.213673,335.207509
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Ashli,45.072267,42.373754
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Burton,153.630242,125.117865
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Carleen,437.908074,247.148986
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Charles,91.875444,33.947313
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Claire,250.845979,210.585089
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Claude,622.781437,346.266655
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Cynthia,486.96756,350.088345
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Delma,601.717934,207.132776
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Dewayne,213.431723,296.648221
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Dominique,158.230294,120.000285
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Eddy,779.013328,511.416762
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Eldon,190.051834,88.432972
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Elois,50.712015,30.228559
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Elvira,432.064416,334.77452
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Etta,962.844966,194.423025
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Geoffrey,124.791089,122.980623
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Gloria,1330.877173,311.338416
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Henrietta,706.50776,60.345285
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Heriberto,96.502891,92.705053
+bdg2_buildings_energy,90,90,LightGBM (diff),Fox_education_Jaclyn,546.174057,190.260427
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Adrianne,1916.484965,718.53194
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Audrey,51.532461,21.763399
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Carlos,291.861071,252.604929
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Cathy,210.691693,101.502153
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Cecelia,96.11019,29.870961
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Christie,89.202238,71.10742
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Cindy,147.842858,67.292705
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Dixie,436.15618,380.248772
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Emma,400.42707,230.781423
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Gary,243.88238,63.391975
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Jerrod,17.620006,15.49452
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Johnnie,886.071757,617.554947
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Kathie,65.601454,57.21452
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Lakeisha,140.137838,67.73806
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Leeanne,67.415435,29.268986
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Renna,295.721244,279.075712
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Sheldon,135.350737,96.598167
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Terrell,140.160377,140.085747
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_assembly_Tony,182.210037,150.948932
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Andre,338.323095,335.207509
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Ashli,37.02387,42.373754
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Burton,171.711631,125.117865
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Carleen,489.555214,247.148986
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Charles,50.496299,33.947313
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Claire,283.804539,210.585089
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Claude,683.859075,346.266655
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Cynthia,468.457875,350.088345
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Delma,347.42243,207.132776
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Dewayne,205.704991,296.648221
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Dominique,131.499009,120.000285
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Eddy,776.844178,511.416762
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Eldon,134.10917,88.432972
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Elois,44.30393,30.228559
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Elvira,336.396339,334.77452
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Etta,663.429959,194.423025
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Geoffrey,153.085103,122.980623
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Gloria,751.669218,311.338416
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Henrietta,515.988281,60.345285
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Heriberto,66.413101,92.705053
+bdg2_buildings_energy,90,90,LightGBM (diff) [refit],Fox_education_Jaclyn,484.657326,190.260427
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Adrianne,1156.232883,718.53194
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Audrey,46.605066,21.763399
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Carlos,307.349701,252.604929
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Cathy,194.003194,101.502153
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Cecelia,88.155272,29.870961
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Christie,75.816714,71.10742
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Cindy,132.332605,67.292705
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Dixie,429.771357,380.248772
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Emma,455.834313,230.781423
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Gary,337.823149,63.391975
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Jerrod,15.193211,15.49452
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Johnnie,916.547137,617.554947
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Kathie,57.373282,57.21452
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Lakeisha,112.066526,67.73806
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Leeanne,66.25677,29.268986
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Renna,279.693917,279.075712
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Sheldon,143.399405,96.598167
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Terrell,160.072999,140.085747
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_assembly_Tony,245.607105,150.948932
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Andre,344.885106,335.207509
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Ashli,43.136869,42.373754
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Burton,172.609132,125.117865
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Carleen,363.762932,247.148986
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Charles,59.825644,33.947313
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Claire,354.065949,210.585089
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Claude,674.283059,346.266655
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Cynthia,431.940848,350.088345
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Delma,307.990755,207.132776
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Dewayne,181.853661,296.648221
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Dominique,158.401582,120.000285
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Eddy,756.420895,511.416762
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Eldon,139.698536,88.432972
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Elois,52.823273,30.228559
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Elvira,330.050536,334.77452
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Etta,569.0156,194.423025
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Geoffrey,175.284479,122.980623
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Gloria,781.782191,311.338416
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Henrietta,445.129965,60.345285
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Heriberto,58.106149,92.705053
+bdg2_buildings_energy,90,90,LightGBM [refit],Fox_education_Jaclyn,476.074879,190.260427
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Adrianne,1270.177399,718.53194
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Audrey,82.601576,21.763399
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Carlos,377.761085,252.604929
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Cathy,185.951931,101.502153
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Cecelia,132.217103,29.870961
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Christie,129.644362,71.10742
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Cindy,170.035591,67.292705
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Dixie,452.219709,380.248772
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Emma,338.15006,230.781423
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Gary,269.093461,63.391975
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Jerrod,53.691819,15.49452
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Johnnie,765.752538,617.554947
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Kathie,89.770191,57.21452
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Lakeisha,190.216422,67.73806
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Leeanne,83.024335,29.268986
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Renna,271.403141,279.075712
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Sheldon,161.995138,96.598167
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Terrell,218.823592,140.085747
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_assembly_Tony,256.437552,150.948932
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Andre,268.061973,335.207509
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Ashli,70.39302,42.373754
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Burton,183.107339,125.117865
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Carleen,478.616245,247.148986
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Charles,155.962007,33.947313
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Claire,243.26494,210.585089
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Claude,1091.423153,346.266655
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Cynthia,429.757295,350.088345
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Delma,264.43979,207.132776
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Dewayne,173.614647,296.648221
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Dominique,182.522321,120.000285
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Eddy,1611.275069,511.416762
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Eldon,195.195843,88.432972
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Elois,72.464773,30.228559
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Elvira,453.461532,334.77452
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Etta,778.120765,194.423025
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Geoffrey,312.611134,122.980623
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Gloria,1151.597032,311.338416
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Henrietta,525.0758,60.345285
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Heriberto,148.056317,92.705053
+bdg2_buildings_energy,90,90,LightGBM snippet,Fox_education_Jaclyn,458.554783,190.260427
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Adrianne,1384.76771,718.53194
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Audrey,88.526632,21.763399
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Carlos,426.568981,252.604929
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Cathy,232.95167,101.502153
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Cecelia,127.082941,29.870961
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Christie,119.882971,71.10742
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Cindy,142.229178,67.292705
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Dixie,441.173571,380.248772
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Emma,551.244811,230.781423
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Gary,332.781373,63.391975
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Jerrod,46.452819,15.49452
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Johnnie,707.69194,617.554947
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Kathie,75.827681,57.21452
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Lakeisha,166.497101,67.73806
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Leeanne,78.504026,29.268986
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Renna,251.747901,279.075712
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Sheldon,212.005743,96.598167
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Terrell,152.956687,140.085747
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_assembly_Tony,187.554537,150.948932
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Andre,244.976633,335.207509
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Ashli,54.91342,42.373754
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Burton,177.841616,125.117865
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Carleen,582.015636,247.148986
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Charles,82.334508,33.947313
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Claire,243.389394,210.585089
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Claude,588.540364,346.266655
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Cynthia,424.7021,350.088345
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Delma,268.954158,207.132776
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Dewayne,159.992014,296.648221
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Dominique,136.478116,120.000285
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Eddy,1006.284088,511.416762
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Eldon,143.565298,88.432972
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Elois,57.796075,30.228559
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Elvira,329.79798,334.77452
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Etta,718.96259,194.423025
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Geoffrey,243.819188,122.980623
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Gloria,891.910298,311.338416
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Henrietta,462.173956,60.345285
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Heriberto,103.18157,92.705053
+bdg2_buildings_energy,90,90,LightGBM snippet [refit],Fox_education_Jaclyn,465.296796,190.260427
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Adrianne,1451.035596,718.53194
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Audrey,49.606208,21.763399
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Carlos,256.987461,252.604929
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Cathy,201.15552,101.502153
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Cecelia,89.422134,29.870961
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Christie,92.039304,71.10742
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Cindy,160.311071,67.292705
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Dixie,480.633035,380.248772
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Emma,389.477102,230.781423
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Gary,273.315269,63.391975
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Jerrod,17.706304,15.49452
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Johnnie,723.402563,617.554947
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Kathie,62.014814,57.21452
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Lakeisha,127.856541,67.73806
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Leeanne,76.875459,29.268986
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Renna,197.917998,279.075712
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Sheldon,162.152995,96.598167
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Terrell,155.239785,140.085747
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_assembly_Tony,195.252233,150.948932
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Andre,277.303367,335.207509
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Ashli,43.478302,42.373754
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Burton,134.643591,125.117865
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Carleen,550.260771,247.148986
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Charles,55.558591,33.947313
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Claire,217.636117,210.585089
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Claude,663.607519,346.266655
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Cynthia,495.707161,350.088345
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Delma,322.948356,207.132776
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Dewayne,157.29081,296.648221
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Dominique,134.279738,120.000285
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Eddy,678.916896,511.416762
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Eldon,140.719222,88.432972
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Elois,49.108769,30.228559
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Elvira,289.433192,334.77452
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Etta,839.799756,194.423025
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Geoffrey,155.519341,122.980623
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Gloria,859.795303,311.338416
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Henrietta,509.709176,60.345285
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Heriberto,54.634511,92.705053
+bdg2_buildings_energy,90,90,LightGBM+ (diff) [refit],Fox_education_Jaclyn,468.779209,190.260427
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Adrianne,1491.720704,718.53194
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Audrey,52.082766,21.763399
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Carlos,263.533259,252.604929
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Cathy,170.160971,101.502153
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Cecelia,84.832355,29.870961
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Christie,85.853632,71.10742
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Cindy,151.89893,67.292705
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Dixie,476.581632,380.248772
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Emma,441.270611,230.781423
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Gary,295.237973,63.391975
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Jerrod,13.98165,15.49452
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Johnnie,645.670482,617.554947
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Kathie,62.416999,57.21452
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Lakeisha,109.590921,67.73806
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Leeanne,75.4025,29.268986
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Renna,227.959233,279.075712
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Sheldon,156.633526,96.598167
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Terrell,249.387494,140.085747
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_assembly_Tony,229.025869,150.948932
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Andre,250.860643,335.207509
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Ashli,51.767385,42.373754
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Burton,122.122263,125.117865
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Carleen,447.102029,247.148986
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Charles,58.443155,33.947313
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Claire,218.83015,210.585089
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Claude,677.851039,346.266655
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Cynthia,381.867211,350.088345
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Delma,326.513567,207.132776
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Dewayne,128.426941,296.648221
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Dominique,130.269179,120.000285
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Eddy,756.021403,511.416762
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Eldon,139.238896,88.432972
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Elois,51.12729,30.228559
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Elvira,307.635732,334.77452
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Etta,621.218413,194.423025
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Geoffrey,141.072745,122.980623
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Gloria,908.849359,311.338416
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Henrietta,470.140642,60.345285
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Heriberto,52.896423,92.705053
+bdg2_buildings_energy,90,90,LightGBM+ [refit],Fox_education_Jaclyn,453.558984,190.260427
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Adrianne,1916.484965,718.53194
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Audrey,51.532461,21.763399
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Carlos,291.861071,252.604929
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Cathy,210.691693,101.502153
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Cecelia,96.11019,29.870961
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Christie,89.202238,71.10742
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Cindy,147.842858,67.292705
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Dixie,436.15618,380.248772
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Emma,400.42707,230.781423
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Gary,243.88238,63.391975
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Jerrod,17.620006,15.49452
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Johnnie,886.071757,617.554947
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Kathie,65.601454,57.21452
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Lakeisha,140.137838,67.73806
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Leeanne,67.415435,29.268986
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Renna,295.721244,279.075712
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Sheldon,135.350737,96.598167
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Terrell,140.160377,140.085747
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_assembly_Tony,182.210037,150.948932
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Andre,338.323095,335.207509
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Ashli,37.02387,42.373754
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Burton,171.711631,125.117865
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Carleen,489.555214,247.148986
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Charles,50.496299,33.947313
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Claire,283.804539,210.585089
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Claude,683.859075,346.266655
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Cynthia,468.457875,350.088345
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Delma,347.42243,207.132776
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Dewayne,205.704991,296.648221
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Dominique,131.499009,120.000285
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Eddy,776.844178,511.416762
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Eldon,134.10917,88.432972
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Elois,44.30393,30.228559
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Elvira,336.396339,334.77452
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Etta,663.429959,194.423025
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Geoffrey,153.085103,122.980623
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Gloria,751.669218,311.338416
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Henrietta,515.988281,60.345285
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Heriberto,66.413101,92.705053
+bdg2_buildings_energy,90,90,ML selected on validation (4),Fox_education_Jaclyn,484.657326,190.260427
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Adrianne,1916.484965,718.53194
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Audrey,51.532461,21.763399
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Carlos,291.861071,252.604929
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Cathy,210.691693,101.502153
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Cecelia,96.11019,29.870961
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Christie,89.202238,71.10742
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Cindy,147.842858,67.292705
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Dixie,436.15618,380.248772
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Emma,400.42707,230.781423
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Gary,243.88238,63.391975
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Jerrod,17.620006,15.49452
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Johnnie,886.071757,617.554947
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Kathie,65.601454,57.21452
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Lakeisha,140.137838,67.73806
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Leeanne,67.415435,29.268986
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Renna,295.721244,279.075712
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Sheldon,135.350737,96.598167
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Terrell,140.160377,140.085747
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_assembly_Tony,182.210037,150.948932
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Andre,338.323095,335.207509
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Ashli,37.02387,42.373754
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Burton,171.711631,125.117865
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Carleen,489.555214,247.148986
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Charles,50.496299,33.947313
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Claire,283.804539,210.585089
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Claude,683.859075,346.266655
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Cynthia,468.457875,350.088345
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Delma,347.42243,207.132776
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Dewayne,205.704991,296.648221
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Dominique,131.499009,120.000285
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Eddy,776.844178,511.416762
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Eldon,134.10917,88.432972
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Elois,44.30393,30.228559
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Elvira,336.396339,334.77452
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Etta,663.429959,194.423025
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Geoffrey,153.085103,122.980623
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Gloria,751.669218,311.338416
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Henrietta,515.988281,60.345285
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Heriberto,66.413101,92.705053
+bdg2_buildings_energy,90,90,ML selected on validation (6),Fox_education_Jaclyn,484.657326,190.260427
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Adrianne,1368.55896,718.53194
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Audrey,268.843671,21.763399
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Carlos,244.026198,252.604929
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Cathy,202.798289,101.502153
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Cecelia,275.112658,29.870961
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Christie,264.062121,71.10742
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Cindy,315.254366,67.292705
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Dixie,508.995689,380.248772
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Emma,379.745102,230.781423
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Gary,212.74626,63.391975
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Jerrod,271.32646,15.49452
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Johnnie,915.834393,617.554947
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Kathie,305.759511,57.21452
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Lakeisha,322.844877,67.73806
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Leeanne,266.165267,29.268986
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Renna,334.630259,279.075712
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Sheldon,291.172683,96.598167
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Terrell,295.347364,140.085747
+bdg2_buildings_energy,90,90,Ridge,Fox_assembly_Tony,319.067686,150.948932
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Andre,423.195021,335.207509
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Ashli,254.497039,42.373754
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Burton,245.680708,125.117865
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Carleen,464.593329,247.148986
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Charles,267.0696,33.947313
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Claire,313.776653,210.585089
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Claude,657.966764,346.266655
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Cynthia,612.55573,350.088345
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Delma,413.540098,207.132776
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Dewayne,323.063148,296.648221
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Dominique,247.71839,120.000285
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Eddy,667.323199,511.416762
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Eldon,279.424621,88.432972
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Elois,248.182327,30.228559
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Elvira,535.503789,334.77452
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Etta,808.977696,194.423025
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Geoffrey,255.914886,122.980623
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Gloria,581.486472,311.338416
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Henrietta,585.10412,60.345285
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Heriberto,255.6384,92.705053
+bdg2_buildings_energy,90,90,Ridge,Fox_education_Jaclyn,558.852703,190.260427
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Adrianne,1384.514223,718.53194
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Audrey,198.940185,21.763399
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Carlos,304.849384,252.604929
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Cathy,259.77169,101.502153
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Cecelia,187.8688,29.870961
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Christie,142.465814,71.10742
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Cindy,170.187771,67.292705
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Dixie,451.496874,380.248772
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Emma,435.771366,230.781423
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Gary,295.462035,63.391975
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Jerrod,186.130759,15.49452
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Johnnie,1001.204889,617.554947
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Kathie,172.554851,57.21452
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Lakeisha,212.671476,67.73806
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Leeanne,178.138156,29.268986
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Renna,285.38769,279.075712
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Sheldon,183.818798,96.598167
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Terrell,152.840168,140.085747
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_assembly_Tony,159.913381,150.948932
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Andre,386.329163,335.207509
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Ashli,169.845665,42.373754
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Burton,202.402063,125.117865
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Carleen,514.444629,247.148986
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Charles,170.999922,33.947313
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Claire,264.96226,210.585089
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Claude,689.350523,346.266655
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Cynthia,528.402668,350.088345
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Delma,326.092902,207.132776
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Dewayne,225.715652,296.648221
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Dominique,133.516145,120.000285
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Eddy,702.472551,511.416762
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Eldon,117.393204,88.432972
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Elois,163.578751,30.228559
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Elvira,387.12001,334.77452
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Etta,659.715655,194.423025
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Geoffrey,211.991873,122.980623
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Gloria,494.588071,311.338416
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Henrietta,505.496361,60.345285
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Heriberto,162.174989,92.705053
+bdg2_buildings_energy,90,90,Ridge [refit],Fox_education_Jaclyn,420.322808,190.260427
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Adrianne,1854.359881,718.53194
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Audrey,44.466786,21.763399
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Carlos,265.048452,252.604929
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Cathy,183.070655,101.502153
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Cecelia,120.071429,29.870961
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Christie,91.69,71.10742
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Cindy,151.385298,67.292705
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Dixie,533.578214,380.248772
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Emma,450.18875,230.781423
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Gary,259.420476,63.391975
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Jerrod,17.99631,15.49452
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Johnnie,737.850893,617.554947
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Kathie,60.98869,57.21452
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Lakeisha,158.685298,67.73806
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Leeanne,75.129167,29.268986
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Renna,254.593393,279.075712
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Sheldon,175.614881,96.598167
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Terrell,147.230774,140.085747
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_assembly_Tony,179.161012,150.948932
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Andre,237.815179,335.207509
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Ashli,51.205,42.373754
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Burton,136.018036,125.117865
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Carleen,509.857679,247.148986
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Charles,66.585476,33.947313
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Claire,172.256429,210.585089
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Claude,561.304226,346.266655
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Cynthia,411.440298,350.088345
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Delma,295.823333,207.132776
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Dewayne,167.63375,296.648221
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Dominique,125.775417,120.000285
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Eddy,747.974643,511.416762
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Eldon,160.958214,88.432972
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Elois,51.643631,30.228559
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Elvira,254.212857,334.77452
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Etta,695.995357,194.423025
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Geoffrey,123.485833,122.980623
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Gloria,497.201131,311.338416
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Henrietta,494.045714,60.345285
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Heriberto,50.3525,92.705053
+bdg2_buildings_energy,90,90,Seasonal naive,Fox_education_Jaclyn,461.561964,190.260427
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Adrianne,1196.441807,718.53194
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Audrey,41.912783,21.763399
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Carlos,237.705199,252.604929
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Cathy,168.838782,101.502153
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Cecelia,53.51325,29.870961
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Christie,72.902826,71.10742
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Cindy,154.224633,67.292705
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Dixie,429.935372,380.248772
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Emma,343.692355,230.781423
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Gary,249.144873,63.391975
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Jerrod,15.455713,15.49452
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Johnnie,612.096661,617.554947
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Kathie,48.329858,57.21452
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Lakeisha,99.960556,67.73806
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Leeanne,68.431333,29.268986
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Renna,229.993634,279.075712
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Sheldon,103.860236,96.598167
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Terrell,121.383221,140.085747
+bdg2_buildings_energy,182,182,Chronos-2,Fox_assembly_Tony,178.002105,150.948932
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Andre,210.170178,335.207509
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Ashli,47.485468,42.373754
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Burton,121.831661,125.117865
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Carleen,384.579212,247.148986
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Charles,45.966967,33.947313
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Claire,164.198475,210.585089
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Claude,500.884782,346.266655
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Cynthia,365.961359,350.088345
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Delma,273.09631,207.132776
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Dewayne,131.310336,296.648221
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Dominique,126.088176,120.000285
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Eddy,644.403638,511.416762
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Eldon,154.463862,88.432972
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Elois,54.676801,30.228559
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Elvira,232.79074,334.77452
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Etta,688.493225,194.423025
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Geoffrey,120.307843,122.980623
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Gloria,433.031375,311.338416
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Henrietta,476.191222,60.345285
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Heriberto,39.618806,92.705053
+bdg2_buildings_energy,182,182,Chronos-2,Fox_education_Jaclyn,398.54109,190.260427
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Adrianne,1217.61309,718.53194
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Audrey,44.659915,21.763399
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Carlos,242.496701,252.604929
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Cathy,172.42984,101.502153
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Cecelia,99.483284,29.870961
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Christie,82.963927,71.10742
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Cindy,136.229113,67.292705
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Dixie,447.631864,380.248772
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Emma,363.509684,230.781423
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Gary,241.068729,63.391975
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Jerrod,15.476955,15.49452
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Johnnie,717.840166,617.554947
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Kathie,69.412243,57.21452
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Lakeisha,91.303993,67.73806
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Leeanne,64.371256,29.268986
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Renna,263.383769,279.075712
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Sheldon,245.059127,96.598167
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Terrell,206.482101,140.085747
+bdg2_buildings_energy,182,182,LightGBM,Fox_assembly_Tony,196.672754,150.948932
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Andre,252.417126,335.207509
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Ashli,97.72806,42.373754
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Burton,104.460828,125.117865
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Carleen,431.577304,247.148986
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Charles,62.877964,33.947313
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Claire,164.622411,210.585089
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Claude,555.196558,346.266655
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Cynthia,375.359304,350.088345
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Delma,454.83802,207.132776
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Dewayne,193.456358,296.648221
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Dominique,118.736348,120.000285
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Eddy,544.246852,511.416762
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Eldon,171.057986,88.432972
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Elois,49.577207,30.228559
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Elvira,324.0724,334.77452
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Etta,722.278646,194.423025
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Geoffrey,142.116055,122.980623
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Gloria,460.954962,311.338416
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Henrietta,401.284923,60.345285
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Heriberto,120.933381,92.705053
+bdg2_buildings_energy,182,182,LightGBM,Fox_education_Jaclyn,418.065884,190.260427
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Adrianne,1844.562087,718.53194
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Audrey,37.287741,21.763399
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Carlos,256.592565,252.604929
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Cathy,191.776012,101.502153
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Cecelia,133.859659,29.870961
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Christie,92.782781,71.10742
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Cindy,165.042894,67.292705
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Dixie,528.560027,380.248772
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Emma,468.838954,230.781423
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Gary,235.659214,63.391975
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Jerrod,18.2041,15.49452
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Johnnie,816.632477,617.554947
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Kathie,72.941952,57.21452
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Lakeisha,145.502786,67.73806
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Leeanne,74.676364,29.268986
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Renna,285.731223,279.075712
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Sheldon,158.395492,96.598167
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Terrell,167.131473,140.085747
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_assembly_Tony,182.563963,150.948932
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Andre,249.214911,335.207509
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Ashli,50.456689,42.373754
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Burton,121.439788,125.117865
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Carleen,490.658504,247.148986
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Charles,68.962324,33.947313
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Claire,180.893273,210.585089
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Claude,584.827995,346.266655
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Cynthia,427.959417,350.088345
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Delma,321.094435,207.132776
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Dewayne,211.372364,296.648221
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Dominique,124.081004,120.000285
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Eddy,654.546119,511.416762
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Eldon,152.233196,88.432972
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Elois,49.27476,30.228559
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Elvira,366.257498,334.77452
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Etta,836.818142,194.423025
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Geoffrey,87.62021,122.980623
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Gloria,616.699237,311.338416
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Henrietta,500.516222,60.345285
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Heriberto,73.427433,92.705053
+bdg2_buildings_energy,182,182,LightGBM (diff),Fox_education_Jaclyn,431.438201,190.260427
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Adrianne,1384.869345,718.53194
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Audrey,45.632459,21.763399
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Carlos,288.001529,252.604929
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Cathy,202.008513,101.502153
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Cecelia,104.581538,29.870961
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Christie,76.682669,71.10742
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Cindy,145.048841,67.292705
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Dixie,468.46981,380.248772
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Emma,384.383032,230.781423
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Gary,232.448538,63.391975
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Jerrod,16.497838,15.49452
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Johnnie,781.177785,617.554947
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Kathie,72.791133,57.21452
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Lakeisha,128.730408,67.73806
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Leeanne,68.310782,29.268986
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Renna,256.252431,279.075712
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Sheldon,125.362584,96.598167
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Terrell,152.362778,140.085747
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_assembly_Tony,184.293526,150.948932
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Andre,301.927964,335.207509
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Ashli,44.950832,42.373754
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Burton,149.16049,125.117865
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Carleen,542.758613,247.148986
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Charles,53.117423,33.947313
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Claire,230.60531,210.585089
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Claude,672.164007,346.266655
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Cynthia,451.353979,350.088345
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Delma,304.974655,207.132776
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Dewayne,173.862441,296.648221
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Dominique,111.811898,120.000285
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Eddy,722.798374,511.416762
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Eldon,130.72093,88.432972
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Elois,39.954011,30.228559
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Elvira,405.140061,334.77452
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Etta,704.831193,194.423025
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Geoffrey,127.862725,122.980623
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Gloria,647.754781,311.338416
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Henrietta,484.986043,60.345285
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Heriberto,68.941732,92.705053
+bdg2_buildings_energy,182,182,LightGBM (diff) [refit],Fox_education_Jaclyn,461.261513,190.260427
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Adrianne,1272.754272,718.53194
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Audrey,46.391502,21.763399
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Carlos,270.072953,252.604929
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Cathy,187.230402,101.502153
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Cecelia,86.734401,29.870961
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Christie,73.890178,71.10742
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Cindy,121.870205,67.292705
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Dixie,439.779062,380.248772
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Emma,361.373891,230.781423
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Gary,257.249351,63.391975
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Jerrod,15.421065,15.49452
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Johnnie,789.686791,617.554947
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Kathie,62.292204,57.21452
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Lakeisha,89.78819,67.73806
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Leeanne,61.16086,29.268986
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Renna,242.105077,279.075712
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Sheldon,183.25659,96.598167
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Terrell,126.830732,140.085747
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_assembly_Tony,162.954043,150.948932
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Andre,292.953746,335.207509
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Ashli,60.926387,42.373754
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Burton,134.664581,125.117865
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Carleen,483.066976,247.148986
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Charles,58.009174,33.947313
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Claire,207.778517,210.585089
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Claude,632.912602,346.266655
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Cynthia,427.968797,350.088345
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Delma,296.326492,207.132776
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Dewayne,209.472822,296.648221
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Dominique,109.499949,120.000285
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Eddy,609.10336,511.416762
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Eldon,139.343778,88.432972
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Elois,45.208121,30.228559
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Elvira,360.223724,334.77452
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Etta,645.836505,194.423025
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Geoffrey,157.165606,122.980623
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Gloria,408.881419,311.338416
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Henrietta,431.71225,60.345285
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Heriberto,64.023683,92.705053
+bdg2_buildings_energy,182,182,LightGBM [refit],Fox_education_Jaclyn,407.298347,190.260427
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Adrianne,1164.329157,718.53194
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Audrey,47.415433,21.763399
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Carlos,266.290689,252.604929
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Cathy,169.404165,101.502153
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Cecelia,165.116886,29.870961
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Christie,149.582648,71.10742
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Cindy,183.865577,67.292705
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Dixie,448.307555,380.248772
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Emma,394.263511,230.781423
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Gary,285.680883,63.391975
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Jerrod,56.085335,15.49452
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Johnnie,668.060436,617.554947
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Kathie,94.373528,57.21452
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Lakeisha,157.527174,67.73806
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Leeanne,111.166083,29.268986
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Renna,341.294484,279.075712
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Sheldon,172.267682,96.598167
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Terrell,202.8838,140.085747
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_assembly_Tony,212.059323,150.948932
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Andre,235.24908,335.207509
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Ashli,41.524992,42.373754
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Burton,134.897225,125.117865
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Carleen,451.878581,247.148986
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Charles,145.846453,33.947313
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Claire,229.107841,210.585089
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Claude,1292.240695,346.266655
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Cynthia,433.061962,350.088345
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Delma,287.55847,207.132776
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Dewayne,171.224526,296.648221
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Dominique,116.759829,120.000285
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Eddy,760.731481,511.416762
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Eldon,174.776439,88.432972
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Elois,88.075485,30.228559
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Elvira,313.659559,334.77452
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Etta,831.042093,194.423025
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Geoffrey,112.985006,122.980623
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Gloria,1530.918644,311.338416
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Henrietta,479.385615,60.345285
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Heriberto,135.892372,92.705053
+bdg2_buildings_energy,182,182,LightGBM snippet,Fox_education_Jaclyn,448.530431,190.260427
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Adrianne,1347.965244,718.53194
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Audrey,62.061832,21.763399
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Carlos,285.877202,252.604929
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Cathy,183.099134,101.502153
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Cecelia,144.24015,29.870961
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Christie,124.461271,71.10742
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Cindy,155.378098,67.292705
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Dixie,433.538222,380.248772
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Emma,370.429581,230.781423
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Gary,296.31039,63.391975
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Jerrod,47.763362,15.49452
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Johnnie,784.848927,617.554947
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Kathie,76.576649,57.21452
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Lakeisha,173.911964,67.73806
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Leeanne,77.318706,29.268986
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Renna,320.198006,279.075712
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Sheldon,170.526925,96.598167
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Terrell,145.563715,140.085747
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_assembly_Tony,183.4608,150.948932
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Andre,244.553247,335.207509
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Ashli,67.694572,42.373754
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Burton,163.194282,125.117865
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Carleen,568.719254,247.148986
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Charles,88.499448,33.947313
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Claire,231.15073,210.585089
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Claude,561.416134,346.266655
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Cynthia,484.973558,350.088345
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Delma,253.391982,207.132776
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Dewayne,159.511724,296.648221
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Dominique,128.683771,120.000285
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Eddy,831.791807,511.416762
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Eldon,131.228359,88.432972
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Elois,64.890597,30.228559
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Elvira,322.839887,334.77452
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Etta,666.823078,194.423025
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Geoffrey,202.089533,122.980623
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Gloria,878.196642,311.338416
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Henrietta,448.883306,60.345285
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Heriberto,85.803883,92.705053
+bdg2_buildings_energy,182,182,LightGBM snippet [refit],Fox_education_Jaclyn,463.110106,190.260427
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Adrianne,1412.860943,718.53194
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Audrey,42.131263,21.763399
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Carlos,248.578426,252.604929
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Cathy,190.399521,101.502153
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Cecelia,88.450805,29.870961
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Christie,74.803943,71.10742
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Cindy,148.263688,67.292705
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Dixie,443.29746,380.248772
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Emma,340.234974,230.781423
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Gary,266.210317,63.391975
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Jerrod,16.981631,15.49452
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Johnnie,673.12658,617.554947
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Kathie,69.757909,57.21452
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Lakeisha,125.103687,67.73806
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Leeanne,62.73829,29.268986
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Renna,220.182867,279.075712
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Sheldon,130.373755,96.598167
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Terrell,140.149628,140.085747
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_assembly_Tony,175.609397,150.948932
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Andre,282.520945,335.207509
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Ashli,47.529739,42.373754
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Burton,134.933184,125.117865
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Carleen,510.401225,247.148986
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Charles,48.341784,33.947313
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Claire,237.333688,210.585089
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Claude,629.337669,346.266655
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Cynthia,469.142334,350.088345
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Delma,274.839623,207.132776
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Dewayne,131.34628,296.648221
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Dominique,108.721888,120.000285
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Eddy,681.748885,511.416762
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Eldon,126.648651,88.432972
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Elois,43.950158,30.228559
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Elvira,377.220677,334.77452
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Etta,693.053296,194.423025
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Geoffrey,156.024143,122.980623
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Gloria,684.135017,311.338416
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Henrietta,454.912114,60.345285
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Heriberto,52.171986,92.705053
+bdg2_buildings_energy,182,182,LightGBM+ (diff) [refit],Fox_education_Jaclyn,430.756822,190.260427
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Adrianne,1181.408284,718.53194
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Audrey,48.25496,21.763399
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Carlos,237.867113,252.604929
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Cathy,170.225025,101.502153
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Cecelia,98.713058,29.870961
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Christie,78.532298,71.10742
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Cindy,124.247467,67.292705
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Dixie,448.18042,380.248772
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Emma,381.026308,230.781423
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Gary,225.942764,63.391975
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Jerrod,16.488136,15.49452
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Johnnie,593.628436,617.554947
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Kathie,67.660197,57.21452
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Lakeisha,103.358281,67.73806
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Leeanne,59.718121,29.268986
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Renna,208.912707,279.075712
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Sheldon,170.728162,96.598167
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Terrell,174.087937,140.085747
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_assembly_Tony,192.691395,150.948932
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Andre,247.027216,335.207509
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Ashli,58.410565,42.373754
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Burton,114.340553,125.117865
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Carleen,386.481339,247.148986
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Charles,53.236624,33.947313
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Claire,210.803528,210.585089
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Claude,620.139773,346.266655
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Cynthia,323.83054,350.088345
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Delma,283.82132,207.132776
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Dewayne,127.202142,296.648221
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Dominique,100.519878,120.000285
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Eddy,704.880467,511.416762
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Eldon,138.424899,88.432972
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Elois,44.728977,30.228559
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Elvira,345.743743,334.77452
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Etta,661.864159,194.423025
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Geoffrey,166.429952,122.980623
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Gloria,676.181595,311.338416
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Henrietta,525.808956,60.345285
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Heriberto,58.16485,92.705053
+bdg2_buildings_energy,182,182,LightGBM+ [refit],Fox_education_Jaclyn,400.127821,190.260427
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Adrianne,1384.869345,718.53194
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Audrey,45.632459,21.763399
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Carlos,288.001529,252.604929
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Cathy,202.008513,101.502153
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Cecelia,104.581538,29.870961
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Christie,76.682669,71.10742
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Cindy,145.048841,67.292705
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Dixie,468.46981,380.248772
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Emma,384.383032,230.781423
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Gary,232.448538,63.391975
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Jerrod,16.497838,15.49452
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Johnnie,781.177785,617.554947
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Kathie,72.791133,57.21452
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Lakeisha,128.730408,67.73806
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Leeanne,68.310782,29.268986
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Renna,256.252431,279.075712
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Sheldon,125.362584,96.598167
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Terrell,152.362778,140.085747
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_assembly_Tony,184.293526,150.948932
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Andre,301.927964,335.207509
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Ashli,44.950832,42.373754
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Burton,149.16049,125.117865
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Carleen,542.758613,247.148986
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Charles,53.117423,33.947313
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Claire,230.60531,210.585089
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Claude,672.164007,346.266655
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Cynthia,451.353979,350.088345
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Delma,304.974655,207.132776
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Dewayne,173.862441,296.648221
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Dominique,111.811898,120.000285
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Eddy,722.798374,511.416762
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Eldon,130.72093,88.432972
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Elois,39.954011,30.228559
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Elvira,405.140061,334.77452
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Etta,704.831193,194.423025
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Geoffrey,127.862725,122.980623
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Gloria,647.754781,311.338416
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Henrietta,484.986043,60.345285
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Heriberto,68.941732,92.705053
+bdg2_buildings_energy,182,182,ML selected on validation (4),Fox_education_Jaclyn,461.261513,190.260427
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Adrianne,1412.860943,718.53194
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Audrey,42.131263,21.763399
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Carlos,248.578426,252.604929
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Cathy,190.399521,101.502153
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Cecelia,88.450805,29.870961
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Christie,74.803943,71.10742
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Cindy,148.263688,67.292705
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Dixie,443.29746,380.248772
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Emma,340.234974,230.781423
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Gary,266.210317,63.391975
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Jerrod,16.981631,15.49452
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Johnnie,673.12658,617.554947
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Kathie,69.757909,57.21452
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Lakeisha,125.103687,67.73806
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Leeanne,62.73829,29.268986
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Renna,220.182867,279.075712
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Sheldon,130.373755,96.598167
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Terrell,140.149628,140.085747
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_assembly_Tony,175.609397,150.948932
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Andre,282.520945,335.207509
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Ashli,47.529739,42.373754
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Burton,134.933184,125.117865
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Carleen,510.401225,247.148986
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Charles,48.341784,33.947313
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Claire,237.333688,210.585089
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Claude,629.337669,346.266655
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Cynthia,469.142334,350.088345
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Delma,274.839623,207.132776
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Dewayne,131.34628,296.648221
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Dominique,108.721888,120.000285
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Eddy,681.748885,511.416762
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Eldon,126.648651,88.432972
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Elois,43.950158,30.228559
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Elvira,377.220677,334.77452
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Etta,693.053296,194.423025
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Geoffrey,156.024143,122.980623
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Gloria,684.135017,311.338416
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Henrietta,454.912114,60.345285
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Heriberto,52.171986,92.705053
+bdg2_buildings_energy,182,182,ML selected on validation (6),Fox_education_Jaclyn,430.756822,190.260427
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Adrianne,1479.768453,718.53194
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Audrey,230.598663,21.763399
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Carlos,238.472157,252.604929
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Cathy,239.782084,101.502153
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Cecelia,289.12195,29.870961
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Christie,246.485867,71.10742
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Cindy,330.490387,67.292705
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Dixie,516.61153,380.248772
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Emma,454.442457,230.781423
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Gary,237.974173,63.391975
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Jerrod,245.061839,15.49452
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Johnnie,856.672889,617.554947
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Kathie,266.773619,57.21452
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Lakeisha,312.065384,67.73806
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Leeanne,271.555067,29.268986
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Renna,250.264807,279.075712
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Sheldon,293.002151,96.598167
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Terrell,298.157611,140.085747
+bdg2_buildings_energy,182,182,Ridge,Fox_assembly_Tony,252.540572,150.948932
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Andre,301.281276,335.207509
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Ashli,243.257792,42.373754
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Burton,162.459049,125.117865
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Carleen,431.966345,247.148986
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Charles,264.663482,33.947313
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Claire,188.442149,210.585089
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Claude,583.167477,346.266655
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Cynthia,497.945612,350.088345
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Delma,429.912498,207.132776
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Dewayne,254.605325,296.648221
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Dominique,191.637645,120.000285
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Eddy,555.66334,511.416762
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Eldon,270.116876,88.432972
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Elois,232.162012,30.228559
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Elvira,389.208317,334.77452
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Etta,838.166667,194.423025
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Geoffrey,176.543913,122.980623
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Gloria,528.003903,311.338416
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Henrietta,579.563018,60.345285
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Heriberto,237.126371,92.705053
+bdg2_buildings_energy,182,182,Ridge,Fox_education_Jaclyn,470.111417,190.260427
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Adrianne,1410.755438,718.53194
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Audrey,218.01448,21.763399
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Carlos,309.188039,252.604929
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Cathy,278.319475,101.502153
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Cecelia,227.706923,29.870961
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Christie,166.681758,71.10742
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Cindy,179.363749,67.292705
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Dixie,450.356483,380.248772
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Emma,455.032069,230.781423
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Gary,308.000539,63.391975
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Jerrod,207.01877,15.49452
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Johnnie,974.533514,617.554947
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Kathie,182.569675,57.21452
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Lakeisha,231.531077,67.73806
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Leeanne,199.556466,29.268986
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Renna,287.187536,279.075712
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Sheldon,211.857389,96.598167
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Terrell,190.679254,140.085747
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_assembly_Tony,171.814296,150.948932
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Andre,363.530756,335.207509
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Ashli,194.256295,42.373754
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Burton,218.319297,125.117865
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Carleen,537.47507,247.148986
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Charles,198.633648,33.947313
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Claire,247.421393,210.585089
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Claude,675.015038,346.266655
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Cynthia,490.787615,350.088345
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Delma,340.056735,207.132776
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Dewayne,230.714432,296.648221
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Dominique,145.79984,120.000285
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Eddy,693.958541,511.416762
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Eldon,137.842435,88.432972
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Elois,186.181817,30.228559
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Elvira,338.735667,334.77452
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Etta,668.813704,194.423025
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Geoffrey,224.120467,122.980623
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Gloria,473.683266,311.338416
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Henrietta,540.507697,60.345285
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Heriberto,185.753459,92.705053
+bdg2_buildings_energy,182,182,Ridge [refit],Fox_education_Jaclyn,415.301478,190.260427
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Adrianne,1854.359881,718.53194
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Audrey,44.466786,21.763399
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Carlos,265.048452,252.604929
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Cathy,183.070655,101.502153
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Cecelia,120.071429,29.870961
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Christie,91.69,71.10742
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Cindy,151.385298,67.292705
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Dixie,533.578214,380.248772
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Emma,450.18875,230.781423
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Gary,259.420476,63.391975
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Jerrod,17.99631,15.49452
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Johnnie,737.850893,617.554947
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Kathie,60.98869,57.21452
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Lakeisha,158.685298,67.73806
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Leeanne,75.129167,29.268986
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Renna,254.593393,279.075712
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Sheldon,175.614881,96.598167
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Terrell,147.230774,140.085747
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_assembly_Tony,179.161012,150.948932
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Andre,237.815179,335.207509
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Ashli,51.205,42.373754
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Burton,136.018036,125.117865
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Carleen,509.857679,247.148986
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Charles,66.585476,33.947313
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Claire,172.256429,210.585089
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Claude,561.304226,346.266655
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Cynthia,411.440298,350.088345
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Delma,295.823333,207.132776
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Dewayne,167.63375,296.648221
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Dominique,125.775417,120.000285
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Eddy,747.974643,511.416762
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Eldon,160.958214,88.432972
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Elois,51.643631,30.228559
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Elvira,254.212857,334.77452
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Etta,695.995357,194.423025
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Geoffrey,123.485833,122.980623
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Gloria,497.201131,311.338416
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Henrietta,494.045714,60.345285
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Heriberto,50.3525,92.705053
+bdg2_buildings_energy,182,182,Seasonal naive,Fox_education_Jaclyn,461.561964,190.260427
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Adrianne,1207.197678,718.53194
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Audrey,41.962384,21.763399
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Carlos,191.771577,252.604929
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Cathy,169.495173,101.502153
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Cecelia,53.761244,29.870961
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Christie,70.043316,71.10742
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Cindy,140.126954,67.292705
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Dixie,385.148492,380.248772
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Emma,386.927222,230.781423
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Gary,206.045312,63.391975
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Jerrod,13.336298,15.49452
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Johnnie,545.9812,617.554947
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Kathie,37.225383,57.21452
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Lakeisha,91.221637,67.73806
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Leeanne,67.285647,29.268986
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Renna,225.557992,279.075712
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Sheldon,144.66646,96.598167
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Terrell,74.522042,140.085747
+bdg2_buildings_energy,full,563,Chronos-2,Fox_assembly_Tony,198.138248,150.948932
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Andre,197.516618,335.207509
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Ashli,49.705333,42.373754
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Burton,80.736687,125.117865
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Carleen,401.288879,247.148986
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Charles,36.412213,33.947313
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Claire,158.820842,210.585089
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Claude,494.072823,346.266655
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Cynthia,374.441998,350.088345
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Delma,258.61559,207.132776
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Dewayne,128.798602,296.648221
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Dominique,95.910217,120.000285
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Eddy,550.113475,511.416762
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Eldon,146.613772,88.432972
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Elois,49.283823,30.228559
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Elvira,168.565947,334.77452
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Etta,559.742325,194.423025
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Geoffrey,124.428476,122.980623
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Gloria,420.043545,311.338416
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Henrietta,450.336558,60.345285
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Heriberto,61.741203,92.705053
+bdg2_buildings_energy,full,563,Chronos-2,Fox_education_Jaclyn,411.847833,190.260427
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Adrianne,1094.904066,718.53194
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Audrey,43.607577,21.763399
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Carlos,191.283456,252.604929
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Cathy,161.022556,101.502153
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Cecelia,68.381393,29.870961
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Christie,70.227935,71.10742
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Cindy,134.332167,67.292705
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Dixie,395.508961,380.248772
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Emma,388.177138,230.781423
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Gary,218.445719,63.391975
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Jerrod,13.044241,15.49452
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Johnnie,544.930929,617.554947
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Kathie,39.80501,57.21452
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Lakeisha,97.095015,67.73806
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Leeanne,67.824774,29.268986
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Renna,218.780081,279.075712
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Sheldon,126.079482,96.598167
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Terrell,94.590497,140.085747
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_assembly_Tony,197.745121,150.948932
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Andre,196.834094,335.207509
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Ashli,46.784486,42.373754
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Burton,87.948754,125.117865
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Carleen,485.615585,247.148986
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Charles,37.006466,33.947313
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Claire,169.452332,210.585089
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Claude,504.550872,346.266655
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Cynthia,339.712434,350.088345
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Delma,249.158422,207.132776
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Dewayne,112.973882,296.648221
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Dominique,105.047308,120.000285
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Eddy,521.761409,511.416762
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Eldon,147.096078,88.432972
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Elois,47.60252,30.228559
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Elvira,183.079587,334.77452
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Etta,627.630702,194.423025
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Geoffrey,121.905271,122.980623
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Gloria,417.428584,311.338416
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Henrietta,481.976265,60.345285
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Heriberto,53.958653,92.705053
+bdg2_buildings_energy,full,563,Chronos-2 base,Fox_education_Jaclyn,410.66888,190.260427
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Adrianne,1208.147604,718.53194
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Audrey,42.917358,21.763399
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Carlos,194.560663,252.604929
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Cathy,170.537868,101.502153
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Cecelia,57.062533,29.870961
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Christie,79.531378,71.10742
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Cindy,133.169137,67.292705
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Dixie,376.666374,380.248772
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Emma,402.051706,230.781423
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Gary,226.412046,63.391975
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Jerrod,13.732252,15.49452
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Johnnie,606.388088,617.554947
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Kathie,34.790433,57.21452
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Lakeisha,94.386642,67.73806
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Leeanne,70.073949,29.268986
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Renna,226.564378,279.075712
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Sheldon,102.790227,96.598167
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Terrell,119.245304,140.085747
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_assembly_Tony,181.890578,150.948932
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Andre,199.916742,335.207509
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Ashli,46.881789,42.373754
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Burton,94.726114,125.117865
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Carleen,439.427819,247.148986
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Charles,45.771895,33.947313
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Claire,140.886638,210.585089
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Claude,489.289785,346.266655
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Cynthia,345.969591,350.088345
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Delma,240.449232,207.132776
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Dewayne,130.834829,296.648221
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Dominique,113.102007,120.000285
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Eddy,569.591929,511.416762
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Eldon,144.661517,88.432972
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Elois,44.41877,30.228559
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Elvira,154.682501,334.77452
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Etta,604.316097,194.423025
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Geoffrey,124.799336,122.980623
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Gloria,391.199074,311.338416
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Henrietta,466.080777,60.345285
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Heriberto,42.351864,92.705053
+bdg2_buildings_energy,full,563,Chronos-2 synth,Fox_education_Jaclyn,404.35647,190.260427
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Adrianne,1203.239217,718.53194
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Audrey,44.33816,21.763399
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Carlos,235.724014,252.604929
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Cathy,186.308393,101.502153
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Cecelia,89.314596,29.870961
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Christie,83.928671,71.10742
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Cindy,118.153884,67.292705
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Dixie,397.768356,380.248772
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Emma,412.146593,230.781423
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Gary,241.974155,63.391975
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Jerrod,15.522328,15.49452
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Johnnie,763.385127,617.554947
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Kathie,68.679188,57.21452
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Lakeisha,103.382878,67.73806
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Leeanne,61.014496,29.268986
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Renna,229.71232,279.075712
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Sheldon,144.820315,96.598167
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Terrell,171.723063,140.085747
+bdg2_buildings_energy,full,563,LightGBM,Fox_assembly_Tony,163.447715,150.948932
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Andre,320.76636,335.207509
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Ashli,104.173114,42.373754
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Burton,105.425484,125.117865
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Carleen,381.294478,247.148986
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Charles,54.637241,33.947313
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Claire,197.587401,210.585089
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Claude,604.165698,346.266655
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Cynthia,467.834552,350.088345
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Delma,381.189619,207.132776
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Dewayne,189.127284,296.648221
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Dominique,107.83829,120.000285
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Eddy,552.725799,511.416762
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Eldon,133.894449,88.432972
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Elois,42.158953,30.228559
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Elvira,331.260837,334.77452
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Etta,591.652986,194.423025
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Geoffrey,127.538054,122.980623
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Gloria,383.807362,311.338416
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Henrietta,472.89903,60.345285
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Heriberto,57.433198,92.705053
+bdg2_buildings_energy,full,563,LightGBM,Fox_education_Jaclyn,434.297674,190.260427
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Adrianne,1518.01088,718.53194
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Audrey,40.076028,21.763399
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Carlos,247.411554,252.604929
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Cathy,194.108694,101.502153
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Cecelia,126.584696,29.870961
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Christie,85.344971,71.10742
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Cindy,148.261636,67.292705
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Dixie,472.247234,380.248772
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Emma,453.443715,230.781423
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Gary,249.836053,63.391975
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Jerrod,17.594846,15.49452
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Johnnie,701.427842,617.554947
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Kathie,66.617117,57.21452
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Lakeisha,130.778629,67.73806
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Leeanne,69.001186,29.268986
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Renna,227.364585,279.075712
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Sheldon,139.645684,96.598167
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Terrell,151.631997,140.085747
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_assembly_Tony,194.593387,150.948932
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Andre,253.615274,335.207509
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Ashli,43.882635,42.373754
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Burton,124.971919,125.117865
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Carleen,415.001341,247.148986
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Charles,57.804264,33.947313
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Claire,195.256694,210.585089
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Claude,582.954536,346.266655
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Cynthia,452.338849,350.088345
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Delma,283.811024,207.132776
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Dewayne,147.738668,296.648221
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Dominique,130.432018,120.000285
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Eddy,534.075272,511.416762
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Eldon,153.152932,88.432972
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Elois,45.581253,30.228559
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Elvira,364.025917,334.77452
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Etta,722.409479,194.423025
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Geoffrey,120.118545,122.980623
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Gloria,485.424011,311.338416
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Henrietta,487.333431,60.345285
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Heriberto,47.558854,92.705053
+bdg2_buildings_energy,full,563,LightGBM (diff),Fox_education_Jaclyn,428.954164,190.260427
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Adrianne,1467.141985,718.53194
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Audrey,41.469084,21.763399
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Carlos,247.375377,252.604929
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Cathy,201.436737,101.502153
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Cecelia,123.018328,29.870961
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Christie,78.600452,71.10742
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Cindy,144.414256,67.292705
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Dixie,461.300164,380.248772
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Emma,456.439308,230.781423
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Gary,238.867744,63.391975
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Jerrod,17.642969,15.49452
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Johnnie,778.9302,617.554947
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Kathie,69.540848,57.21452
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Lakeisha,128.385498,67.73806
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Leeanne,65.957008,29.268986
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Renna,228.848573,279.075712
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Sheldon,134.205601,96.598167
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Terrell,129.328134,140.085747
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_assembly_Tony,185.340548,150.948932
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Andre,261.638137,335.207509
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Ashli,46.537143,42.373754
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Burton,128.670157,125.117865
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Carleen,420.188103,247.148986
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Charles,56.826933,33.947313
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Claire,193.159584,210.585089
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Claude,627.918441,346.266655
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Cynthia,459.696846,350.088345
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Delma,281.349758,207.132776
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Dewayne,138.695584,296.648221
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Dominique,129.583665,120.000285
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Eddy,551.195217,511.416762
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Eldon,141.704214,88.432972
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Elois,44.120004,30.228559
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Elvira,372.5995,334.77452
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Etta,718.833738,194.423025
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Geoffrey,132.041967,122.980623
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Gloria,505.282293,311.338416
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Henrietta,471.638269,60.345285
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Heriberto,45.102627,92.705053
+bdg2_buildings_energy,full,563,LightGBM (diff) [refit],Fox_education_Jaclyn,438.562983,190.260427
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Adrianne,1195.026973,718.53194
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Audrey,44.461988,21.763399
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Carlos,247.494451,252.604929
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Cathy,185.468734,101.502153
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Cecelia,94.907579,29.870961
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Christie,81.870098,71.10742
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Cindy,125.128167,67.292705
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Dixie,397.95986,380.248772
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Emma,411.515472,230.781423
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Gary,248.105734,63.391975
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Jerrod,15.49732,15.49452
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Johnnie,795.909229,617.554947
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Kathie,68.254858,57.21452
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Lakeisha,101.545091,67.73806
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Leeanne,57.572089,29.268986
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Renna,222.079673,279.075712
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Sheldon,136.423204,96.598167
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Terrell,162.287416,140.085747
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_assembly_Tony,164.132694,150.948932
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Andre,320.53406,335.207509
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Ashli,76.322846,42.373754
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Burton,110.291187,125.117865
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Carleen,397.55612,247.148986
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Charles,55.419495,33.947313
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Claire,187.606724,210.585089
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Claude,630.498936,346.266655
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Cynthia,459.502173,350.088345
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Delma,379.806937,207.132776
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Dewayne,176.733679,296.648221
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Dominique,107.271,120.000285
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Eddy,559.022,511.416762
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Eldon,127.827816,88.432972
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Elois,40.686641,30.228559
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Elvira,327.663068,334.77452
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Etta,572.128284,194.423025
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Geoffrey,127.922871,122.980623
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Gloria,400.986938,311.338416
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Henrietta,455.50809,60.345285
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Heriberto,55.144586,92.705053
+bdg2_buildings_energy,full,563,LightGBM [refit],Fox_education_Jaclyn,416.563108,190.260427
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Adrianne,1057.579844,718.53194
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Audrey,59.934291,21.763399
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Carlos,248.579114,252.604929
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Cathy,165.895648,101.502153
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Cecelia,144.299557,29.870961
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Christie,102.175032,71.10742
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Cindy,157.640174,67.292705
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Dixie,468.119997,380.248772
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Emma,383.844443,230.781423
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Gary,251.259505,63.391975
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Jerrod,33.917177,15.49452
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Johnnie,715.416168,617.554947
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Kathie,83.33183,57.21452
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Lakeisha,134.275367,67.73806
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Leeanne,64.035819,29.268986
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Renna,238.003716,279.075712
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Sheldon,154.548594,96.598167
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Terrell,172.53559,140.085747
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_assembly_Tony,169.246623,150.948932
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Andre,235.544306,335.207509
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Ashli,51.118163,42.373754
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Burton,111.500034,125.117865
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Carleen,437.822559,247.148986
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Charles,74.581591,33.947313
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Claire,223.366967,210.585089
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Claude,641.98555,346.266655
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Cynthia,436.774074,350.088345
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Delma,285.542607,207.132776
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Dewayne,155.140505,296.648221
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Dominique,132.456981,120.000285
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Eddy,740.969404,511.416762
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Eldon,142.030805,88.432972
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Elois,55.427487,30.228559
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Elvira,313.874381,334.77452
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Etta,633.903583,194.423025
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Geoffrey,134.235728,122.980623
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Gloria,990.81408,311.338416
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Henrietta,483.089673,60.345285
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Heriberto,141.262149,92.705053
+bdg2_buildings_energy,full,563,LightGBM snippet,Fox_education_Jaclyn,448.767573,190.260427
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Adrianne,1006.509025,718.53194
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Audrey,53.977047,21.763399
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Carlos,249.050175,252.604929
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Cathy,166.688578,101.502153
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Cecelia,140.251572,29.870961
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Christie,101.933723,71.10742
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Cindy,148.550319,67.292705
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Dixie,494.475859,380.248772
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Emma,373.691351,230.781423
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Gary,254.699273,63.391975
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Jerrod,34.065053,15.49452
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Johnnie,644.283572,617.554947
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Kathie,77.811767,57.21452
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Lakeisha,138.093098,67.73806
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Leeanne,58.187559,29.268986
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Renna,219.648055,279.075712
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Sheldon,149.069926,96.598167
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Terrell,178.323756,140.085747
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_assembly_Tony,180.384814,150.948932
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Andre,230.709247,335.207509
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Ashli,47.862805,42.373754
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Burton,123.035718,125.117865
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Carleen,472.533658,247.148986
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Charles,80.04728,33.947313
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Claire,183.978474,210.585089
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Claude,546.639926,346.266655
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Cynthia,422.699889,350.088345
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Delma,310.977108,207.132776
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Dewayne,156.094032,296.648221
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Dominique,113.570156,120.000285
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Eddy,666.095997,511.416762
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Eldon,128.015492,88.432972
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Elois,56.195727,30.228559
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Elvira,304.410308,334.77452
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Etta,706.368926,194.423025
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Geoffrey,133.084643,122.980623
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Gloria,837.179438,311.338416
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Henrietta,473.29397,60.345285
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Heriberto,112.724553,92.705053
+bdg2_buildings_energy,full,563,LightGBM snippet [refit],Fox_education_Jaclyn,419.859614,190.260427
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Adrianne,1247.585617,718.53194
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Audrey,44.481653,21.763399
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Carlos,230.037626,252.604929
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Cathy,186.32679,101.502153
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Cecelia,111.908661,29.870961
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Christie,77.071996,71.10742
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Cindy,157.810577,67.292705
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Dixie,449.192239,380.248772
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Emma,366.81236,230.781423
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Gary,246.923516,63.391975
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Jerrod,16.953756,15.49452
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Johnnie,632.58428,617.554947
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Kathie,63.40234,57.21452
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Lakeisha,121.63637,67.73806
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Leeanne,66.420396,29.268986
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Renna,201.891862,279.075712
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Sheldon,126.139512,96.598167
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Terrell,136.155369,140.085747
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_assembly_Tony,175.155848,150.948932
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Andre,270.478656,335.207509
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Ashli,36.542687,42.373754
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Burton,122.993067,125.117865
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Carleen,418.531443,247.148986
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Charles,53.557161,33.947313
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Claire,196.04996,210.585089
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Claude,605.092601,346.266655
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Cynthia,473.510255,350.088345
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Delma,249.01213,207.132776
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Dewayne,109.920799,296.648221
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Dominique,114.095529,120.000285
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Eddy,620.623678,511.416762
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Eldon,125.750447,88.432972
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Elois,43.706474,30.228559
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Elvira,334.025556,334.77452
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Etta,674.192985,194.423025
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Geoffrey,140.529075,122.980623
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Gloria,456.125135,311.338416
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Henrietta,449.466551,60.345285
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Heriberto,41.737043,92.705053
+bdg2_buildings_energy,full,563,LightGBM+ (diff) [refit],Fox_education_Jaclyn,434.475697,190.260427
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Adrianne,1192.17331,718.53194
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Audrey,48.204544,21.763399
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Carlos,219.597587,252.604929
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Cathy,170.725883,101.502153
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Cecelia,83.627437,29.870961
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Christie,76.60169,71.10742
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Cindy,128.379093,67.292705
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Dixie,406.759795,380.248772
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Emma,400.556708,230.781423
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Gary,238.896786,63.391975
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Jerrod,16.178254,15.49452
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Johnnie,685.164696,617.554947
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Kathie,69.484915,57.21452
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Lakeisha,92.884934,67.73806
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Leeanne,57.790561,29.268986
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Renna,213.96962,279.075712
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Sheldon,142.275611,96.598167
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Terrell,155.628387,140.085747
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_assembly_Tony,177.949506,150.948932
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Andre,276.902187,335.207509
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Ashli,68.333183,42.373754
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Burton,101.167161,125.117865
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Carleen,394.80793,247.148986
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Charles,51.956485,33.947313
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Claire,164.947928,210.585089
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Claude,638.720862,346.266655
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Cynthia,478.804414,350.088345
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Delma,337.85413,207.132776
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Dewayne,140.112229,296.648221
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Dominique,100.823001,120.000285
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Eddy,596.17059,511.416762
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Eldon,125.075415,88.432972
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Elois,41.819729,30.228559
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Elvira,309.811503,334.77452
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Etta,631.633864,194.423025
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Geoffrey,129.289021,122.980623
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Gloria,430.145007,311.338416
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Henrietta,484.904422,60.345285
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Heriberto,49.841917,92.705053
+bdg2_buildings_energy,full,563,LightGBM+ [refit],Fox_education_Jaclyn,417.745424,190.260427
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Adrianne,1195.026973,718.53194
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Audrey,44.461988,21.763399
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Carlos,247.494451,252.604929
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Cathy,185.468734,101.502153
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Cecelia,94.907579,29.870961
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Christie,81.870098,71.10742
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Cindy,125.128167,67.292705
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Dixie,397.95986,380.248772
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Emma,411.515472,230.781423
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Gary,248.105734,63.391975
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Jerrod,15.49732,15.49452
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Johnnie,795.909229,617.554947
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Kathie,68.254858,57.21452
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Lakeisha,101.545091,67.73806
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Leeanne,57.572089,29.268986
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Renna,222.079673,279.075712
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Sheldon,136.423204,96.598167
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Terrell,162.287416,140.085747
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_assembly_Tony,164.132694,150.948932
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Andre,320.53406,335.207509
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Ashli,76.322846,42.373754
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Burton,110.291187,125.117865
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Carleen,397.55612,247.148986
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Charles,55.419495,33.947313
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Claire,187.606724,210.585089
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Claude,630.498936,346.266655
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Cynthia,459.502173,350.088345
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Delma,379.806937,207.132776
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Dewayne,176.733679,296.648221
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Dominique,107.271,120.000285
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Eddy,559.022,511.416762
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Eldon,127.827816,88.432972
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Elois,40.686641,30.228559
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Elvira,327.663068,334.77452
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Etta,572.128284,194.423025
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Geoffrey,127.922871,122.980623
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Gloria,400.986938,311.338416
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Henrietta,455.50809,60.345285
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Heriberto,55.144586,92.705053
+bdg2_buildings_energy,full,563,ML selected on validation (4),Fox_education_Jaclyn,416.563108,190.260427
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Adrianne,1192.17331,718.53194
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Audrey,48.204544,21.763399
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Carlos,219.597587,252.604929
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Cathy,170.725883,101.502153
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Cecelia,83.627437,29.870961
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Christie,76.60169,71.10742
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Cindy,128.379093,67.292705
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Dixie,406.759795,380.248772
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Emma,400.556708,230.781423
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Gary,238.896786,63.391975
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Jerrod,16.178254,15.49452
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Johnnie,685.164696,617.554947
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Kathie,69.484915,57.21452
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Lakeisha,92.884934,67.73806
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Leeanne,57.790561,29.268986
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Renna,213.96962,279.075712
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Sheldon,142.275611,96.598167
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Terrell,155.628387,140.085747
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_assembly_Tony,177.949506,150.948932
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Andre,276.902187,335.207509
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Ashli,68.333183,42.373754
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Burton,101.167161,125.117865
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Carleen,394.80793,247.148986
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Charles,51.956485,33.947313
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Claire,164.947928,210.585089
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Claude,638.720862,346.266655
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Cynthia,478.804414,350.088345
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Delma,337.85413,207.132776
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Dewayne,140.112229,296.648221
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Dominique,100.823001,120.000285
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Eddy,596.17059,511.416762
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Eldon,125.075415,88.432972
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Elois,41.819729,30.228559
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Elvira,309.811503,334.77452
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Etta,631.633864,194.423025
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Geoffrey,129.289021,122.980623
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Gloria,430.145007,311.338416
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Henrietta,484.904422,60.345285
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Heriberto,49.841917,92.705053
+bdg2_buildings_energy,full,563,ML selected on validation (6),Fox_education_Jaclyn,417.745424,190.260427
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Adrianne,1392.798479,718.53194
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Audrey,145.67278,21.763399
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Carlos,239.10628,252.604929
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Cathy,177.284112,101.502153
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Cecelia,184.784723,29.870961
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Christie,118.731227,71.10742
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Cindy,205.762468,67.292705
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Dixie,447.58166,380.248772
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Emma,454.548271,230.781423
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Gary,251.23231,63.391975
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Jerrod,151.499974,15.49452
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Johnnie,946.171875,617.554947
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Kathie,151.128354,57.21452
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Lakeisha,180.15702,67.73806
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Leeanne,160.307183,29.268986
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Renna,245.926193,279.075712
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Sheldon,168.418527,96.598167
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Terrell,159.0555,140.085747
+bdg2_buildings_energy,full,563,Ridge,Fox_assembly_Tony,160.567672,150.948932
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Andre,328.142577,335.207509
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Ashli,139.348327,42.373754
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Burton,128.267547,125.117865
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Carleen,476.745173,247.148986
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Charles,160.257343,33.947313
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Claire,204.176369,210.585089
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Claude,572.631196,346.266655
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Cynthia,485.284149,350.088345
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Delma,317.870115,207.132776
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Dewayne,198.532578,296.648221
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Dominique,103.333549,120.000285
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Eddy,649.090457,511.416762
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Eldon,152.722899,88.432972
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Elois,133.689281,30.228559
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Elvira,370.822087,334.77452
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Etta,715.242378,194.423025
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Geoffrey,114.533013,122.980623
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Gloria,441.704338,311.338416
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Henrietta,496.872582,60.345285
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Heriberto,111.465944,92.705053
+bdg2_buildings_energy,full,563,Ridge,Fox_education_Jaclyn,418.692744,190.260427
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Adrianne,1391.053424,718.53194
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Audrey,151.024902,21.763399
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Carlos,244.404694,252.604929
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Cathy,183.612471,101.502153
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Cecelia,184.801615,29.870961
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Christie,117.200842,71.10742
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Cindy,199.254501,67.292705
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Dixie,447.970733,380.248772
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Emma,453.738385,230.781423
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Gary,254.834773,63.391975
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Jerrod,153.841343,15.49452
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Johnnie,950.480745,617.554947
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Kathie,146.668737,57.21452
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Lakeisha,178.503681,67.73806
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Leeanne,160.963519,29.268986
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Renna,247.60624,279.075712
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Sheldon,167.271443,96.598167
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Terrell,155.740424,140.085747
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_assembly_Tony,156.477603,150.948932
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Andre,331.954085,335.207509
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Ashli,141.91608,42.373754
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Burton,133.529913,125.117865
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Carleen,482.851899,247.148986
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Charles,161.604779,33.947313
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Claire,208.662911,210.585089
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Claude,586.447058,346.266655
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Cynthia,485.938162,350.088345
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Delma,314.796083,207.132776
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Dewayne,196.804727,296.648221
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Dominique,99.712046,120.000285
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Eddy,654.994253,511.416762
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Eldon,144.498057,88.432972
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Elois,135.956281,30.228559
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Elvira,366.126493,334.77452
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Etta,707.352502,194.423025
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Geoffrey,122.729837,122.980623
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Gloria,441.464543,311.338416
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Henrietta,497.901671,60.345285
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Heriberto,114.158102,92.705053
+bdg2_buildings_energy,full,563,Ridge [refit],Fox_education_Jaclyn,415.591739,190.260427
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Adrianne,1854.359881,718.53194
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Audrey,44.466786,21.763399
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Carlos,265.048452,252.604929
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Cathy,183.070655,101.502153
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Cecelia,120.071429,29.870961
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Christie,91.69,71.10742
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Cindy,151.385298,67.292705
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Dixie,533.578214,380.248772
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Emma,450.18875,230.781423
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Gary,259.420476,63.391975
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Jerrod,17.99631,15.49452
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Johnnie,737.850893,617.554947
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Kathie,60.98869,57.21452
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Lakeisha,158.685298,67.73806
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Leeanne,75.129167,29.268986
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Renna,254.593393,279.075712
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Sheldon,175.614881,96.598167
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Terrell,147.230774,140.085747
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_assembly_Tony,179.161012,150.948932
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Andre,237.815179,335.207509
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Ashli,51.205,42.373754
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Burton,136.018036,125.117865
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Carleen,509.857679,247.148986
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Charles,66.585476,33.947313
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Claire,172.256429,210.585089
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Claude,561.304226,346.266655
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Cynthia,411.440298,350.088345
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Delma,295.823333,207.132776
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Dewayne,167.63375,296.648221
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Dominique,125.775417,120.000285
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Eddy,747.974643,511.416762
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Eldon,160.958214,88.432972
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Elois,51.643631,30.228559
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Elvira,254.212857,334.77452
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Etta,695.995357,194.423025
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Geoffrey,123.485833,122.980623
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Gloria,497.201131,311.338416
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Henrietta,494.045714,60.345285
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Heriberto,50.3525,92.705053
+bdg2_buildings_energy,full,563,Seasonal naive,Fox_education_Jaclyn,461.561964,190.260427

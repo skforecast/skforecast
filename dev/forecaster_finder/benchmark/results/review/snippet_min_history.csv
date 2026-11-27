@@ -1,0 +1,11 @@
+target,series,freq,n0,n1,n2,n3,n4,min_ok,n5,n6
+number,one,hourly,168: ValueError: `initial_train_size` must be an integer greater ,216: ValueError: `initial_train_size` must be greater than the `w,240: ValueError: `initial_train_size` must be greater than the `w,336: ValueError: `initial_train_size` must be greater than the `w,504: ok,504,720: ok,1440: ok
+number,several,hourly,168: ValueError: `initial_train_size` must be an integer greater ,216: ValueError: `initial_train_size` must be greater than the `w,240: ValueError: `initial_train_size` must be greater than the `w,336: ValueError: `initial_train_size` must be greater than the `w,504: ok,504,720: ok,1440: ok
+number,one,daily,90: ValueError: `initial_train_size` must be an integer greater ,120: ValueError: `initial_train_size` must be greater than the `w,150: ok,180: ok,270: ok,150,365: ok,730: ok
+number,several,daily,90: ValueError: `initial_train_size` must be an integer greater ,120: ValueError: `initial_train_size` must be greater than the `w,150: ok,180: ok,270: ok,150,365: ok,730: ok
+number,one,weekly,52: ValueError: The `window_size` of the forecaster (52) leaves ,78: ValueError: `initial_train_size` must be greater than the `w,104: ok,130: ok,156: ok,104,208: ok,260: ok
+number,several,weekly,52: ValueError: The `window_size` of the forecaster (52) leaves ,78: ValueError: `initial_train_size` must be greater than the `w,104: ok,130: ok,156: ok,104,208: ok,260: ok
+number,one,monthly,24: ValueError: `initial_train_size` must be an integer greater ,36: ValueError: `initial_train_size` must be an integer greater ,48: ValueError: `initial_train_size` must be greater than the `w,60: ok,72: ok,60,96: ok,120: ok
+number,several,monthly,24: ValueError: `initial_train_size` must be an integer greater ,36: ValueError: `initial_train_size` must be an integer greater ,48: ValueError: `initial_train_size` must be greater than the `w,60: ok,72: ok,60,96: ok,120: ok
+number,one,quarterly,12: ValueError: `initial_train_size` must be an integer greater ,16: ValueError: `initial_train_size` must be greater than the `w,20: ok,24: ok,32: ok,20,40: ok,60: ok
+number,several,quarterly,12: ValueError: `initial_train_size` must be an integer greater ,16: ValueError: `initial_train_size` must be greater than the `w,20: ok,24: ok,32: ok,20,40: ok,60: ok

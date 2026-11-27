@@ -1,0 +1,15 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series
+vic_electricity_daily_past_only,full,927,Seasonal naive,Baseline,0.7980907466226828,0.00598340300007294,,1.0,1
+vic_electricity_daily_past_only,full,927,LightGBM (no exog),ML,0.6325052332529586,0.15721545299993522,,0.7925229504659214,1
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate),ML,0.6206304398672319,4.645410599999877,,0.7776439490040227,1
+vic_electricity_daily_past_only,full,927,LightGBM (no exog) [refit],ML,0.659242903611618,0.635491871000113,,0.8260249932747202,1
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate) [refit],ML,0.6239004744786715,29.904697755999905,,0.7817412708001688,1
+vic_electricity_daily_past_only,full,927,Chronos-2 (no exog),Foundation,0.483563132836988,0.8227021169998352,,0.6058999366717435,1
+vic_electricity_daily_past_only,full,927,"Chronos-2 (no exog, own loop)",Foundation,0.483563132836988,0.43184112399990227,,0.6058999366717435,1
+vic_electricity_daily_past_only,full,927,Chronos-2 (past-only covariates),Foundation,0.49410551828464444,0.6223292879999462,,0.6191094438515587,1
+vic_electricity_daily_past_only,full,927,Chronos-2 base (no exog),Foundation,0.4862732992265655,0.8990718459999698,,0.6092957489913904,1
+vic_electricity_daily_past_only,full,927,"Chronos-2 base (no exog, own loop)",Foundation,0.4862732992265655,1.0068818049999209,,0.6092957489913904,1
+vic_electricity_daily_past_only,full,927,Chronos-2 base (past-only covariates),Foundation,0.4974151988272424,1.5431936109998787,,0.6232564416166672,1
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (no exog),Foundation,0.5087481853089459,0.8485183590000815,,0.6374565642589379,1
+vic_electricity_daily_past_only,full,927,"Chronos-2 synth (no exog, own loop)",Foundation,0.5087481853089459,0.9099795479999102,,0.6374565642589379,1
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (past-only covariates),Foundation,0.5003999977273921,1.723942174000058,,0.6269963658205007,1

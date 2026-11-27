@@ -1,0 +1,15 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series
+ett_hourly_past_only,full,8928,Seasonal naive,Baseline,3.961053972342874,0.009708084000067174,,1.0,1
+ett_hourly_past_only,full,8928,LightGBM (no exog),ML,2.400747436802869,0.30970200999990993,,0.6060880395888373,1
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),ML,2.898391336342957,9.448919133000118,,0.7317222528600448,1
+ett_hourly_past_only,full,8928,LightGBM (no exog) [refit],ML,2.4603900930592912,4.637977512999896,,0.621145308859305,1
+ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],ML,2.7721312398562445,247.727601758,,0.6998468738906356,1
+ett_hourly_past_only,full,8928,Chronos-2 (no exog),Foundation,2.5590913516991782,3.625285202999976,,0.6460632370998807,1
+ett_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",Foundation,2.5590913516991782,3.344186327999978,,0.6460632370998807,1
+ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),Foundation,2.5624085634432263,18.322651364999956,,0.6469006939402089,1
+ett_hourly_past_only,full,8928,Chronos-2 base (no exog),Foundation,2.4253404929183664,12.07738287799998,,0.6122967548164542,1
+ett_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",Foundation,2.4253404929183664,10.537731750000148,,0.6122967548164542,1
+ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),Foundation,2.5313230898187973,70.2459901100001,,0.6390529155858932,1
+ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),Foundation,2.794456058544124,10.80368351800007,,0.7054829542984657,1
+ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",Foundation,2.794456058544124,10.202929390000008,,0.7054829542984657,1
+ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),Foundation,2.6133988452937467,70.83756552499995,,0.6597736015568554,1

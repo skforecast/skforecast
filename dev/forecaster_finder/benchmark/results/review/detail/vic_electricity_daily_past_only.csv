@@ -1,0 +1,85 @@
+case,history,history_obs,model,level,fold,mae,scale
+vic_electricity_daily_past_only,full,927,Seasonal naive,demand,0,8483.416443,15342.529925
+vic_electricity_daily_past_only,full,927,Seasonal naive,demand,1,16383.826291,15342.529925
+vic_electricity_daily_past_only,full,927,Seasonal naive,demand,2,9438.296573,15342.529925
+vic_electricity_daily_past_only,full,927,Seasonal naive,demand,3,7223.719165,15342.529925
+vic_electricity_daily_past_only,full,927,Seasonal naive,demand,4,13539.163841,15342.529925
+vic_electricity_daily_past_only,full,927,Seasonal naive,demand,5,18399.964666,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog),demand,0,9302.525808,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog),demand,1,14181.460175,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog),demand,2,6566.689972,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog),demand,3,5261.703417,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog),demand,4,8782.242081,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog),demand,5,14130.761362,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate),demand,0,7989.156708,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate),demand,1,9556.824607,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate),demand,2,7257.514778,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate),demand,3,6314.842594,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate),demand,4,13287.397568,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate),demand,5,12726.510322,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog) [refit],demand,0,9302.525808,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog) [refit],demand,1,15355.173225,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog) [refit],demand,2,7192.547524,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog) [refit],demand,3,6236.326937,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog) [refit],demand,4,8028.028692,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM (no exog) [refit],demand,5,14572.121674,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate) [refit],demand,0,7989.156708,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate) [refit],demand,1,9503.482661,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate) [refit],demand,2,7316.939526,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate) [refit],demand,3,6350.109203,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate) [refit],demand,4,13100.195328,15342.529925
+vic_electricity_daily_past_only,full,927,LightGBM drivers (DirectMultiVariate) [refit],demand,5,13173.386773,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (no exog),demand,0,8752.859948,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (no exog),demand,1,5780.015319,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (no exog),demand,2,5719.330372,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (no exog),demand,3,5613.353751,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (no exog),demand,4,8479.433431,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (no exog),demand,5,10169.498197,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 (no exog, own loop)",demand,0,8752.859948,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 (no exog, own loop)",demand,1,5780.015319,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 (no exog, own loop)",demand,2,5719.330372,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 (no exog, own loop)",demand,3,5613.353751,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 (no exog, own loop)",demand,4,8479.433431,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 (no exog, own loop)",demand,5,10169.498197,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (past-only covariates),demand,0,8418.585037,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (past-only covariates),demand,1,5843.397802,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (past-only covariates),demand,2,6186.638966,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (past-only covariates),demand,3,5930.671328,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (past-only covariates),demand,4,8820.124457,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 (past-only covariates),demand,5,10285.554613,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (no exog),demand,0,8820.931055,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (no exog),demand,1,6272.625019,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (no exog),demand,2,5611.777358,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (no exog),demand,3,5733.620052,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (no exog),demand,4,8030.857538,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (no exog),demand,5,10294.164849,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 base (no exog, own loop)",demand,0,8820.931055,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 base (no exog, own loop)",demand,1,6272.625019,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 base (no exog, own loop)",demand,2,5611.777358,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 base (no exog, own loop)",demand,3,5733.620052,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 base (no exog, own loop)",demand,4,8030.857538,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 base (no exog, own loop)",demand,5,10294.164849,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (past-only covariates),demand,0,8902.108832,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (past-only covariates),demand,1,6333.250248,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (past-only covariates),demand,2,5946.280286,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (past-only covariates),demand,3,5696.126719,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (past-only covariates),demand,4,8305.62128,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 base (past-only covariates),demand,5,10606.258074,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (no exog),demand,0,9626.897774,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (no exog),demand,1,5174.609114,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (no exog),demand,2,5933.649421,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (no exog),demand,3,5722.572522,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (no exog),demand,4,8351.842349,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (no exog),demand,5,12023.334365,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 synth (no exog, own loop)",demand,0,9626.897774,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 synth (no exog, own loop)",demand,1,5174.609114,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 synth (no exog, own loop)",demand,2,5933.649421,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 synth (no exog, own loop)",demand,3,5722.572522,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 synth (no exog, own loop)",demand,4,8351.842349,15342.529925
+vic_electricity_daily_past_only,full,927,"Chronos-2 synth (no exog, own loop)",demand,5,12023.334365,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (past-only covariates),demand,0,8773.026228,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (past-only covariates),demand,1,5402.772692,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (past-only covariates),demand,2,5639.960952,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (past-only covariates),demand,3,5767.941384,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (past-only covariates),demand,4,8491.844145,15342.529925
+vic_electricity_daily_past_only,full,927,Chronos-2 synth (past-only covariates),demand,5,11988.866238,15342.529925

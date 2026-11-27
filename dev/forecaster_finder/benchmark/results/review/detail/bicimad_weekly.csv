@@ -1,0 +1,313 @@
+case,history,history_obs,model,level,fold,mae,scale
+bicimad_weekly,104,104,Seasonal naive,users,0,19100.75,7258.328084
+bicimad_weekly,104,104,Seasonal naive,users,1,12302.125,7258.328084
+bicimad_weekly,104,104,Seasonal naive,users,2,19261.875,7258.328084
+bicimad_weekly,104,104,Seasonal naive,users,3,14446.875,7258.328084
+bicimad_weekly,104,104,Seasonal naive,users,4,3451.625,7258.328084
+bicimad_weekly,104,104,Seasonal naive,users,5,7780.125,7258.328084
+bicimad_weekly,104,104,LightGBM,users,0,22697.714799,7258.328084
+bicimad_weekly,104,104,LightGBM,users,1,18311.879612,7258.328084
+bicimad_weekly,104,104,LightGBM,users,2,17300.041066,7258.328084
+bicimad_weekly,104,104,LightGBM,users,3,13382.594111,7258.328084
+bicimad_weekly,104,104,LightGBM,users,4,4277.726788,7258.328084
+bicimad_weekly,104,104,LightGBM,users,5,9479.097672,7258.328084
+bicimad_weekly,104,104,LightGBM [refit],users,0,22697.714799,7258.328084
+bicimad_weekly,104,104,LightGBM [refit],users,1,19952.951829,7258.328084
+bicimad_weekly,104,104,LightGBM [refit],users,2,6103.403924,7258.328084
+bicimad_weekly,104,104,LightGBM [refit],users,3,21249.289349,7258.328084
+bicimad_weekly,104,104,LightGBM [refit],users,4,6183.28136,7258.328084
+bicimad_weekly,104,104,LightGBM [refit],users,5,14927.863626,7258.328084
+bicimad_weekly,104,104,Ridge,users,0,10483.588483,7258.328084
+bicimad_weekly,104,104,Ridge,users,1,13586.131392,7258.328084
+bicimad_weekly,104,104,Ridge,users,2,18272.589313,7258.328084
+bicimad_weekly,104,104,Ridge,users,3,10646.051315,7258.328084
+bicimad_weekly,104,104,Ridge,users,4,4335.07117,7258.328084
+bicimad_weekly,104,104,Ridge,users,5,14400.889743,7258.328084
+bicimad_weekly,104,104,Ridge [refit],users,0,10483.588483,7258.328084
+bicimad_weekly,104,104,Ridge [refit],users,1,11480.151787,7258.328084
+bicimad_weekly,104,104,Ridge [refit],users,2,18266.058902,7258.328084
+bicimad_weekly,104,104,Ridge [refit],users,3,9532.701931,7258.328084
+bicimad_weekly,104,104,Ridge [refit],users,4,4509.286967,7258.328084
+bicimad_weekly,104,104,Ridge [refit],users,5,15307.770377,7258.328084
+bicimad_weekly,104,104,LightGBM (diff),users,0,8814.131782,7258.328084
+bicimad_weekly,104,104,LightGBM (diff),users,1,22964.152548,7258.328084
+bicimad_weekly,104,104,LightGBM (diff),users,2,22626.571565,7258.328084
+bicimad_weekly,104,104,LightGBM (diff),users,3,22355.845689,7258.328084
+bicimad_weekly,104,104,LightGBM (diff),users,4,11601.256997,7258.328084
+bicimad_weekly,104,104,LightGBM (diff),users,5,11792.351123,7258.328084
+bicimad_weekly,104,104,LightGBM (diff) [refit],users,0,8814.131782,7258.328084
+bicimad_weekly,104,104,LightGBM (diff) [refit],users,1,18942.581246,7258.328084
+bicimad_weekly,104,104,LightGBM (diff) [refit],users,2,20409.743475,7258.328084
+bicimad_weekly,104,104,LightGBM (diff) [refit],users,3,13433.23568,7258.328084
+bicimad_weekly,104,104,LightGBM (diff) [refit],users,4,6269.019853,7258.328084
+bicimad_weekly,104,104,LightGBM (diff) [refit],users,5,10724.824924,7258.328084
+bicimad_weekly,104,104,Ridge (diff),users,0,18066.827943,7258.328084
+bicimad_weekly,104,104,Ridge (diff),users,1,11290.405548,7258.328084
+bicimad_weekly,104,104,Ridge (diff),users,2,14288.233658,7258.328084
+bicimad_weekly,104,104,Ridge (diff),users,3,13123.152263,7258.328084
+bicimad_weekly,104,104,Ridge (diff),users,4,3387.505299,7258.328084
+bicimad_weekly,104,104,Ridge (diff),users,5,18629.652478,7258.328084
+bicimad_weekly,104,104,Ridge (diff) [refit],users,0,18066.827943,7258.328084
+bicimad_weekly,104,104,Ridge (diff) [refit],users,1,10144.43256,7258.328084
+bicimad_weekly,104,104,Ridge (diff) [refit],users,2,16927.95924,7258.328084
+bicimad_weekly,104,104,Ridge (diff) [refit],users,3,12033.327297,7258.328084
+bicimad_weekly,104,104,Ridge (diff) [refit],users,4,7213.550286,7258.328084
+bicimad_weekly,104,104,Ridge (diff) [refit],users,5,21348.716123,7258.328084
+bicimad_weekly,104,104,LightGBM+ [refit],users,0,25821.667304,7258.328084
+bicimad_weekly,104,104,LightGBM+ [refit],users,1,14683.759919,7258.328084
+bicimad_weekly,104,104,LightGBM+ [refit],users,2,16948.736683,7258.328084
+bicimad_weekly,104,104,LightGBM+ [refit],users,3,21231.143477,7258.328084
+bicimad_weekly,104,104,LightGBM+ [refit],users,4,6934.66481,7258.328084
+bicimad_weekly,104,104,LightGBM+ [refit],users,5,16426.920938,7258.328084
+bicimad_weekly,104,104,LightGBM+ (diff) [refit],users,0,9765.388653,7258.328084
+bicimad_weekly,104,104,LightGBM+ (diff) [refit],users,1,16447.011139,7258.328084
+bicimad_weekly,104,104,LightGBM+ (diff) [refit],users,2,15564.542273,7258.328084
+bicimad_weekly,104,104,LightGBM+ (diff) [refit],users,3,12102.061762,7258.328084
+bicimad_weekly,104,104,LightGBM+ (diff) [refit],users,4,10837.500478,7258.328084
+bicimad_weekly,104,104,LightGBM+ (diff) [refit],users,5,10834.525873,7258.328084
+bicimad_weekly,104,104,LightGBM snippet,users,0,6300.635829,7258.328084
+bicimad_weekly,104,104,LightGBM snippet,users,1,10248.154323,7258.328084
+bicimad_weekly,104,104,LightGBM snippet,users,2,7190.452138,7258.328084
+bicimad_weekly,104,104,LightGBM snippet,users,3,16629.840134,7258.328084
+bicimad_weekly,104,104,LightGBM snippet,users,4,5563.746637,7258.328084
+bicimad_weekly,104,104,LightGBM snippet,users,5,17088.853751,7258.328084
+bicimad_weekly,104,104,LightGBM snippet [refit],users,0,6300.635829,7258.328084
+bicimad_weekly,104,104,LightGBM snippet [refit],users,1,10119.840519,7258.328084
+bicimad_weekly,104,104,LightGBM snippet [refit],users,2,7698.951815,7258.328084
+bicimad_weekly,104,104,LightGBM snippet [refit],users,3,19697.598358,7258.328084
+bicimad_weekly,104,104,LightGBM snippet [refit],users,4,6342.24385,7258.328084
+bicimad_weekly,104,104,LightGBM snippet [refit],users,5,17684.503846,7258.328084
+bicimad_weekly,104,104,Chronos-2,users,0,24564.788086,7258.328084
+bicimad_weekly,104,104,Chronos-2,users,1,23552.396973,7258.328084
+bicimad_weekly,104,104,Chronos-2,users,2,17997.860352,7258.328084
+bicimad_weekly,104,104,Chronos-2,users,3,14473.003906,7258.328084
+bicimad_weekly,104,104,Chronos-2,users,4,1859.852051,7258.328084
+bicimad_weekly,104,104,Chronos-2,users,5,12065.496582,7258.328084
+bicimad_weekly,104,104,AutoETS,users,0,21491.537351,7258.328084
+bicimad_weekly,104,104,AutoETS,users,1,11957.205186,7258.328084
+bicimad_weekly,104,104,AutoETS,users,2,5542.869373,7258.328084
+bicimad_weekly,104,104,AutoETS,users,3,16291.49149,7258.328084
+bicimad_weekly,104,104,AutoETS,users,4,9006.630181,7258.328084
+bicimad_weekly,104,104,AutoETS,users,5,15208.75,7258.328084
+bicimad_weekly,208,208,Seasonal naive,users,0,19100.75,7258.328084
+bicimad_weekly,208,208,Seasonal naive,users,1,12302.125,7258.328084
+bicimad_weekly,208,208,Seasonal naive,users,2,19261.875,7258.328084
+bicimad_weekly,208,208,Seasonal naive,users,3,14446.875,7258.328084
+bicimad_weekly,208,208,Seasonal naive,users,4,3451.625,7258.328084
+bicimad_weekly,208,208,Seasonal naive,users,5,7780.125,7258.328084
+bicimad_weekly,208,208,LightGBM,users,0,14294.803177,7258.328084
+bicimad_weekly,208,208,LightGBM,users,1,14413.246132,7258.328084
+bicimad_weekly,208,208,LightGBM,users,2,9854.93231,7258.328084
+bicimad_weekly,208,208,LightGBM,users,3,9287.861004,7258.328084
+bicimad_weekly,208,208,LightGBM,users,4,11777.077997,7258.328084
+bicimad_weekly,208,208,LightGBM,users,5,12047.686371,7258.328084
+bicimad_weekly,208,208,LightGBM [refit],users,0,14294.803177,7258.328084
+bicimad_weekly,208,208,LightGBM [refit],users,1,10552.120069,7258.328084
+bicimad_weekly,208,208,LightGBM [refit],users,2,12559.797648,7258.328084
+bicimad_weekly,208,208,LightGBM [refit],users,3,10827.580052,7258.328084
+bicimad_weekly,208,208,LightGBM [refit],users,4,5842.049248,7258.328084
+bicimad_weekly,208,208,LightGBM [refit],users,5,18184.197766,7258.328084
+bicimad_weekly,208,208,Ridge,users,0,15941.455781,7258.328084
+bicimad_weekly,208,208,Ridge,users,1,13084.959204,7258.328084
+bicimad_weekly,208,208,Ridge,users,2,10221.597712,7258.328084
+bicimad_weekly,208,208,Ridge,users,3,9849.767643,7258.328084
+bicimad_weekly,208,208,Ridge,users,4,4863.998295,7258.328084
+bicimad_weekly,208,208,Ridge,users,5,11346.975642,7258.328084
+bicimad_weekly,208,208,Ridge [refit],users,0,15941.455781,7258.328084
+bicimad_weekly,208,208,Ridge [refit],users,1,12458.525074,7258.328084
+bicimad_weekly,208,208,Ridge [refit],users,2,10401.379061,7258.328084
+bicimad_weekly,208,208,Ridge [refit],users,3,9916.292462,7258.328084
+bicimad_weekly,208,208,Ridge [refit],users,4,5365.394808,7258.328084
+bicimad_weekly,208,208,Ridge [refit],users,5,12136.857365,7258.328084
+bicimad_weekly,208,208,LightGBM (diff),users,0,7242.413438,7258.328084
+bicimad_weekly,208,208,LightGBM (diff),users,1,25061.673335,7258.328084
+bicimad_weekly,208,208,LightGBM (diff),users,2,9402.972116,7258.328084
+bicimad_weekly,208,208,LightGBM (diff),users,3,9952.741895,7258.328084
+bicimad_weekly,208,208,LightGBM (diff),users,4,3827.569766,7258.328084
+bicimad_weekly,208,208,LightGBM (diff),users,5,11145.41198,7258.328084
+bicimad_weekly,208,208,LightGBM (diff) [refit],users,0,7242.413438,7258.328084
+bicimad_weekly,208,208,LightGBM (diff) [refit],users,1,18842.421223,7258.328084
+bicimad_weekly,208,208,LightGBM (diff) [refit],users,2,11572.164212,7258.328084
+bicimad_weekly,208,208,LightGBM (diff) [refit],users,3,10763.937583,7258.328084
+bicimad_weekly,208,208,LightGBM (diff) [refit],users,4,4880.282365,7258.328084
+bicimad_weekly,208,208,LightGBM (diff) [refit],users,5,7213.647749,7258.328084
+bicimad_weekly,208,208,Ridge (diff),users,0,17671.10871,7258.328084
+bicimad_weekly,208,208,Ridge (diff),users,1,9589.696023,7258.328084
+bicimad_weekly,208,208,Ridge (diff),users,2,13645.573518,7258.328084
+bicimad_weekly,208,208,Ridge (diff),users,3,10048.519637,7258.328084
+bicimad_weekly,208,208,Ridge (diff),users,4,8303.715472,7258.328084
+bicimad_weekly,208,208,Ridge (diff),users,5,14797.205087,7258.328084
+bicimad_weekly,208,208,Ridge (diff) [refit],users,0,17671.10871,7258.328084
+bicimad_weekly,208,208,Ridge (diff) [refit],users,1,9369.930197,7258.328084
+bicimad_weekly,208,208,Ridge (diff) [refit],users,2,14962.490554,7258.328084
+bicimad_weekly,208,208,Ridge (diff) [refit],users,3,9563.804047,7258.328084
+bicimad_weekly,208,208,Ridge (diff) [refit],users,4,10333.717706,7258.328084
+bicimad_weekly,208,208,Ridge (diff) [refit],users,5,16695.062889,7258.328084
+bicimad_weekly,208,208,LightGBM+ [refit],users,0,14081.435921,7258.328084
+bicimad_weekly,208,208,LightGBM+ [refit],users,1,15110.94708,7258.328084
+bicimad_weekly,208,208,LightGBM+ [refit],users,2,9581.743692,7258.328084
+bicimad_weekly,208,208,LightGBM+ [refit],users,3,6610.359235,7258.328084
+bicimad_weekly,208,208,LightGBM+ [refit],users,4,9055.812549,7258.328084
+bicimad_weekly,208,208,LightGBM+ [refit],users,5,17607.418841,7258.328084
+bicimad_weekly,208,208,LightGBM+ (diff) [refit],users,0,6217.007192,7258.328084
+bicimad_weekly,208,208,LightGBM+ (diff) [refit],users,1,19567.72167,7258.328084
+bicimad_weekly,208,208,LightGBM+ (diff) [refit],users,2,10381.404797,7258.328084
+bicimad_weekly,208,208,LightGBM+ (diff) [refit],users,3,12499.630743,7258.328084
+bicimad_weekly,208,208,LightGBM+ (diff) [refit],users,4,9005.928138,7258.328084
+bicimad_weekly,208,208,LightGBM+ (diff) [refit],users,5,11774.1389,7258.328084
+bicimad_weekly,208,208,LightGBM snippet,users,0,15813.876224,7258.328084
+bicimad_weekly,208,208,LightGBM snippet,users,1,19146.179805,7258.328084
+bicimad_weekly,208,208,LightGBM snippet,users,2,16015.014477,7258.328084
+bicimad_weekly,208,208,LightGBM snippet,users,3,10315.678122,7258.328084
+bicimad_weekly,208,208,LightGBM snippet,users,4,9217.174557,7258.328084
+bicimad_weekly,208,208,LightGBM snippet,users,5,14763.563182,7258.328084
+bicimad_weekly,208,208,LightGBM snippet [refit],users,0,15813.876224,7258.328084
+bicimad_weekly,208,208,LightGBM snippet [refit],users,1,12329.579878,7258.328084
+bicimad_weekly,208,208,LightGBM snippet [refit],users,2,13166.087013,7258.328084
+bicimad_weekly,208,208,LightGBM snippet [refit],users,3,14199.89209,7258.328084
+bicimad_weekly,208,208,LightGBM snippet [refit],users,4,10425.622509,7258.328084
+bicimad_weekly,208,208,LightGBM snippet [refit],users,5,15048.859837,7258.328084
+bicimad_weekly,208,208,ML selected on validation (4),users,0,15941.455781,7258.328084
+bicimad_weekly,208,208,ML selected on validation (4),users,1,12458.525074,7258.328084
+bicimad_weekly,208,208,ML selected on validation (4),users,2,10401.379061,7258.328084
+bicimad_weekly,208,208,ML selected on validation (4),users,3,9916.292462,7258.328084
+bicimad_weekly,208,208,ML selected on validation (4),users,4,5365.394808,7258.328084
+bicimad_weekly,208,208,ML selected on validation (4),users,5,12136.857365,7258.328084
+bicimad_weekly,208,208,ML selected on validation (6),users,0,6217.007192,7258.328084
+bicimad_weekly,208,208,ML selected on validation (6),users,1,19567.72167,7258.328084
+bicimad_weekly,208,208,ML selected on validation (6),users,2,10381.404797,7258.328084
+bicimad_weekly,208,208,ML selected on validation (6),users,3,12499.630743,7258.328084
+bicimad_weekly,208,208,ML selected on validation (6),users,4,9005.928138,7258.328084
+bicimad_weekly,208,208,ML selected on validation (6),users,5,11774.1389,7258.328084
+bicimad_weekly,208,208,Chronos-2,users,0,15603.173828,7258.328084
+bicimad_weekly,208,208,Chronos-2,users,1,12170.129395,7258.328084
+bicimad_weekly,208,208,Chronos-2,users,2,7362.52002,7258.328084
+bicimad_weekly,208,208,Chronos-2,users,3,11236.448242,7258.328084
+bicimad_weekly,208,208,Chronos-2,users,4,2366.682617,7258.328084
+bicimad_weekly,208,208,Chronos-2,users,5,6901.154297,7258.328084
+bicimad_weekly,208,208,AutoETS,users,0,21491.537351,7258.328084
+bicimad_weekly,208,208,AutoETS,users,1,11957.205186,7258.328084
+bicimad_weekly,208,208,AutoETS,users,2,5542.869373,7258.328084
+bicimad_weekly,208,208,AutoETS,users,3,16291.49149,7258.328084
+bicimad_weekly,208,208,AutoETS,users,4,9006.630181,7258.328084
+bicimad_weekly,208,208,AutoETS,users,5,15208.75,7258.328084
+bicimad_weekly,full,382,Seasonal naive,users,0,19100.75,7258.328084
+bicimad_weekly,full,382,Seasonal naive,users,1,12302.125,7258.328084
+bicimad_weekly,full,382,Seasonal naive,users,2,19261.875,7258.328084
+bicimad_weekly,full,382,Seasonal naive,users,3,14446.875,7258.328084
+bicimad_weekly,full,382,Seasonal naive,users,4,3451.625,7258.328084
+bicimad_weekly,full,382,Seasonal naive,users,5,7780.125,7258.328084
+bicimad_weekly,full,382,LightGBM,users,0,12128.566852,7258.328084
+bicimad_weekly,full,382,LightGBM,users,1,10559.231742,7258.328084
+bicimad_weekly,full,382,LightGBM,users,2,10369.208507,7258.328084
+bicimad_weekly,full,382,LightGBM,users,3,9525.738653,7258.328084
+bicimad_weekly,full,382,LightGBM,users,4,4607.66196,7258.328084
+bicimad_weekly,full,382,LightGBM,users,5,10365.099198,7258.328084
+bicimad_weekly,full,382,LightGBM [refit],users,0,12128.566852,7258.328084
+bicimad_weekly,full,382,LightGBM [refit],users,1,9349.787874,7258.328084
+bicimad_weekly,full,382,LightGBM [refit],users,2,7080.999256,7258.328084
+bicimad_weekly,full,382,LightGBM [refit],users,3,9442.028763,7258.328084
+bicimad_weekly,full,382,LightGBM [refit],users,4,5900.935386,7258.328084
+bicimad_weekly,full,382,LightGBM [refit],users,5,11790.620095,7258.328084
+bicimad_weekly,full,382,Ridge,users,0,14660.452909,7258.328084
+bicimad_weekly,full,382,Ridge,users,1,11855.51919,7258.328084
+bicimad_weekly,full,382,Ridge,users,2,8034.936192,7258.328084
+bicimad_weekly,full,382,Ridge,users,3,9529.685619,7258.328084
+bicimad_weekly,full,382,Ridge,users,4,5315.835127,7258.328084
+bicimad_weekly,full,382,Ridge,users,5,12387.974421,7258.328084
+bicimad_weekly,full,382,Ridge [refit],users,0,14660.452909,7258.328084
+bicimad_weekly,full,382,Ridge [refit],users,1,11772.254206,7258.328084
+bicimad_weekly,full,382,Ridge [refit],users,2,7953.886571,7258.328084
+bicimad_weekly,full,382,Ridge [refit],users,3,9731.926702,7258.328084
+bicimad_weekly,full,382,Ridge [refit],users,4,5372.856336,7258.328084
+bicimad_weekly,full,382,Ridge [refit],users,5,12765.185373,7258.328084
+bicimad_weekly,full,382,LightGBM (diff),users,0,8253.478408,7258.328084
+bicimad_weekly,full,382,LightGBM (diff),users,1,9318.690029,7258.328084
+bicimad_weekly,full,382,LightGBM (diff),users,2,9684.434506,7258.328084
+bicimad_weekly,full,382,LightGBM (diff),users,3,12944.1632,7258.328084
+bicimad_weekly,full,382,LightGBM (diff),users,4,3888.622705,7258.328084
+bicimad_weekly,full,382,LightGBM (diff),users,5,8392.627367,7258.328084
+bicimad_weekly,full,382,LightGBM (diff) [refit],users,0,8253.478408,7258.328084
+bicimad_weekly,full,382,LightGBM (diff) [refit],users,1,13161.339608,7258.328084
+bicimad_weekly,full,382,LightGBM (diff) [refit],users,2,15289.398807,7258.328084
+bicimad_weekly,full,382,LightGBM (diff) [refit],users,3,15293.122863,7258.328084
+bicimad_weekly,full,382,LightGBM (diff) [refit],users,4,4636.139734,7258.328084
+bicimad_weekly,full,382,LightGBM (diff) [refit],users,5,13570.869094,7258.328084
+bicimad_weekly,full,382,Ridge (diff),users,0,16030.502527,7258.328084
+bicimad_weekly,full,382,Ridge (diff),users,1,11043.542467,7258.328084
+bicimad_weekly,full,382,Ridge (diff),users,2,13144.832856,7258.328084
+bicimad_weekly,full,382,Ridge (diff),users,3,10051.305282,7258.328084
+bicimad_weekly,full,382,Ridge (diff),users,4,7514.750452,7258.328084
+bicimad_weekly,full,382,Ridge (diff),users,5,13952.037895,7258.328084
+bicimad_weekly,full,382,Ridge (diff) [refit],users,0,16030.502527,7258.328084
+bicimad_weekly,full,382,Ridge (diff) [refit],users,1,10891.755203,7258.328084
+bicimad_weekly,full,382,Ridge (diff) [refit],users,2,13757.920363,7258.328084
+bicimad_weekly,full,382,Ridge (diff) [refit],users,3,9883.959883,7258.328084
+bicimad_weekly,full,382,Ridge (diff) [refit],users,4,8801.234057,7258.328084
+bicimad_weekly,full,382,Ridge (diff) [refit],users,5,14928.030803,7258.328084
+bicimad_weekly,full,382,LightGBM+ [refit],users,0,11248.541376,7258.328084
+bicimad_weekly,full,382,LightGBM+ [refit],users,1,11333.203401,7258.328084
+bicimad_weekly,full,382,LightGBM+ [refit],users,2,8381.401152,7258.328084
+bicimad_weekly,full,382,LightGBM+ [refit],users,3,5684.413942,7258.328084
+bicimad_weekly,full,382,LightGBM+ [refit],users,4,8067.057729,7258.328084
+bicimad_weekly,full,382,LightGBM+ [refit],users,5,12860.149259,7258.328084
+bicimad_weekly,full,382,LightGBM+ (diff) [refit],users,0,6114.977157,7258.328084
+bicimad_weekly,full,382,LightGBM+ (diff) [refit],users,1,11456.004187,7258.328084
+bicimad_weekly,full,382,LightGBM+ (diff) [refit],users,2,6630.312161,7258.328084
+bicimad_weekly,full,382,LightGBM+ (diff) [refit],users,3,13068.799021,7258.328084
+bicimad_weekly,full,382,LightGBM+ (diff) [refit],users,4,3739.61653,7258.328084
+bicimad_weekly,full,382,LightGBM+ (diff) [refit],users,5,7032.787082,7258.328084
+bicimad_weekly,full,382,LightGBM snippet,users,0,11278.578321,7258.328084
+bicimad_weekly,full,382,LightGBM snippet,users,1,11967.702838,7258.328084
+bicimad_weekly,full,382,LightGBM snippet,users,2,18737.009041,7258.328084
+bicimad_weekly,full,382,LightGBM snippet,users,3,5918.663901,7258.328084
+bicimad_weekly,full,382,LightGBM snippet,users,4,9153.251118,7258.328084
+bicimad_weekly,full,382,LightGBM snippet,users,5,17476.684124,7258.328084
+bicimad_weekly,full,382,LightGBM snippet [refit],users,0,11278.578321,7258.328084
+bicimad_weekly,full,382,LightGBM snippet [refit],users,1,11586.180024,7258.328084
+bicimad_weekly,full,382,LightGBM snippet [refit],users,2,4438.788893,7258.328084
+bicimad_weekly,full,382,LightGBM snippet [refit],users,3,4480.331487,7258.328084
+bicimad_weekly,full,382,LightGBM snippet [refit],users,4,9436.314942,7258.328084
+bicimad_weekly,full,382,LightGBM snippet [refit],users,5,16971.750622,7258.328084
+bicimad_weekly,full,382,ML selected on validation (4),users,0,8253.478408,7258.328084
+bicimad_weekly,full,382,ML selected on validation (4),users,1,13161.339608,7258.328084
+bicimad_weekly,full,382,ML selected on validation (4),users,2,15289.398807,7258.328084
+bicimad_weekly,full,382,ML selected on validation (4),users,3,15293.122863,7258.328084
+bicimad_weekly,full,382,ML selected on validation (4),users,4,4636.139734,7258.328084
+bicimad_weekly,full,382,ML selected on validation (4),users,5,13570.869094,7258.328084
+bicimad_weekly,full,382,ML selected on validation (6),users,0,6114.977157,7258.328084
+bicimad_weekly,full,382,ML selected on validation (6),users,1,11456.004187,7258.328084
+bicimad_weekly,full,382,ML selected on validation (6),users,2,6630.312161,7258.328084
+bicimad_weekly,full,382,ML selected on validation (6),users,3,13068.799021,7258.328084
+bicimad_weekly,full,382,ML selected on validation (6),users,4,3739.61653,7258.328084
+bicimad_weekly,full,382,ML selected on validation (6),users,5,7032.787082,7258.328084
+bicimad_weekly,full,382,Chronos-2,users,0,5146.790527,7258.328084
+bicimad_weekly,full,382,Chronos-2,users,1,12345.037109,7258.328084
+bicimad_weekly,full,382,Chronos-2,users,2,4841.971191,7258.328084
+bicimad_weekly,full,382,Chronos-2,users,3,11357.324219,7258.328084
+bicimad_weekly,full,382,Chronos-2,users,4,2935.293945,7258.328084
+bicimad_weekly,full,382,Chronos-2,users,5,8578.755859,7258.328084
+bicimad_weekly,full,382,Chronos-2 base,users,0,6528.10498,7258.328084
+bicimad_weekly,full,382,Chronos-2 base,users,1,9792.399902,7258.328084
+bicimad_weekly,full,382,Chronos-2 base,users,2,5366.545898,7258.328084
+bicimad_weekly,full,382,Chronos-2 base,users,3,8551.588867,7258.328084
+bicimad_weekly,full,382,Chronos-2 base,users,4,3159.786133,7258.328084
+bicimad_weekly,full,382,Chronos-2 base,users,5,4191.469238,7258.328084
+bicimad_weekly,full,382,Chronos-2 synth,users,0,9700.177734,7258.328084
+bicimad_weekly,full,382,Chronos-2 synth,users,1,6018.203125,7258.328084
+bicimad_weekly,full,382,Chronos-2 synth,users,2,7090.970215,7258.328084
+bicimad_weekly,full,382,Chronos-2 synth,users,3,7839.041504,7258.328084
+bicimad_weekly,full,382,Chronos-2 synth,users,4,2047.698242,7258.328084
+bicimad_weekly,full,382,Chronos-2 synth,users,5,4835.656738,7258.328084
+bicimad_weekly,full,382,AutoETS,users,0,22200.789046,7258.328084
+bicimad_weekly,full,382,AutoETS,users,1,11912.761269,7258.328084
+bicimad_weekly,full,382,AutoETS,users,2,5844.002852,7258.328084
+bicimad_weekly,full,382,AutoETS,users,3,15766.418976,7258.328084
+bicimad_weekly,full,382,AutoETS,users,4,9869.485588,7258.328084
+bicimad_weekly,full,382,AutoETS,users,5,14915.366017,7258.328084
+bicimad_weekly,full,382,AutoARIMA,users,0,20593.105871,7258.328084
+bicimad_weekly,full,382,AutoARIMA,users,1,10116.959148,7258.328084
+bicimad_weekly,full,382,AutoARIMA,users,2,8174.847748,7258.328084
+bicimad_weekly,full,382,AutoARIMA,users,3,13268.127213,7258.328084
+bicimad_weekly,full,382,AutoARIMA,users,4,6094.185376,7258.328084
+bicimad_weekly,full,382,AutoARIMA,users,5,12533.693511,7258.328084

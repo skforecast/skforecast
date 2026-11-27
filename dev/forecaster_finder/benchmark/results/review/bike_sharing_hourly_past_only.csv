@@ -1,0 +1,15 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series
+bike_sharing_hourly_past_only,full,8928,Seasonal naive,Baseline,0.6952579463256984,0.009089710000125706,,1.0,1
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog),ML,0.5953899869175672,0.3239150100000643,,0.8563584063498825,1
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),ML,0.5540031108653846,5.513175745000126,,0.7968310377366877,1
+bike_sharing_hourly_past_only,full,8928,LightGBM (no exog) [refit],ML,0.5442275174370863,4.914228921999893,,0.7827706541337957,1
+bike_sharing_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate) [refit],ML,0.5543105199951042,154.38272647200006,,0.7972731889286938,1
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (no exog),Foundation,0.4750040516415795,3.8987348290002046,,0.6832054982641803,1
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 (no exog, own loop)",Foundation,0.4750040516415795,3.2447886540001036,,0.6832054982641803,1
+bike_sharing_hourly_past_only,full,8928,Chronos-2 (past-only covariates),Foundation,0.4870020417484684,9.98692132500014,,0.7004623885597835,1
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (no exog),Foundation,0.5628482016900093,11.292127803000085,,0.8095530653976002,1
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 base (no exog, own loop)",Foundation,0.5628482016900093,10.947187182999869,,0.8095530653976002,1
+bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),Foundation,0.4867912765977253,40.73105492800005,,0.7001592418617026,1
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),Foundation,0.5388137679037043,11.349873923999894,,0.7749839764525226,1
+bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",Foundation,0.5388137679037043,11.476578028999938,,0.7749839764525226,1
+bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),Foundation,0.5358583587176968,40.98641836799993,,0.7707331668046413,1

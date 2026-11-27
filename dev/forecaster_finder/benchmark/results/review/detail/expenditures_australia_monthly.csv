@@ -1,0 +1,361 @@
+case,history,history_obs,model,level,fold,mae,scale
+expenditures_australia_monthly,36,36,Seasonal naive,turnover,0,33.075,19.675
+expenditures_australia_monthly,36,36,Seasonal naive,turnover,1,54.591667,19.675
+expenditures_australia_monthly,36,36,Seasonal naive,turnover,2,40.308333,19.675
+expenditures_australia_monthly,36,36,Seasonal naive,turnover,3,47.9,19.675
+expenditures_australia_monthly,36,36,Seasonal naive,turnover,4,18.8,19.675
+expenditures_australia_monthly,36,36,LightGBM,turnover,0,52.089659,19.675
+expenditures_australia_monthly,36,36,LightGBM,turnover,1,54.785847,19.675
+expenditures_australia_monthly,36,36,LightGBM,turnover,2,65.282171,19.675
+expenditures_australia_monthly,36,36,LightGBM,turnover,3,103.682171,19.675
+expenditures_australia_monthly,36,36,LightGBM,turnover,4,118.602574,19.675
+expenditures_australia_monthly,36,36,LightGBM [refit],turnover,0,52.089659,19.675
+expenditures_australia_monthly,36,36,LightGBM [refit],turnover,1,39.684745,19.675
+expenditures_australia_monthly,36,36,LightGBM [refit],turnover,2,47.737632,19.675
+expenditures_australia_monthly,36,36,LightGBM [refit],turnover,3,26.17991,19.675
+expenditures_australia_monthly,36,36,LightGBM [refit],turnover,4,60.831219,19.675
+expenditures_australia_monthly,36,36,Ridge,turnover,0,217.768408,19.675
+expenditures_australia_monthly,36,36,Ridge,turnover,1,278.73326,19.675
+expenditures_australia_monthly,36,36,Ridge,turnover,2,449.340492,19.675
+expenditures_australia_monthly,36,36,Ridge,turnover,3,534.190876,19.675
+expenditures_australia_monthly,36,36,Ridge,turnover,4,698.146485,19.675
+expenditures_australia_monthly,36,36,Ridge [refit],turnover,0,217.768408,19.675
+expenditures_australia_monthly,36,36,Ridge [refit],turnover,1,24.189658,19.675
+expenditures_australia_monthly,36,36,Ridge [refit],turnover,2,35.549692,19.675
+expenditures_australia_monthly,36,36,Ridge [refit],turnover,3,15.232162,19.675
+expenditures_australia_monthly,36,36,Ridge [refit],turnover,4,41.35014,19.675
+expenditures_australia_monthly,36,36,LightGBM (diff),turnover,0,60.129305,19.675
+expenditures_australia_monthly,36,36,LightGBM (diff),turnover,1,63.980871,19.675
+expenditures_australia_monthly,36,36,LightGBM (diff),turnover,2,165.274341,19.675
+expenditures_australia_monthly,36,36,LightGBM (diff),turnover,3,54.057485,19.675
+expenditures_australia_monthly,36,36,LightGBM (diff),turnover,4,118.706492,19.675
+expenditures_australia_monthly,36,36,LightGBM (diff) [refit],turnover,0,60.129305,19.675
+expenditures_australia_monthly,36,36,LightGBM (diff) [refit],turnover,1,48.604157,19.675
+expenditures_australia_monthly,36,36,LightGBM (diff) [refit],turnover,2,48.121748,19.675
+expenditures_australia_monthly,36,36,LightGBM (diff) [refit],turnover,3,23.896412,19.675
+expenditures_australia_monthly,36,36,LightGBM (diff) [refit],turnover,4,23.415742,19.675
+expenditures_australia_monthly,36,36,Ridge (diff),turnover,0,48.70012,19.675
+expenditures_australia_monthly,36,36,Ridge (diff),turnover,1,38.961449,19.675
+expenditures_australia_monthly,36,36,Ridge (diff),turnover,2,59.348955,19.675
+expenditures_australia_monthly,36,36,Ridge (diff),turnover,3,38.471972,19.675
+expenditures_australia_monthly,36,36,Ridge (diff),turnover,4,77.430669,19.675
+expenditures_australia_monthly,36,36,Ridge (diff) [refit],turnover,0,48.70012,19.675
+expenditures_australia_monthly,36,36,Ridge (diff) [refit],turnover,1,22.138942,19.675
+expenditures_australia_monthly,36,36,Ridge (diff) [refit],turnover,2,29.921744,19.675
+expenditures_australia_monthly,36,36,Ridge (diff) [refit],turnover,3,13.24086,19.675
+expenditures_australia_monthly,36,36,Ridge (diff) [refit],turnover,4,45.095745,19.675
+expenditures_australia_monthly,36,36,LightGBM+ [refit],turnover,0,49.465926,19.675
+expenditures_australia_monthly,36,36,LightGBM+ [refit],turnover,1,42.164745,19.675
+expenditures_australia_monthly,36,36,LightGBM+ [refit],turnover,2,43.270972,19.675
+expenditures_australia_monthly,36,36,LightGBM+ [refit],turnover,3,25.184297,19.675
+expenditures_australia_monthly,36,36,LightGBM+ [refit],turnover,4,57.156611,19.675
+expenditures_australia_monthly,36,36,LightGBM+ (diff) [refit],turnover,0,38.207604,19.675
+expenditures_australia_monthly,36,36,LightGBM+ (diff) [refit],turnover,1,20.925299,19.675
+expenditures_australia_monthly,36,36,LightGBM+ (diff) [refit],turnover,2,37.334785,19.675
+expenditures_australia_monthly,36,36,LightGBM+ (diff) [refit],turnover,3,13.506264,19.675
+expenditures_australia_monthly,36,36,LightGBM+ (diff) [refit],turnover,4,33.130116,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet,turnover,0,70.825,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet,turnover,1,121.641667,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet,turnover,2,160.966667,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet,turnover,3,208.866667,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet,turnover,4,225.7,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet [refit],turnover,0,70.825,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet [refit],turnover,1,99.575002,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet [refit],turnover,2,48.840334,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet [refit],turnover,3,46.774929,19.675
+expenditures_australia_monthly,36,36,LightGBM snippet [refit],turnover,4,35.01175,19.675
+expenditures_australia_monthly,36,36,Chronos-2,turnover,0,36.729554,19.675
+expenditures_australia_monthly,36,36,Chronos-2,turnover,1,19.628814,19.675
+expenditures_australia_monthly,36,36,Chronos-2,turnover,2,16.463526,19.675
+expenditures_australia_monthly,36,36,Chronos-2,turnover,3,15.797028,19.675
+expenditures_australia_monthly,36,36,Chronos-2,turnover,4,26.082684,19.675
+expenditures_australia_monthly,36,36,AutoETS,turnover,0,29.387674,19.675
+expenditures_australia_monthly,36,36,AutoETS,turnover,1,33.036254,19.675
+expenditures_australia_monthly,36,36,AutoETS,turnover,2,14.75706,19.675
+expenditures_australia_monthly,36,36,AutoETS,turnover,3,23.446687,19.675
+expenditures_australia_monthly,36,36,AutoETS,turnover,4,17.711519,19.675
+expenditures_australia_monthly,36,36,AutoARIMA,turnover,0,21.541667,19.675
+expenditures_australia_monthly,36,36,AutoARIMA,turnover,1,17.075,19.675
+expenditures_australia_monthly,36,36,AutoARIMA,turnover,2,28.358333,19.675
+expenditures_australia_monthly,36,36,AutoARIMA,turnover,3,12.233333,19.675
+expenditures_australia_monthly,36,36,AutoARIMA,turnover,4,41.266667,19.675
+expenditures_australia_monthly,60,60,Seasonal naive,turnover,0,33.075,19.675
+expenditures_australia_monthly,60,60,Seasonal naive,turnover,1,54.591667,19.675
+expenditures_australia_monthly,60,60,Seasonal naive,turnover,2,40.308333,19.675
+expenditures_australia_monthly,60,60,Seasonal naive,turnover,3,47.9,19.675
+expenditures_australia_monthly,60,60,Seasonal naive,turnover,4,18.8,19.675
+expenditures_australia_monthly,60,60,LightGBM,turnover,0,21.367043,19.675
+expenditures_australia_monthly,60,60,LightGBM,turnover,1,43.48038,19.675
+expenditures_australia_monthly,60,60,LightGBM,turnover,2,62.953002,19.675
+expenditures_australia_monthly,60,60,LightGBM,turnover,3,105.566416,19.675
+expenditures_australia_monthly,60,60,LightGBM,turnover,4,122.399749,19.675
+expenditures_australia_monthly,60,60,LightGBM [refit],turnover,0,21.367043,19.675
+expenditures_australia_monthly,60,60,LightGBM [refit],turnover,1,34.130601,19.675
+expenditures_australia_monthly,60,60,LightGBM [refit],turnover,2,42.526131,19.675
+expenditures_australia_monthly,60,60,LightGBM [refit],turnover,3,34.748743,19.675
+expenditures_australia_monthly,60,60,LightGBM [refit],turnover,4,76.15116,19.675
+expenditures_australia_monthly,60,60,Ridge,turnover,0,42.472265,19.675
+expenditures_australia_monthly,60,60,Ridge,turnover,1,60.758826,19.675
+expenditures_australia_monthly,60,60,Ridge,turnover,2,116.244414,19.675
+expenditures_australia_monthly,60,60,Ridge,turnover,3,135.992104,19.675
+expenditures_australia_monthly,60,60,Ridge,turnover,4,208.038726,19.675
+expenditures_australia_monthly,60,60,Ridge [refit],turnover,0,42.472265,19.675
+expenditures_australia_monthly,60,60,Ridge [refit],turnover,1,31.035567,19.675
+expenditures_australia_monthly,60,60,Ridge [refit],turnover,2,56.090667,19.675
+expenditures_australia_monthly,60,60,Ridge [refit],turnover,3,30.095135,19.675
+expenditures_australia_monthly,60,60,Ridge [refit],turnover,4,61.655133,19.675
+expenditures_australia_monthly,60,60,LightGBM (diff),turnover,0,34.577109,19.675
+expenditures_australia_monthly,60,60,LightGBM (diff),turnover,1,37.243549,19.675
+expenditures_australia_monthly,60,60,LightGBM (diff),turnover,2,40.602836,19.675
+expenditures_australia_monthly,60,60,LightGBM (diff),turnover,3,41.716531,19.675
+expenditures_australia_monthly,60,60,LightGBM (diff),turnover,4,67.498409,19.675
+expenditures_australia_monthly,60,60,LightGBM (diff) [refit],turnover,0,34.577109,19.675
+expenditures_australia_monthly,60,60,LightGBM (diff) [refit],turnover,1,14.735518,19.675
+expenditures_australia_monthly,60,60,LightGBM (diff) [refit],turnover,2,24.80117,19.675
+expenditures_australia_monthly,60,60,LightGBM (diff) [refit],turnover,3,15.895278,19.675
+expenditures_australia_monthly,60,60,LightGBM (diff) [refit],turnover,4,36.830811,19.675
+expenditures_australia_monthly,60,60,Ridge (diff),turnover,0,37.643345,19.675
+expenditures_australia_monthly,60,60,Ridge (diff),turnover,1,26.847391,19.675
+expenditures_australia_monthly,60,60,Ridge (diff),turnover,2,50.073074,19.675
+expenditures_australia_monthly,60,60,Ridge (diff),turnover,3,27.796072,19.675
+expenditures_australia_monthly,60,60,Ridge (diff),turnover,4,68.60736,19.675
+expenditures_australia_monthly,60,60,Ridge (diff) [refit],turnover,0,37.643345,19.675
+expenditures_australia_monthly,60,60,Ridge (diff) [refit],turnover,1,21.923437,19.675
+expenditures_australia_monthly,60,60,Ridge (diff) [refit],turnover,2,32.404272,19.675
+expenditures_australia_monthly,60,60,Ridge (diff) [refit],turnover,3,14.883364,19.675
+expenditures_australia_monthly,60,60,Ridge (diff) [refit],turnover,4,45.087084,19.675
+expenditures_australia_monthly,60,60,LightGBM+ [refit],turnover,0,35.531865,19.675
+expenditures_australia_monthly,60,60,LightGBM+ [refit],turnover,1,47.100029,19.675
+expenditures_australia_monthly,60,60,LightGBM+ [refit],turnover,2,38.559414,19.675
+expenditures_australia_monthly,60,60,LightGBM+ [refit],turnover,3,27.48668,19.675
+expenditures_australia_monthly,60,60,LightGBM+ [refit],turnover,4,59.485682,19.675
+expenditures_australia_monthly,60,60,LightGBM+ (diff) [refit],turnover,0,40.528259,19.675
+expenditures_australia_monthly,60,60,LightGBM+ (diff) [refit],turnover,1,14.300705,19.675
+expenditures_australia_monthly,60,60,LightGBM+ (diff) [refit],turnover,2,17.505522,19.675
+expenditures_australia_monthly,60,60,LightGBM+ (diff) [refit],turnover,3,13.520199,19.675
+expenditures_australia_monthly,60,60,LightGBM+ (diff) [refit],turnover,4,35.297699,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet,turnover,0,51.43578,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet,turnover,1,102.782928,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet,turnover,2,142.107928,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet,turnover,3,190.007928,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet,turnover,4,206.841262,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet [refit],turnover,0,51.43578,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet [refit],turnover,1,54.733593,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet [refit],turnover,2,39.077974,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet [refit],turnover,3,42.246007,19.675
+expenditures_australia_monthly,60,60,LightGBM snippet [refit],turnover,4,30.510916,19.675
+expenditures_australia_monthly,60,60,ML selected on validation (4),turnover,0,37.643345,19.675
+expenditures_australia_monthly,60,60,ML selected on validation (4),turnover,1,21.923437,19.675
+expenditures_australia_monthly,60,60,ML selected on validation (4),turnover,2,32.404272,19.675
+expenditures_australia_monthly,60,60,ML selected on validation (4),turnover,3,14.883364,19.675
+expenditures_australia_monthly,60,60,ML selected on validation (4),turnover,4,45.087084,19.675
+expenditures_australia_monthly,60,60,ML selected on validation (6),turnover,0,37.643345,19.675
+expenditures_australia_monthly,60,60,ML selected on validation (6),turnover,1,21.923437,19.675
+expenditures_australia_monthly,60,60,ML selected on validation (6),turnover,2,32.404272,19.675
+expenditures_australia_monthly,60,60,ML selected on validation (6),turnover,3,14.883364,19.675
+expenditures_australia_monthly,60,60,ML selected on validation (6),turnover,4,45.087084,19.675
+expenditures_australia_monthly,60,60,Chronos-2,turnover,0,35.359018,19.675
+expenditures_australia_monthly,60,60,Chronos-2,turnover,1,24.248942,19.675
+expenditures_australia_monthly,60,60,Chronos-2,turnover,2,14.986628,19.675
+expenditures_australia_monthly,60,60,Chronos-2,turnover,3,10.660545,19.675
+expenditures_australia_monthly,60,60,Chronos-2,turnover,4,15.402544,19.675
+expenditures_australia_monthly,60,60,AutoETS,turnover,0,31.750949,19.675
+expenditures_australia_monthly,60,60,AutoETS,turnover,1,33.776232,19.675
+expenditures_australia_monthly,60,60,AutoETS,turnover,2,17.776694,19.675
+expenditures_australia_monthly,60,60,AutoETS,turnover,3,25.676502,19.675
+expenditures_australia_monthly,60,60,AutoETS,turnover,4,14.879296,19.675
+expenditures_australia_monthly,60,60,AutoARIMA,turnover,0,15.667206,19.675
+expenditures_australia_monthly,60,60,AutoARIMA,turnover,1,14.78783,19.675
+expenditures_australia_monthly,60,60,AutoARIMA,turnover,2,26.13001,19.675
+expenditures_australia_monthly,60,60,AutoARIMA,turnover,3,15.38317,19.675
+expenditures_australia_monthly,60,60,AutoARIMA,turnover,4,49.228704,19.675
+expenditures_australia_monthly,120,120,Seasonal naive,turnover,0,33.075,19.675
+expenditures_australia_monthly,120,120,Seasonal naive,turnover,1,54.591667,19.675
+expenditures_australia_monthly,120,120,Seasonal naive,turnover,2,40.308333,19.675
+expenditures_australia_monthly,120,120,Seasonal naive,turnover,3,47.9,19.675
+expenditures_australia_monthly,120,120,Seasonal naive,turnover,4,18.8,19.675
+expenditures_australia_monthly,120,120,LightGBM,turnover,0,21.843863,19.675
+expenditures_australia_monthly,120,120,LightGBM,turnover,1,44.868891,19.675
+expenditures_australia_monthly,120,120,LightGBM,turnover,2,76.686725,19.675
+expenditures_australia_monthly,120,120,LightGBM,turnover,3,122.193812,19.675
+expenditures_australia_monthly,120,120,LightGBM,turnover,4,139.027145,19.675
+expenditures_australia_monthly,120,120,LightGBM [refit],turnover,0,21.843863,19.675
+expenditures_australia_monthly,120,120,LightGBM [refit],turnover,1,41.900907,19.675
+expenditures_australia_monthly,120,120,LightGBM [refit],turnover,2,40.167592,19.675
+expenditures_australia_monthly,120,120,LightGBM [refit],turnover,3,26.190033,19.675
+expenditures_australia_monthly,120,120,LightGBM [refit],turnover,4,66.888901,19.675
+expenditures_australia_monthly,120,120,Ridge,turnover,0,29.364838,19.675
+expenditures_australia_monthly,120,120,Ridge,turnover,1,48.837615,19.675
+expenditures_australia_monthly,120,120,Ridge,turnover,2,37.952664,19.675
+expenditures_australia_monthly,120,120,Ridge,turnover,3,46.739001,19.675
+expenditures_australia_monthly,120,120,Ridge,turnover,4,32.678323,19.675
+expenditures_australia_monthly,120,120,Ridge [refit],turnover,0,29.364838,19.675
+expenditures_australia_monthly,120,120,Ridge [refit],turnover,1,45.108528,19.675
+expenditures_australia_monthly,120,120,Ridge [refit],turnover,2,25.487763,19.675
+expenditures_australia_monthly,120,120,Ridge [refit],turnover,3,29.149424,19.675
+expenditures_australia_monthly,120,120,Ridge [refit],turnover,4,31.006431,19.675
+expenditures_australia_monthly,120,120,LightGBM (diff),turnover,0,48.60696,19.675
+expenditures_australia_monthly,120,120,LightGBM (diff),turnover,1,14.671427,19.675
+expenditures_australia_monthly,120,120,LightGBM (diff),turnover,2,43.326226,19.675
+expenditures_australia_monthly,120,120,LightGBM (diff),turnover,3,23.72273,19.675
+expenditures_australia_monthly,120,120,LightGBM (diff),turnover,4,44.297851,19.675
+expenditures_australia_monthly,120,120,LightGBM (diff) [refit],turnover,0,48.60696,19.675
+expenditures_australia_monthly,120,120,LightGBM (diff) [refit],turnover,1,23.011022,19.675
+expenditures_australia_monthly,120,120,LightGBM (diff) [refit],turnover,2,30.066524,19.675
+expenditures_australia_monthly,120,120,LightGBM (diff) [refit],turnover,3,38.019915,19.675
+expenditures_australia_monthly,120,120,LightGBM (diff) [refit],turnover,4,36.627597,19.675
+expenditures_australia_monthly,120,120,Ridge (diff),turnover,0,24.85852,19.675
+expenditures_australia_monthly,120,120,Ridge (diff),turnover,1,27.631429,19.675
+expenditures_australia_monthly,120,120,Ridge (diff),turnover,2,31.65427,19.675
+expenditures_australia_monthly,120,120,Ridge (diff),turnover,3,23.628533,19.675
+expenditures_australia_monthly,120,120,Ridge (diff),turnover,4,51.903752,19.675
+expenditures_australia_monthly,120,120,Ridge (diff) [refit],turnover,0,24.85852,19.675
+expenditures_australia_monthly,120,120,Ridge (diff) [refit],turnover,1,26.882528,19.675
+expenditures_australia_monthly,120,120,Ridge (diff) [refit],turnover,2,26.625143,19.675
+expenditures_australia_monthly,120,120,Ridge (diff) [refit],turnover,3,19.045325,19.675
+expenditures_australia_monthly,120,120,Ridge (diff) [refit],turnover,4,44.494316,19.675
+expenditures_australia_monthly,120,120,LightGBM+ [refit],turnover,0,24.860677,19.675
+expenditures_australia_monthly,120,120,LightGBM+ [refit],turnover,1,35.937634,19.675
+expenditures_australia_monthly,120,120,LightGBM+ [refit],turnover,2,31.847911,19.675
+expenditures_australia_monthly,120,120,LightGBM+ [refit],turnover,3,27.150288,19.675
+expenditures_australia_monthly,120,120,LightGBM+ [refit],turnover,4,55.997503,19.675
+expenditures_australia_monthly,120,120,LightGBM+ (diff) [refit],turnover,0,37.074477,19.675
+expenditures_australia_monthly,120,120,LightGBM+ (diff) [refit],turnover,1,12.939716,19.675
+expenditures_australia_monthly,120,120,LightGBM+ (diff) [refit],turnover,2,15.771644,19.675
+expenditures_australia_monthly,120,120,LightGBM+ (diff) [refit],turnover,3,14.861993,19.675
+expenditures_australia_monthly,120,120,LightGBM+ (diff) [refit],turnover,4,36.980078,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet,turnover,0,41.501453,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet,turnover,1,82.940389,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet,turnover,2,122.265389,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet,turnover,3,170.165389,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet,turnover,4,186.998722,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet [refit],turnover,0,41.501453,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet [refit],turnover,1,45.6251,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet [refit],turnover,2,35.312791,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet [refit],turnover,3,42.646124,19.675
+expenditures_australia_monthly,120,120,LightGBM snippet [refit],turnover,4,27.6751,19.675
+expenditures_australia_monthly,120,120,ML selected on validation (4),turnover,0,24.85852,19.675
+expenditures_australia_monthly,120,120,ML selected on validation (4),turnover,1,26.882528,19.675
+expenditures_australia_monthly,120,120,ML selected on validation (4),turnover,2,26.625143,19.675
+expenditures_australia_monthly,120,120,ML selected on validation (4),turnover,3,19.045325,19.675
+expenditures_australia_monthly,120,120,ML selected on validation (4),turnover,4,44.494316,19.675
+expenditures_australia_monthly,120,120,ML selected on validation (6),turnover,0,24.85852,19.675
+expenditures_australia_monthly,120,120,ML selected on validation (6),turnover,1,26.882528,19.675
+expenditures_australia_monthly,120,120,ML selected on validation (6),turnover,2,26.625143,19.675
+expenditures_australia_monthly,120,120,ML selected on validation (6),turnover,3,19.045325,19.675
+expenditures_australia_monthly,120,120,ML selected on validation (6),turnover,4,44.494316,19.675
+expenditures_australia_monthly,120,120,Chronos-2,turnover,0,31.061748,19.675
+expenditures_australia_monthly,120,120,Chronos-2,turnover,1,26.562538,19.675
+expenditures_australia_monthly,120,120,Chronos-2,turnover,2,18.67466,19.675
+expenditures_australia_monthly,120,120,Chronos-2,turnover,3,29.493127,19.675
+expenditures_australia_monthly,120,120,Chronos-2,turnover,4,19.122113,19.675
+expenditures_australia_monthly,120,120,AutoETS,turnover,0,20.019502,19.675
+expenditures_australia_monthly,120,120,AutoETS,turnover,1,22.28246,19.675
+expenditures_australia_monthly,120,120,AutoETS,turnover,2,15.441998,19.675
+expenditures_australia_monthly,120,120,AutoETS,turnover,3,14.180363,19.675
+expenditures_australia_monthly,120,120,AutoETS,turnover,4,38.539491,19.675
+expenditures_australia_monthly,120,120,AutoARIMA,turnover,0,19.732113,19.675
+expenditures_australia_monthly,120,120,AutoARIMA,turnover,1,24.862104,19.675
+expenditures_australia_monthly,120,120,AutoARIMA,turnover,2,17.022053,19.675
+expenditures_australia_monthly,120,120,AutoARIMA,turnover,3,17.728556,19.675
+expenditures_australia_monthly,120,120,AutoARIMA,turnover,4,29.209011,19.675
+expenditures_australia_monthly,full,393,Seasonal naive,turnover,0,33.075,19.675
+expenditures_australia_monthly,full,393,Seasonal naive,turnover,1,54.591667,19.675
+expenditures_australia_monthly,full,393,Seasonal naive,turnover,2,40.308333,19.675
+expenditures_australia_monthly,full,393,Seasonal naive,turnover,3,47.9,19.675
+expenditures_australia_monthly,full,393,Seasonal naive,turnover,4,18.8,19.675
+expenditures_australia_monthly,full,393,LightGBM,turnover,0,31.231591,19.675
+expenditures_australia_monthly,full,393,LightGBM,turnover,1,46.461064,19.675
+expenditures_australia_monthly,full,393,LightGBM,turnover,2,76.658632,19.675
+expenditures_australia_monthly,full,393,LightGBM,turnover,3,119.077469,19.675
+expenditures_australia_monthly,full,393,LightGBM,turnover,4,135.910803,19.675
+expenditures_australia_monthly,full,393,LightGBM [refit],turnover,0,31.231591,19.675
+expenditures_australia_monthly,full,393,LightGBM [refit],turnover,1,32.480559,19.675
+expenditures_australia_monthly,full,393,LightGBM [refit],turnover,2,39.844716,19.675
+expenditures_australia_monthly,full,393,LightGBM [refit],turnover,3,25.935338,19.675
+expenditures_australia_monthly,full,393,LightGBM [refit],turnover,4,52.150163,19.675
+expenditures_australia_monthly,full,393,Ridge,turnover,0,31.261463,19.675
+expenditures_australia_monthly,full,393,Ridge,turnover,1,44.539851,19.675
+expenditures_australia_monthly,full,393,Ridge,turnover,2,41.823709,19.675
+expenditures_australia_monthly,full,393,Ridge,turnover,3,41.718788,19.675
+expenditures_australia_monthly,full,393,Ridge,turnover,4,59.688756,19.675
+expenditures_australia_monthly,full,393,Ridge [refit],turnover,0,31.261463,19.675
+expenditures_australia_monthly,full,393,Ridge [refit],turnover,1,43.012251,19.675
+expenditures_australia_monthly,full,393,Ridge [refit],turnover,2,34.144116,19.675
+expenditures_australia_monthly,full,393,Ridge [refit],turnover,3,35.375981,19.675
+expenditures_australia_monthly,full,393,Ridge [refit],turnover,4,46.253189,19.675
+expenditures_australia_monthly,full,393,LightGBM (diff),turnover,0,32.153007,19.675
+expenditures_australia_monthly,full,393,LightGBM (diff),turnover,1,23.908513,19.675
+expenditures_australia_monthly,full,393,LightGBM (diff),turnover,2,13.560655,19.675
+expenditures_australia_monthly,full,393,LightGBM (diff),turnover,3,23.740754,19.675
+expenditures_australia_monthly,full,393,LightGBM (diff),turnover,4,59.153584,19.675
+expenditures_australia_monthly,full,393,LightGBM (diff) [refit],turnover,0,32.153007,19.675
+expenditures_australia_monthly,full,393,LightGBM (diff) [refit],turnover,1,23.616576,19.675
+expenditures_australia_monthly,full,393,LightGBM (diff) [refit],turnover,2,20.471104,19.675
+expenditures_australia_monthly,full,393,LightGBM (diff) [refit],turnover,3,28.777157,19.675
+expenditures_australia_monthly,full,393,LightGBM (diff) [refit],turnover,4,46.683203,19.675
+expenditures_australia_monthly,full,393,Ridge (diff),turnover,0,26.455276,19.675
+expenditures_australia_monthly,full,393,Ridge (diff),turnover,1,35.543878,19.675
+expenditures_australia_monthly,full,393,Ridge (diff),turnover,2,37.204271,19.675
+expenditures_australia_monthly,full,393,Ridge (diff),turnover,3,32.422469,19.675
+expenditures_australia_monthly,full,393,Ridge (diff),turnover,4,56.04985,19.675
+expenditures_australia_monthly,full,393,Ridge (diff) [refit],turnover,0,26.455276,19.675
+expenditures_australia_monthly,full,393,Ridge (diff) [refit],turnover,1,35.081808,19.675
+expenditures_australia_monthly,full,393,Ridge (diff) [refit],turnover,2,33.607445,19.675
+expenditures_australia_monthly,full,393,Ridge (diff) [refit],turnover,3,28.570396,19.675
+expenditures_australia_monthly,full,393,Ridge (diff) [refit],turnover,4,49.161002,19.675
+expenditures_australia_monthly,full,393,LightGBM+ [refit],turnover,0,27.684348,19.675
+expenditures_australia_monthly,full,393,LightGBM+ [refit],turnover,1,31.577306,19.675
+expenditures_australia_monthly,full,393,LightGBM+ [refit],turnover,2,29.337434,19.675
+expenditures_australia_monthly,full,393,LightGBM+ [refit],turnover,3,26.38497,19.675
+expenditures_australia_monthly,full,393,LightGBM+ [refit],turnover,4,42.498253,19.675
+expenditures_australia_monthly,full,393,LightGBM+ (diff) [refit],turnover,0,22.422205,19.675
+expenditures_australia_monthly,full,393,LightGBM+ (diff) [refit],turnover,1,18.294573,19.675
+expenditures_australia_monthly,full,393,LightGBM+ (diff) [refit],turnover,2,16.228761,19.675
+expenditures_australia_monthly,full,393,LightGBM+ (diff) [refit],turnover,3,17.787899,19.675
+expenditures_australia_monthly,full,393,LightGBM+ (diff) [refit],turnover,4,28.239359,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet,turnover,0,37.750794,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet,turnover,1,80.612636,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet,turnover,2,119.501141,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet,turnover,3,167.401141,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet,turnover,4,184.234475,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet [refit],turnover,0,37.750794,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet [refit],turnover,1,49.72641,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet [refit],turnover,2,35.318838,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet [refit],turnover,3,45.303422,19.675
+expenditures_australia_monthly,full,393,LightGBM snippet [refit],turnover,4,31.705139,19.675
+expenditures_australia_monthly,full,393,ML selected on validation (4),turnover,0,26.455276,19.675
+expenditures_australia_monthly,full,393,ML selected on validation (4),turnover,1,35.081808,19.675
+expenditures_australia_monthly,full,393,ML selected on validation (4),turnover,2,33.607445,19.675
+expenditures_australia_monthly,full,393,ML selected on validation (4),turnover,3,28.570396,19.675
+expenditures_australia_monthly,full,393,ML selected on validation (4),turnover,4,49.161002,19.675
+expenditures_australia_monthly,full,393,ML selected on validation (6),turnover,0,26.455276,19.675
+expenditures_australia_monthly,full,393,ML selected on validation (6),turnover,1,35.081808,19.675
+expenditures_australia_monthly,full,393,ML selected on validation (6),turnover,2,33.607445,19.675
+expenditures_australia_monthly,full,393,ML selected on validation (6),turnover,3,28.570396,19.675
+expenditures_australia_monthly,full,393,ML selected on validation (6),turnover,4,49.161002,19.675
+expenditures_australia_monthly,full,393,Chronos-2,turnover,0,21.262908,19.675
+expenditures_australia_monthly,full,393,Chronos-2,turnover,1,29.766944,19.675
+expenditures_australia_monthly,full,393,Chronos-2,turnover,2,37.643049,19.675
+expenditures_australia_monthly,full,393,Chronos-2,turnover,3,27.059296,19.675
+expenditures_australia_monthly,full,393,Chronos-2,turnover,4,17.899476,19.675
+expenditures_australia_monthly,full,393,Chronos-2 base,turnover,0,21.728705,19.675
+expenditures_australia_monthly,full,393,Chronos-2 base,turnover,1,28.866373,19.675
+expenditures_australia_monthly,full,393,Chronos-2 base,turnover,2,16.689187,19.675
+expenditures_australia_monthly,full,393,Chronos-2 base,turnover,3,22.352281,19.675
+expenditures_australia_monthly,full,393,Chronos-2 base,turnover,4,36.12342,19.675
+expenditures_australia_monthly,full,393,Chronos-2 synth,turnover,0,25.24726,19.675
+expenditures_australia_monthly,full,393,Chronos-2 synth,turnover,1,28.549737,19.675
+expenditures_australia_monthly,full,393,Chronos-2 synth,turnover,2,14.830524,19.675
+expenditures_australia_monthly,full,393,Chronos-2 synth,turnover,3,22.892232,19.675
+expenditures_australia_monthly,full,393,Chronos-2 synth,turnover,4,26.778938,19.675
+expenditures_australia_monthly,full,393,AutoETS,turnover,0,27.768736,19.675
+expenditures_australia_monthly,full,393,AutoETS,turnover,1,35.531105,19.675
+expenditures_australia_monthly,full,393,AutoETS,turnover,2,19.111172,19.675
+expenditures_australia_monthly,full,393,AutoETS,turnover,3,28.313146,19.675
+expenditures_australia_monthly,full,393,AutoETS,turnover,4,15.37507,19.675
+expenditures_australia_monthly,full,393,AutoARIMA,turnover,0,18.59766,19.675
+expenditures_australia_monthly,full,393,AutoARIMA,turnover,1,19.428376,19.675
+expenditures_australia_monthly,full,393,AutoARIMA,turnover,2,23.618919,19.675
+expenditures_australia_monthly,full,393,AutoARIMA,turnover,3,13.974638,19.675
+expenditures_australia_monthly,full,393,AutoARIMA,turnover,4,45.355402,19.675
