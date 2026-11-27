@@ -307,11 +307,25 @@ forecaster = ForecasterRecursive(
 **`categorical_features` options:**
 - `'auto'` (default): Auto-detect non-numeric columns after `transformer_exog`.
 - `list`: Explicit column names to treat as categorical (including numeric columns).
-- `None`: No internal categorical encoding.
+- `None`: No internal categorical encoding. A column of dtype `category` must
+  have integer categories, and the estimator receives its values (not its codes)
+  as a numeric column. `ForecasterRecursiveMultiSeries` issues a `DataTypeWarning`
+  in that case, also for a `category` column left out of the list.
 
 **Important:** When `categorical_features` is not `None`, do not set categorical
 features directly on the estimator or via `fit_kwargs`. The forecaster manages
-the configuration internally and overwrites estimator-level settings.
+the configuration internally and overwrites estimator-level settings. With
+`categorical_features=None` they can be set on the estimator or in `fit_kwargs`,
+and the estimator then reads the values of the column as the categories: use
+small, non-negative integers (ideally `0, 1, 2...`). LightGBM treats negative
+values as missing; XGBoost raises an error with them and needs more time and
+memory the larger the values are.
+
+**LightGBM with few rows per category:** native categorical splits need enough
+rows per category (`min_data_per_group`, 100 by default). With fewer, the model
+can be worse than with the column as numeric: lower `min_data_per_group`, or
+encode the column with an `OrdinalEncoder` in `transformer_exog` so it is passed
+as numeric.
 
 **Choosing an encoding strategy:**
 

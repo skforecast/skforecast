@@ -1773,7 +1773,8 @@ def _evaluate_grid_hyperparameters_multiseries(
                         X_train_encoding,
                         X_test_encoding,
                         sample_weight,
-                        fit_kwargs
+                        fit_kwargs,
+                        feature_names
                     ) = _train_test_split_one_step_ahead_search(
                         forecaster         = forecaster_search,
                         cv                 = cv,
@@ -1843,9 +1844,10 @@ def _evaluate_grid_hyperparameters_multiseries(
                             add_aggregated_metric = add_aggregated_metric,
                             sample_weight         = sample_weight,
                             fit_kwargs            = fit_kwargs,
-                            return_predictions    = False
+                            return_predictions    = False,
+                            feature_names         = feature_names
                         )
-            
+
                 except Exception as e:
                     search_warnings.add_skipped(lags=lags_k, params=params, error=e)
                     continue
@@ -2373,7 +2375,7 @@ def bayesian_search_forecaster_multiseries(
             (
                 X_train, y_train, X_test, y_test,
                 X_train_encoding, X_test_encoding,
-                sample_weight, fit_kwargs,
+                sample_weight, fit_kwargs, feature_names,
                 _estimator_cat_params
             ) = split
             _restore_estimator_categorical_set_params(
@@ -2395,7 +2397,8 @@ def bayesian_search_forecaster_multiseries(
                                  add_aggregated_metric = add_aggregated_metric,
                                  sample_weight         = sample_weight,
                                  fit_kwargs            = fit_kwargs,
-                                 return_predictions    = False
+                                 return_predictions    = False,
+                                 feature_names         = feature_names
                              )
             except Exception as e:
                 raise _skip_trial(search_warnings, trial, error=e) from e

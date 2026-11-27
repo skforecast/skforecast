@@ -52,6 +52,9 @@ def test_check_exog_dtypes_TypeError_when_exog_is_Series_with_no_int_categories(
     """
     err_msg = re.escape(
         "Categorical dtypes in exog must contain only integer values. "
+        "In the forecasters with the argument `categorical_features`, "
+        "include the column in it, or use `categorical_features='auto'`, "
+        "so that the forecaster encodes it. "
         "See skforecast docs for more info about how to include "
         "categorical features https://skforecast.org/"
         "latest/user_guides/categorical-features.html"
@@ -67,6 +70,9 @@ def test_check_exog_dtypes_TypeError_when_exog_is_DataFrame_with_no_int_categori
     """
     err_msg = re.escape(
         "Categorical dtypes in exog must contain only integer values. "
+        "In the forecasters with the argument `categorical_features`, "
+        "include the column in it, or use `categorical_features='auto'`, "
+        "so that the forecaster encodes it. "
         "See skforecast docs for more info about how to include "
         "categorical features https://skforecast.org/"
         "latest/user_guides/categorical-features.html"

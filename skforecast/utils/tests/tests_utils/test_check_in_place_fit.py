@@ -142,3 +142,119 @@ def test_check_in_place_fit_no_error_when_estimator_does_not_modify_X(estimator,
 
     pd.testing.assert_frame_equal(X, X_copy)
     assert hasattr(estimator, 'n_features_in_')
+
+
+class LinearRegressionWritingColumn(LinearRegression):
+    """
+    LinearRegression that overwrites a column of the training matrix in place.
+    """
+
+    def fit(self, X, y, sample_weight=None):
+        X[:, 0] = 0.
+        return super().fit(X, y, sample_weight=sample_weight)
+
+
+@pytest.mark.parametrize(
+    "n_rows, expected_n_rows, expected_positions",
+    [(10, 10, [0, 1, 2, 9]),
+     (150, 100, [0, 1, 3, 149])],
+    ids=lambda value: f'{value}'
+)
+def test_copy_rows_to_check_output_when_numpy(
+    n_rows, expected_n_rows, expected_positions
+):
+    """
+    Test that `_copy_rows_to_check` returns a copy of up to 100 rows of a
+    numpy array, evenly spaced and including the first and the last ones
+    (first three and last positions checked).
+    """
+    X, _ = make_X_y(n_rows)
+    X = X.to_numpy().copy()
+    results = _copy_rows_to_check(X)
+
+    assert isinstance(results, np.ndarray)
+    assert len(results) == expected_n_rows
+    np.testing.assert_array_equal(
+        results[[0, 1, 2, -1]], X[expected_positions]
+    )
+    assert not np.shares_memory(results, X)
+
+
+@pytest.mark.parametrize(
+    "n_rows",
+    [10, 150],
+    ids=lambda n_rows: f'n_rows: {n_rows}'
+)
+@pytest.mark.parametrize(
+    "estimator",
+    [LinearRegression(copy_X=False),
+     make_pipeline(StandardScaler(copy=False), LinearRegression()),
+     LinearRegressionWritingColumn()],
+    ids=['LinearRegression(copy_X=False)', 'pipeline StandardScaler(copy=False)',
+         'estimator writes a column']
+)
+def test_check_in_place_fit_ValueError_when_estimator_modifies_X_numpy(
+    estimator, n_rows
+):
+    """
+    Test ValueError is raised when the estimator modifies in place a training
+    matrix that is a numpy array, with fewer and with more rows than the
+    sample that is compared (100).
+    """
+    X, y = make_X_y(n_rows)
+    X = X.to_numpy().copy()
+    X_rows = _copy_rows_to_check(X)
+    estimator.fit(X, y)
+
+    err_msg = re.escape(
+        "The estimator has modified the training matrix in place during "
+        "`fit`. The matrix is used again after training, to calculate the "
+        "in-sample residuals or to fit the next candidates of a search "
+        "with `OneStepAheadFold`, so the results would be wrong. This "
+        "happens with estimators that do not copy their input, such as "
+        "`LinearRegression(copy_X=False)` or a pipeline with "
+        "`StandardScaler(copy=False)`. Use the default copy behavior of "
+        "the estimator (`copy_X=True`, `copy=True`)."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        _check_in_place_fit(X=X, X_rows=X_rows)
+
+
+def test_check_in_place_fit_no_error_when_imputer_fills_NaN_in_place_numpy():
+    """
+    Test that no error is raised when a step fills in place the cells of a
+    numpy array that were NaN before training (`SimpleImputer(copy=False)`),
+    because those cells are not compared. The rest of the matrix is not
+    modified.
+    """
+    X, y = make_X_y(10)
+    X = X.to_numpy().copy()
+    X[[2, 5], 0] = np.nan
+    X[7, 2] = np.nan
+    X_copy = X.copy()
+    estimator = make_pipeline(SimpleImputer(copy=False), LinearRegression())
+
+    X_rows = _copy_rows_to_check(X)
+    estimator.fit(X, y)
+    _check_in_place_fit(X=X, X_rows=X_rows)
+
+    assert not np.isnan(X).any()
+    np.testing.assert_array_equal(X[~np.isnan(X_copy)], X_copy[~np.isnan(X_copy)])
+
+
+def test_check_in_place_fit_no_error_when_estimator_does_not_modify_X_numpy():
+    """
+    Test that no error is raised and the training matrix is not modified when
+    the estimator does not modify a numpy array with NaN values.
+    """
+    X = np.array([[1., 1.], [3., np.nan], [2., 3.], [5., np.nan], [4., 5.], [6., 6.]])
+    y = pd.Series([1., 2., 3., 4., 5., 6.], name='y')
+    X_copy = X.copy()
+    estimator = HistGradientBoostingRegressor(max_iter=2, min_samples_leaf=1)
+
+    X_rows = _copy_rows_to_check(X)
+    estimator.fit(X, y)
+    _check_in_place_fit(X=X, X_rows=X_rows)
+
+    np.testing.assert_array_equal(X, X_copy)
+    assert hasattr(estimator, 'n_features_in_')

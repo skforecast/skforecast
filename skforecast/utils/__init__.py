@@ -14,9 +14,12 @@ from .utils import (
     _NonFinitePredictorsError,
     _prefers_c_contiguous_X,
     _resolve_n_jobs,
+    _resolve_user_categorical_config,
     _restore_estimator_categorical_set_params,
     _series_too_short_multiseries,
     _split_long_format,
+    _train_matrix_to_estimator_input,
+    _train_matrix_to_numpy,
     _warn_nan_training_rows,
     _warn_nan_training_rows_direct
 )

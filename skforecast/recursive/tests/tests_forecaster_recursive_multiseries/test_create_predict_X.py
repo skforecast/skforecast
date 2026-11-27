@@ -422,10 +422,11 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
 )
 def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor(categorical_features):
     """
-    Test create_predict_X when using LGBMRegressor and categorical variables.
-    Native implementation of categorical features in LGBMRegressor
-    should return the same predictions as the one obtained when using the Forecaster
-    to encode the categorical features.
+    Test create_predict_X when using LGBMRegressor and categorical variables
+    that `transformer_exog` returns as `category` columns of integers. With
+    `categorical_features='auto'` they are detected and passed to LGBMRegressor
+    as native categorical features, with the same predictions as the ones
+    obtained when the Forecaster encodes the original columns.
     """
     df_exog = pd.DataFrame(
         {'exog_1': exog_wide_range['exog_1'],
@@ -463,7 +464,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor(ca
                      lags               = 5,
                      transformer_series = None,
                      transformer_exog   = transformer_exog,
-                     categorical_features = None
+                     categorical_features = 'auto'
                  )
     forecaster.fit(series=series_dict_range, exog=df_exog)
     results = forecaster.create_predict_X(steps=10, exog=exog_predict)
@@ -494,8 +495,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor(ca
                  columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                             '_level_skforecast', 'exog_2', 'exog_3', 'exog_1'],
                  index = pd.RangeIndex(start=50, stop=60, step=1)
-             ).astype({'exog_2': int, 'exog_3': int}
-             ).astype({'exog_2': 'category', 'exog_3': 'category'}),
+             ),
         'l2': pd.DataFrame(
                  data = np.array([
                      [0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
@@ -521,8 +521,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor(ca
                  columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                             '_level_skforecast', 'exog_2', 'exog_3', 'exog_1'],
                  index = pd.RangeIndex(start=50, stop=60, step=1)
-             ).astype({'exog_2': int, 'exog_3': int}
-             ).astype({'exog_2': 'category', 'exog_3': 'category'})
+             )
     }
     expected = expected_df_to_long_format(expected, method='bootstrapping')
 

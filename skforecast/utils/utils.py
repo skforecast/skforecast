@@ -807,67 +807,9 @@ def cast_catboost_categorical_columns(
     return X
 
 
-def cast_catboost_categorical_columns_dataframe(
-    X: pd.DataFrame,
-    fit_kwargs: dict[str, Any],
-    estimator: object,
-    feature_names: list[str],
-) -> pd.DataFrame:
-    """
-    Cast categorical columns of `X` to integer dtype as required by CatBoost
-    when `X` is a pandas DataFrame.
-
-    Two dtypes are supported for categorical columns:
-    * `pandas.Categorical` — converted via `.cat.codes` (NaN -> -1 by default).
-    * float (with NaN from the `OrdinalEncoder`) — `fillna(-1).astype(int)`.
-
-    No-op if `cat_features` is not in `fit_kwargs` or the estimator is not a
-    CatBoost model. A Pipeline is never cast, also when its last step is
-    CatBoost, since `configure_estimator_categorical_features` does not
-    configure native categorical features inside a Pipeline.
-
-    Parameters
-    ----------
-    X : pandas DataFrame
-        Training matrix.
-    fit_kwargs : dict
-        Keyword arguments to pass to `estimator.fit`. Must contain the key
-        `'cat_features'` (a list of int indices) for the cast to run.
-    estimator : object
-        Estimator the matrix will be passed to. The cast only runs if this
-        is a CatBoost estimator.
-    feature_names : list of str
-        Column names of `X` in positional order; used to translate the
-        integer indices in `fit_kwargs['cat_features']` to column labels.
-
-    Returns
-    -------
-    X : pandas DataFrame
-        DataFrame with categorical columns cast to int. Returned unchanged
-        if the cast does not apply.
-
-    """
-
-    if 'cat_features' not in fit_kwargs:
-        return X
-
-    if type(estimator).__module__.split('.')[0] != 'catboost':
-        return X
-
-    X = X.copy()
-    cat_cols = [feature_names[i] for i in fit_kwargs['cat_features']]
-    for col in cat_cols:
-        if hasattr(X[col].dtype, 'categories'):
-            X[col] = X[col].cat.codes.astype(int)
-        else:
-            X[col] = X[col].fillna(-1).astype(int)
-
-    return X
-
-
 def _copy_rows_to_check(
-    X: pd.DataFrame
-) -> pd.DataFrame:
+    X: np.ndarray | pd.DataFrame
+) -> np.ndarray | pd.DataFrame:
     """
     Copy a sample of up to 100 rows of the training matrix `X`, evenly spaced,
     before it is passed to the `fit` method of an estimator. After training,
@@ -876,25 +818,29 @@ def _copy_rows_to_check(
 
     Parameters
     ----------
-    X : pandas DataFrame
+    X : numpy ndarray, pandas DataFrame
         Training values (predictors) passed to the estimator.
 
     Returns
     -------
-    X_rows : pandas DataFrame
-        Copy of the rows of `X` that are checked.
+    X_rows : numpy ndarray, pandas DataFrame
+        Copy of the rows of `X` that are checked, of the same type as `X`.
 
     """
 
     rows_to_check = np.linspace(0, len(X) - 1, num=min(len(X), 100), dtype=int)
-    X_rows = X.iloc[rows_to_check].copy()
+    if isinstance(X, np.ndarray):
+        # NOTE: Indexing with an array of positions already returns a copy.
+        X_rows = X[rows_to_check]
+    else:
+        X_rows = X.iloc[rows_to_check].copy()
 
     return X_rows
 
 
 def _check_in_place_fit(
-    X: pd.DataFrame,
-    X_rows: pd.DataFrame
+    X: np.ndarray | pd.DataFrame,
+    X_rows: np.ndarray | pd.DataFrame
 ) -> None:
     """
     Check that the `fit` method of an estimator has not modified the training
@@ -911,9 +857,9 @@ def _check_in_place_fit(
 
     Parameters
     ----------
-    X : pandas DataFrame
+    X : numpy ndarray, pandas DataFrame
         Training values (predictors) passed to the estimator.
-    X_rows : pandas DataFrame
+    X_rows : numpy ndarray, pandas DataFrame
         Rows of `X` copied with `_copy_rows_to_check` before training.
 
     Returns
@@ -924,11 +870,24 @@ def _check_in_place_fit(
 
     # Same positions as in `_copy_rows_to_check`.
     rows_to_check = np.linspace(0, len(X) - 1, num=len(X_rows), dtype=int)
-    X_rows_after = X.iloc[rows_to_check]
-    if (
-        X_rows_after.shape != X_rows.shape
-        or not X_rows_after.mask(X_rows.isna().to_numpy()).equals(X_rows)
-    ):
+    if isinstance(X, np.ndarray):
+        X_rows_after = X[rows_to_check]
+        is_modified = (
+            X_rows_after.shape != X_rows.shape
+            or not np.array_equal(
+                np.where(np.isnan(X_rows), np.nan, X_rows_after),
+                X_rows,
+                equal_nan=True
+            )
+        )
+    else:
+        X_rows_after = X.iloc[rows_to_check]
+        is_modified = (
+            X_rows_after.shape != X_rows.shape
+            or not X_rows_after.mask(X_rows.isna().to_numpy()).equals(X_rows)
+        )
+
+    if is_modified:
         raise ValueError(
             "The estimator has modified the training matrix in place during "
             "`fit`. The matrix is used again after training, to calculate the "
@@ -939,6 +898,351 @@ def _check_in_place_fit(
             "`StandardScaler(copy=False)`. Use the default copy behavior of "
             "the estimator (`copy_X=True`, `copy=True`)."
         )
+
+
+def _train_matrix_to_numpy(
+    X_train: pd.DataFrame
+) -> np.ndarray:
+    """
+    Values of the training matrix `X_train` as the float64 numpy array that is
+    passed to the estimator, with the same rule that converts the predictors
+    in `predict`, so that the estimator receives the same values in both.
+
+    - If all the columns are float64, the array is a view of the values of
+    `X_train` (no copy).
+    - Otherwise, the missing values of nullable and pyarrow columns are NaN,
+    booleans are 0 and 1, and a column of dtype `category` is replaced by its
+    values (its categories), not by its codes.
+
+    The array is writeable. pandas 3 returns a read-only array when no copy is
+    needed: as with pandas 2, the estimators that need to write in their input
+    do not copy it, and those that modify it in place are detected by
+    `_check_in_place_fit`. The only exception is a matrix whose values belong
+    to a read-only array, which is returned read-only.
+
+    Parameters
+    ----------
+    X_train : pandas DataFrame
+        Training values (predictors).
+
+    Returns
+    -------
+    X_train_values : numpy ndarray
+        Values of `X_train` as a float64 array.
+
+    Notes
+    -----
+    A `TypeError` that names the columns is raised if any of them cannot be
+    passed as numeric values: text, dates, timedeltas, or a `category` whose
+    categories are not integers (the same rule `check_exog_dtypes` applies,
+    since `predict` rejects them when their categories differ from those seen
+    in training).
+
+    """
+
+    def make_writeable(values):
+        # NOTE: pandas 3 returns a read-only array when no copy is needed.
+        if not values.flags.writeable:
+            try:
+                values.flags.writeable = True
+            except ValueError:
+                # The data is not owned by a writeable array: it is kept
+                # read-only and the estimator copies it if it needs to.
+                pass
+        return values
+
+    dtypes = X_train.dtypes.tolist()
+    if all(dtype == np.float64 for dtype in dtypes):
+        return make_writeable(X_train.to_numpy())
+
+    not_convertible = [
+        i for i, dtype in enumerate(dtypes)
+        if getattr(dtype, 'kind', None) in ('m', 'M')
+        or (
+            isinstance(dtype, pd.CategoricalDtype)
+            and not pd.api.types.is_integer_dtype(dtype.categories.dtype)
+        )
+    ]
+    X_train_values = None
+    if not not_convertible:
+        try:
+            X_train_values = X_train.to_numpy(dtype=float, na_value=np.nan)
+        except (ValueError, TypeError):
+            # NOTE: The columns that fail are identified one by one, since the
+            # error of pandas does not name them.
+            for i, dtype in enumerate(dtypes):
+                if dtype == np.float64:
+                    continue
+                try:
+                    X_train.iloc[:, i].to_numpy(dtype=float, na_value=np.nan)
+                except (ValueError, TypeError):
+                    not_convertible.append(i)
+            if not not_convertible:
+                raise
+
+    if not_convertible:
+        columns = ", ".join(
+            f"'{X_train.columns[i]}' ({dtypes[i]})" for i in not_convertible
+        )
+        raise TypeError(
+            f"The following exogenous variables cannot be passed to the "
+            f"estimator as numeric values: {columns}. Include them in "
+            f"`categorical_features`, or use `categorical_features='auto'`, so "
+            f"that the forecaster encodes them. A column of dtype `category` "
+            f"that is not included in `categorical_features` must have integer "
+            f"categories."
+        )
+
+    return make_writeable(X_train_values)
+
+
+def _train_matrix_to_estimator_input(
+    X_train: pd.DataFrame,
+    estimator: object,
+    cat_indices: list[int] | np.ndarray
+) -> np.ndarray | pd.DataFrame:
+    """
+    Training matrix as it is passed to the `fit` and `predict` methods of the
+    estimator: the float64 numpy array of `_train_matrix_to_numpy`.
+
+    For a CatBoost model with categorical features (never inside a Pipeline,
+    where native categorical features are not configured), it is a DataFrame
+    created on that array, with the names of the columns, where the
+    categorical columns are integers: CatBoost does not accept float values
+    in them. They are cast as in `predict` (missing values are -1), so the
+    estimator receives the values of the columns, not the codes of a
+    `category`. A DataFrame is used instead of the `object` array of
+    `cast_catboost_categorical_columns`, which is slower to fit and uses more
+    memory with the size of the training matrix of several series.
+
+    Parameters
+    ----------
+    X_train : pandas DataFrame
+        Training values (predictors).
+    estimator : object
+        Estimator the matrix is passed to.
+    cat_indices : list, numpy ndarray
+        Positions of the columns that the estimator treats as categorical.
+        Only used if the estimator is a CatBoost model.
+
+    Returns
+    -------
+    X_train_estimator : numpy ndarray, pandas DataFrame
+        Matrix to pass to the estimator.
+
+    """
+
+    X_train_values = _train_matrix_to_numpy(X_train)
+    if (
+        len(cat_indices) == 0
+        or type(estimator).__module__.split('.')[0] != 'catboost'
+    ):
+        return X_train_values
+
+    X_train_estimator = pd.DataFrame(
+        X_train_values, columns=X_train.columns, copy=False
+    )
+    for i in cat_indices:
+        # NOTE: `isetitem` replaces the column, it never writes in the array.
+        X_train_estimator.isetitem(
+            int(i), np.nan_to_num(X_train_values[:, i], nan=-1).astype(int)
+        )
+
+    return X_train_estimator
+
+
+def _resolve_user_categorical_config(
+    estimator: object,
+    fit_kwargs: dict[str, Any],
+    feature_names: list[str],
+    level_name: str | None = None
+) -> tuple[dict[str, object], dict[str, object], list[int]]:
+    """
+    Adapt the categorical features the user has configured on the estimator,
+    or in `fit_kwargs`, to a training matrix that is a numpy array: the
+    features given by name are translated to their positions and, if
+    `level_name` is given, the series identifier is added to them, without
+    removing any.
+
+    It complements `configure_estimator_categorical_features`, which replaces
+    the configuration of the user with the features of `categorical_features`.
+    The estimator is never modified: the params that live on it are returned,
+    to be set only while it is fitted, so that it always keeps the
+    configuration of the user and no position of a previous fit is reused
+    when the columns change (for example, after `set_lags`).
+
+    - LightGBM: `categorical_feature` of `fit_kwargs` or, if it is not there,
+    the one of the constructor (or any of its aliases). The result is passed
+    in `fit_kwargs`, which overrides the value of the constructor.
+    - CatBoost: `cat_features` of `fit_kwargs`. If they are set in the
+    constructor, nothing is changed, since CatBoost raises an error when those
+    of `fit` differ from them.
+    - XGBoost: `feature_types` and `enable_categorical` of the estimator.
+    - HistGradientBoosting (scikit-learn): `categorical_features` of the
+    estimator.
+
+    If the estimator is a Pipeline, or it has no native categorical support,
+    nothing is configured.
+
+    Parameters
+    ----------
+    estimator : object
+        Estimator object.
+    fit_kwargs : dict
+        Dictionary with the arguments to pass to the `fit` method of the
+        estimator. This dictionary is updated in-place and returned.
+    feature_names : list
+        Names of all features in the training matrix, in column order.
+    level_name : str, default None
+        Name of the column with the series identifier to add to the
+        categorical features (`encoding='ordinal_category'` when
+        `categorical_features` is `None`). If `None`, nothing is added.
+
+    Returns
+    -------
+    fit_kwargs : dict
+        Updated dictionary with the arguments for the `fit` method.
+    estimator_params : dict
+        Params to set on the estimator while it is fitted. Empty if there is
+        nothing to set.
+    cat_indices : list
+        Positions, in ascending order, of the features the estimator treats
+        as categorical.
+
+    """
+
+    if isinstance(estimator, Pipeline):
+        return fit_kwargs, {}, []
+
+    estimator_name = type(estimator).__name__
+    module = type(estimator).__module__.split('.')[0]
+    level_index = (
+        feature_names.index(level_name) if level_name is not None else None
+    )
+
+    def to_indices(values, param_name):
+        missing = [
+            v for v in values if isinstance(v, str) and v not in feature_names
+        ]
+        if missing:
+            raise ValueError(
+                f"`{param_name}` contains names that are not features of the "
+                f"training matrix: {missing}. Features: {feature_names}."
+            )
+        return [
+            feature_names.index(v) if isinstance(v, str) else int(v)
+            for v in values
+        ]
+
+    estimator_params = {}
+    cat_indices = []
+
+    if module == 'lightgbm':
+
+        def to_list(values):
+            # LightGBM accepts a list of positions or names, 'auto' (only the
+            # `category` columns of a DataFrame) and, as a param, a text with
+            # positions ('0,1,2') or names ('name:c1,c2').
+            if values is None:
+                return None
+            if isinstance(values, str):
+                if values in ('auto', ''):
+                    return None
+                if values.startswith('name:'):
+                    return values[len('name:'):].split(',')
+                return [int(v) for v in values.split(',')]
+            return list(values)
+
+        values = to_list(fit_kwargs.get('categorical_feature'))
+        in_fit_kwargs = values is not None
+        if not in_fit_kwargs:
+            # NOTE: Without the argument of `fit`, LightGBM uses the value
+            # given in its constructor, if any.
+            params = estimator.get_params()
+            for alias in (
+                'categorical_feature', 'cat_feature', 'categorical_column',
+                'cat_column', 'categorical_features'
+            ):
+                values = to_list(params.get(alias))
+                if values is not None:
+                    break
+        has_names = False
+        if values is not None:
+            has_names = any(isinstance(v, str) for v in values)
+            cat_indices = to_indices(values, 'categorical_feature')
+        add_level = level_index is not None and level_index not in cat_indices
+        if add_level:
+            cat_indices.append(level_index)
+        if in_fit_kwargs or has_names or add_level:
+            # NOTE: The names and the series identifier cannot be left in the
+            # constructor: its value would be that of a previous fit.
+            fit_kwargs['categorical_feature'] = cat_indices
+
+    elif module == 'catboost':
+        values_init = estimator.get_params().get('cat_features')
+        values_fit = fit_kwargs.get('cat_features')
+        values = values_fit if values_fit is not None else values_init
+        if values is not None:
+            cat_indices = to_indices(values, 'cat_features')
+        if level_index is not None and level_index not in cat_indices:
+            if values_init is not None:
+                raise ValueError(
+                    "With `encoding='ordinal_category'` and "
+                    "`categorical_features=None`, the series identifier "
+                    "(`_level_skforecast`) is added to the categorical "
+                    "features of the estimator, which is not possible when "
+                    "`cat_features` is set in the constructor of the CatBoost "
+                    "estimator. Pass them with "
+                    "`fit_kwargs={'cat_features': [...]}` instead."
+                )
+            cat_indices.append(level_index)
+        if values_init is None and cat_indices:
+            fit_kwargs['cat_features'] = cat_indices
+
+    elif module == 'xgboost':
+        feature_types = estimator.get_params().get('feature_types')
+        if feature_types is not None:
+            cat_indices = [i for i, t in enumerate(feature_types) if t == 'c']
+        if level_index is not None and level_index not in cat_indices:
+            if feature_types is None:
+                feature_types = ['q'] * len(feature_names)
+            elif len(feature_types) != len(feature_names):
+                raise ValueError(
+                    f"`feature_types` of the estimator has {len(feature_types)} "
+                    f"elements, but the training matrix has "
+                    f"{len(feature_names)} features: {feature_names}. Set one "
+                    f"element per feature."
+                )
+            else:
+                feature_types = list(feature_types)
+            feature_types[level_index] = 'c'
+            cat_indices.append(level_index)
+            estimator_params = {
+                'feature_types': feature_types, 'enable_categorical': True
+            }
+
+    elif module == 'sklearn' and estimator_name in (
+        'HistGradientBoostingRegressor', 'HistGradientBoostingClassifier'
+    ):
+        values = estimator.get_params().get('categorical_features')
+        has_names = False
+        if values is not None and not isinstance(values, str):
+            values = np.asarray(values)
+            if values.dtype == bool:
+                cat_indices = np.flatnonzero(values).tolist()
+            else:
+                values = values.tolist()
+                has_names = any(isinstance(v, str) for v in values)
+                cat_indices = to_indices(values, 'categorical_features')
+        add_level = level_index is not None and level_index not in cat_indices
+        if add_level:
+            cat_indices.append(level_index)
+        if has_names or add_level:
+            estimator_params = {'categorical_features': sorted(set(cat_indices))}
+
+    cat_indices_sorted = sorted(set(cat_indices))
+
+    return fit_kwargs, estimator_params, cat_indices_sorted
 
 
 def _get_catboost_cat_feature_indices(estimator: object) -> np.ndarray:
@@ -1339,6 +1643,9 @@ def check_exog_dtypes(
             if not pd.api.types.is_integer_dtype(dtype.categories.dtype):
                 raise TypeError(
                     "Categorical dtypes in exog must contain only integer values. "
+                    "In the forecasters with the argument `categorical_features`, "
+                    "include the column in it, or use `categorical_features='auto'`, "
+                    "so that the forecaster encodes it. "
                     "See skforecast docs for more info about how to include "
                     "categorical features https://skforecast.org/"
                     "latest/user_guides/categorical-features.html"

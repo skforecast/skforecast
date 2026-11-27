@@ -36,6 +36,38 @@ exog = {
 }
 
 
+def split_one_step_ahead(forecaster, **kwargs):
+    """
+    Output of `_train_test_split_one_step_ahead` where the matrices the
+    estimator receives (numpy arrays, or DataFrames for CatBoost with
+    categorical features) are returned as DataFrames, with the names of their
+    columns (last output of the method) and the index of their targets, to
+    compare them with the expected DataFrames. It is checked that the
+    matrices are float numpy arrays, except for CatBoost.
+    """
+    (
+        X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding,
+        sample_weight, fit_kwargs, X_train_features_names_out_
+    ) = forecaster._train_test_split_one_step_ahead(**kwargs)
+
+    matrices = []
+    for X, y in [(X_train, y_train), (X_test, y_test)]:
+        if isinstance(X, pd.DataFrame):
+            assert type(forecaster.estimator).__name__ == 'CatBoostRegressor'
+            assert X.columns.to_list() == X_train_features_names_out_
+            X = X.set_axis(y.index)
+        else:
+            assert isinstance(X, np.ndarray)
+            assert X.dtype == np.float64
+            X = pd.DataFrame(X, columns=X_train_features_names_out_, index=y.index)
+        matrices.append(X)
+
+    return (
+        matrices[0], y_train, matrices[1], y_test, X_train_encoding,
+        X_test_encoding, sample_weight, fit_kwargs
+    )
+
+
 def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe_encoding_ordinal():
     """
     Test the output of _train_test_split_one_step_ahead when series is dict and exog is
@@ -46,7 +78,8 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series, exog=exog, initial_train_size=10
         )
     )
@@ -212,9 +245,9 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
         ),
     )
 
-    pd.testing.assert_frame_equal(X_train, expected_X_train)
+    pd.testing.assert_frame_equal(X_train, expected_X_train.astype(float))
     pd.testing.assert_series_equal(y_train, expected_y_train)
-    pd.testing.assert_frame_equal(X_test, expected_X_test)
+    pd.testing.assert_frame_equal(X_test, expected_X_test.astype(float))
     pd.testing.assert_series_equal(y_test, expected_y_test)
     pd.testing.assert_series_equal(X_train_encoding, expected_X_train_encoding)
     pd.testing.assert_series_equal(X_test_encoding, expected_X_test_encoding)
@@ -230,7 +263,8 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series, exog=exog, initial_train_size=10
         )
     )
@@ -409,9 +443,9 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
         ),
     )
 
-    pd.testing.assert_frame_equal(X_train, expected_X_train)
+    pd.testing.assert_frame_equal(X_train, expected_X_train.astype(float))
     pd.testing.assert_series_equal(y_train, expected_y_train)
-    pd.testing.assert_frame_equal(X_test, expected_X_test)
+    pd.testing.assert_frame_equal(X_test, expected_X_test.astype(float))
     pd.testing.assert_series_equal(y_test, expected_y_test)
     pd.testing.assert_series_equal(X_train_encoding, expected_X_train_encoding)
     pd.testing.assert_series_equal(X_test_encoding, expected_X_test_encoding)
@@ -427,7 +461,8 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series, exog=exog, initial_train_size=10
         )
     )
@@ -602,9 +637,9 @@ def test_train_test_split_one_step_ahead_when_y_is_series_and_exog_are_dataframe
         ),
     )
 
-    pd.testing.assert_frame_equal(X_train, expected_X_train)
+    pd.testing.assert_frame_equal(X_train, expected_X_train.astype(float))
     pd.testing.assert_series_equal(y_train, expected_y_train)
-    pd.testing.assert_frame_equal(X_test, expected_X_test)
+    pd.testing.assert_frame_equal(X_test, expected_X_test.astype(float))
     pd.testing.assert_series_equal(y_test, expected_y_test)
     pd.testing.assert_series_equal(X_train_encoding, expected_X_train_encoding)
     pd.testing.assert_series_equal(X_test_encoding, expected_X_test_encoding)
@@ -629,7 +664,8 @@ def test_train_test_split_one_step_ahead_when_series_and_exog_are_dict_RangeInde
 
     forecaster = ForecasterRecursiveMultiSeries(LinearRegression(), lags=5)
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_2, exog=exog_2, initial_train_size=10
         )
     )
@@ -728,9 +764,9 @@ def test_train_test_split_one_step_ahead_when_series_and_exog_are_dict_RangeInde
         index=pd.Index([10, 11, 12, 13, 14, 10, 11, 12, 13, 14]),
     )
 
-    pd.testing.assert_frame_equal(X_train, expected_X_train)
+    pd.testing.assert_frame_equal(X_train, expected_X_train.astype(float))
     pd.testing.assert_series_equal(y_train, expected_y_train)
-    pd.testing.assert_frame_equal(X_test, expected_X_test)
+    pd.testing.assert_frame_equal(X_test, expected_X_test.astype(float))
     pd.testing.assert_series_equal(y_test, expected_y_test)
     pd.testing.assert_series_equal(X_train_encoding, expected_X_train_encoding)
     pd.testing.assert_series_equal(X_test_encoding, expected_X_test_encoding)
@@ -746,7 +782,8 @@ def test_train_test_split_one_step_ahead_when_no_exog():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series, initial_train_size=10
         )
     )
@@ -779,7 +816,8 @@ def test_train_test_split_one_step_ahead_when_weight_func():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series, initial_train_size=10
         )
     )
@@ -807,7 +845,8 @@ def test_train_test_split_one_step_ahead_when_series_weights():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series, initial_train_size=10
         )
     )
@@ -853,14 +892,13 @@ def test_train_test_split_one_step_ahead_when_window_features_and_transformers_a
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_20, exog=exog_20, initial_train_size=15
         )
     )
 
-    assert isinstance(X_train, pd.DataFrame)
     assert isinstance(y_train, pd.Series)
-    assert isinstance(X_test, pd.DataFrame)
     assert isinstance(y_test, pd.Series)
     assert isinstance(X_train_encoding, pd.Series)
     assert isinstance(X_test_encoding, pd.Series)
@@ -904,13 +942,12 @@ def test_train_test_split_one_step_ahead_when_lightgbm_categorical():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_20, exog=exog_20, initial_train_size=15
         )
     )
 
-    assert isinstance(X_train, pd.DataFrame)
-    assert isinstance(X_test, pd.DataFrame)
     # Features: lag_1, lag_2, lag_3, _level_skforecast, exog_num, exog_cat
     assert 'categorical_feature' in fit_kwargs
     cat_idx = fit_kwargs['categorical_feature']
@@ -953,7 +990,8 @@ def test_train_test_split_one_step_ahead_when_xgboost_categorical():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_20, exog=exog_20, initial_train_size=15
         )
     )
@@ -1000,7 +1038,8 @@ def test_train_test_split_one_step_ahead_when_histgradientboosting_categorical()
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_20, exog=exog_20, initial_train_size=15
         )
     )
@@ -1049,7 +1088,8 @@ def test_train_test_split_one_step_ahead_when_catboost_categorical():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_20, exog=exog_20, initial_train_size=15
         )
     )
@@ -1058,9 +1098,14 @@ def test_train_test_split_one_step_ahead_when_catboost_categorical():
     assert 'cat_features' in fit_kwargs
     exog_cat_pos = X_train.columns.get_loc('exog_cat')
     assert exog_cat_pos in fit_kwargs['cat_features']
-    # X_train/X_test should remain as DataFrames (no numpy conversion)
-    assert isinstance(X_train, pd.DataFrame)
-    assert isinstance(X_test, pd.DataFrame)
+    # CatBoost with categorical features receives DataFrames (checked in
+    # `split_one_step_ahead`) where the categorical columns are integers
+    assert X_train.dtypes.astype(str).to_list() == [
+        'float64', 'float64', 'float64', 'float64', 'float64', 'int64'
+    ]
+    assert X_test.dtypes.astype(str).to_list() == [
+        'float64', 'float64', 'float64', 'float64', 'float64', 'int64'
+    ]
 
 
 def test_train_test_split_one_step_ahead_when_fit_kwargs_no_categorical():
@@ -1096,7 +1141,8 @@ def test_train_test_split_one_step_ahead_when_fit_kwargs_no_categorical():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_20, exog=exog_20, initial_train_size=15
         )
     )
@@ -1132,7 +1178,8 @@ def test_train_test_split_one_step_ahead_when_non_contiguous_lags():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_20, exog=exog_20, initial_train_size=15
         )
     )
@@ -1212,7 +1259,8 @@ def test_train_test_split_one_step_ahead_fit_predict_with_categorical(
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_50, exog=exog_50, initial_train_size=40
         )
     )
@@ -1271,7 +1319,8 @@ def test_train_test_split_one_step_ahead_restores_is_fitted(initial_is_fitted):
     )
     forecaster.is_fitted = initial_is_fitted
 
-    forecaster._train_test_split_one_step_ahead(
+    split_one_step_ahead(
+        forecaster,
         series=series, initial_train_size=10
     )
 
@@ -1297,7 +1346,8 @@ def test_train_test_split_one_step_ahead_encodings_when_series_names_are_int(enc
     with warnings.catch_warnings():
         warnings.simplefilter("error", category=FutureWarning)
         _, _, _, _, X_train_encoding, X_test_encoding, _, _ = (
-            forecaster._train_test_split_one_step_ahead(
+            split_one_step_ahead(
+                forecaster,
                 series=series_int, initial_train_size=10
             )
         )
@@ -1317,7 +1367,8 @@ def test_train_test_split_one_step_ahead_sample_weight_and_fit_kwargs_ordinal():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series, exog=exog, initial_train_size=10
         )
     )
@@ -1329,24 +1380,29 @@ def test_train_test_split_one_step_ahead_sample_weight_and_fit_kwargs_ordinal():
 def test_train_test_split_one_step_ahead_when_encoding_ordinal_category():
     """
     Test _train_test_split_one_step_ahead with encoding='ordinal_category'.
-    Verify that _level_skforecast column has Categorical dtype and that
-    X_train_encoding correctly maps back to series names.
+    Verify that the _level_skforecast column of the matrices the estimator
+    receives has the codes of the series as values and that X_train_encoding
+    correctly maps back to series names.
     """
     forecaster = ForecasterRecursiveMultiSeries(
         LinearRegression(), lags=3, encoding='ordinal_category'
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series, exog=exog, initial_train_size=10
         )
     )
 
-    assert isinstance(X_train, pd.DataFrame)
     assert '_level_skforecast' in X_train.columns
-    # ordinal_category creates a Categorical dtype column
-    assert hasattr(X_train['_level_skforecast'].dtype, 'categories')
-    assert hasattr(X_test['_level_skforecast'].dtype, 'categories')
+    # The estimator receives the codes of the series, not a category column
+    np.testing.assert_array_equal(
+        X_train['_level_skforecast'].to_numpy(), np.array([0.] * 7 + [1.] * 7)
+    )
+    np.testing.assert_array_equal(
+        X_test['_level_skforecast'].to_numpy(), np.array([0.] * 5 + [1.] * 5)
+    )
     # Encoding maps back to series names
     assert set(X_train_encoding.unique()) == {'series_1', 'series_2'}
     assert set(X_test_encoding.unique()) == {'series_1', 'series_2'}
@@ -1386,7 +1442,8 @@ def test_train_test_split_one_step_ahead_when_ordinal_category_and_lightgbm_cate
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_20, exog=exog_20, initial_train_size=15
         )
     )
@@ -1404,9 +1461,9 @@ def test_train_test_split_one_step_ahead_when_ordinal_category_and_lightgbm_cate
 def test_train_test_split_one_step_ahead_when_ordinal_category_and_level_without_test_data():
     """
     Test _train_test_split_one_step_ahead with encoding='ordinal_category'
-    when a series has no data in the test set. The categories of
-    _level_skforecast include all the levels, so the category codes (used by
-    CatBoost) match the level codes in both X_train and X_test.
+    when a series has no data in the test set. The values of
+    _level_skforecast are the codes of the series in both X_train and X_test,
+    also when a series in between has no rows in the test set.
     """
     series_3 = {
         "series_1": pd.Series(
@@ -1428,21 +1485,20 @@ def test_train_test_split_one_step_ahead_when_ordinal_category_and_level_without
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_3, initial_train_size=15
         )
     )
 
     assert set(X_test_encoding.unique()) == {'series_1', 'series_3'}
-    assert X_train['_level_skforecast'].cat.categories.tolist() == [0, 1, 2]
-    assert X_test['_level_skforecast'].cat.categories.tolist() == [0, 1, 2]
     np.testing.assert_array_equal(
-        X_train['_level_skforecast'].cat.codes.to_numpy(),
-        np.array([0] * 12 + [1] * 9 + [2] * 12)
+        X_train['_level_skforecast'].to_numpy(),
+        np.array([0.] * 12 + [1.] * 9 + [2.] * 12)
     )
     np.testing.assert_array_equal(
-        X_test['_level_skforecast'].cat.codes.to_numpy(),
-        np.array([0] * 5 + [2] * 5)
+        X_test['_level_skforecast'].to_numpy(),
+        np.array([0.] * 5 + [2.] * 5)
     )
 
 
@@ -1469,7 +1525,8 @@ def test_train_test_split_one_step_ahead_when_series_with_window_size_values_in_
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_late, initial_train_size=10
         )
     )
@@ -1502,7 +1559,8 @@ def test_train_test_split_one_step_ahead_when_series_ends_at_end_of_train():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_end, initial_train_size=10
         )
     )
@@ -1561,7 +1619,8 @@ def test_train_test_split_one_step_ahead_ValueError_when_no_series_to_train_or_e
     )
 
     with pytest.raises(ValueError, match=re.escape(err_msg)):
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series_gap, initial_train_size=5
         )
 
@@ -1582,7 +1641,8 @@ def test_train_test_split_one_step_ahead_when_weight_func_and_series_weights():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series, initial_train_size=10
         )
     )
@@ -1622,7 +1682,8 @@ def test_train_test_split_one_step_ahead_when_weight_func_is_dict():
     )
 
     X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
-        forecaster._train_test_split_one_step_ahead(
+        split_one_step_ahead(
+            forecaster,
             series=series, initial_train_size=10
         )
     )
@@ -1663,7 +1724,8 @@ def test_train_test_split_one_step_ahead_encoding_onehot_with_3_series():
         X_train, y_train, X_test, y_test,
         X_train_encoding, X_test_encoding,
         sample_weight, fit_kwargs
-    ) = forecaster._train_test_split_one_step_ahead(
+    ) = split_one_step_ahead(
+            forecaster,
             series=series_3, initial_train_size=15
         )
 
@@ -1717,7 +1779,8 @@ def test_train_test_split_one_step_ahead_encoding_onehot_with_5_series_and_exog(
         X_train, y_train, X_test, y_test,
         X_train_encoding, X_test_encoding,
         sample_weight, fit_kwargs
-    ) = forecaster._train_test_split_one_step_ahead(
+    ) = split_one_step_ahead(
+            forecaster,
             series=series_5, exog=exog_5, initial_train_size=20
         )
 
@@ -1763,7 +1826,8 @@ def test_train_test_split_one_step_ahead_encoding_onehot_with_window_features():
         X_train, y_train, X_test, y_test,
         X_train_encoding, X_test_encoding,
         sample_weight, fit_kwargs
-    ) = forecaster._train_test_split_one_step_ahead(
+    ) = split_one_step_ahead(
+            forecaster,
             series=series_20, initial_train_size=15
         )
 
@@ -1821,7 +1885,8 @@ def test_train_test_split_one_step_ahead_when_forecaster_fitted_with_other_serie
         X_train, y_train, X_test, y_test,
         X_train_encoding, X_test_encoding,
         sample_weight, fit_kwargs
-    ) = forecaster._train_test_split_one_step_ahead(
+    ) = split_one_step_ahead(
+            forecaster,
             series=series_split, initial_train_size=10
         )
 
@@ -1862,7 +1927,8 @@ def test_train_test_split_one_step_ahead_when_series_names_are_integers(encoding
         X_train, y_train, X_test, y_test,
         X_train_encoding, X_test_encoding,
         sample_weight, fit_kwargs
-    ) = forecaster._train_test_split_one_step_ahead(
+    ) = split_one_step_ahead(
+            forecaster,
             series=series_int, initial_train_size=10
         )
 

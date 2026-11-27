@@ -44,7 +44,6 @@ from ..utils import (
     _date_range_from_index,
     check_interval,
     date_to_index_position,
-    cast_catboost_categorical_columns_dataframe,
     _copy_rows_to_check,
     _check_in_place_fit,
     align_series_and_exog_multiseries,
@@ -1093,7 +1092,11 @@ def _train_test_split_one_step_ahead_search(
     Returns
     -------
     split : tuple
-        Output of `_train_test_split_one_step_ahead` of the forecaster.
+        Output of `_train_test_split_one_step_ahead` of the forecaster. In
+        multi-series searches it always has nine elements: the last one is
+        the names of the columns of the matrices for
+        ForecasterRecursiveMultiSeries, and `None` for
+        ForecasterDirectMultiVariate.
 
     """
 
@@ -1124,6 +1127,11 @@ def _train_test_split_one_step_ahead_search(
     split = forecaster._train_test_split_one_step_ahead(
                 series=series, initial_train_size=initial_train_size, exog=exog
             )
+    if forecaster_name != "ForecasterRecursiveMultiSeries":
+        # NOTE: The split of ForecasterRecursiveMultiSeries has one element
+        # more, the names of the columns of its matrices, which are numpy
+        # arrays. Both splits are unpacked by the same code of the searches.
+        split = (*split, None)
     y_test, X_test_encoding = split[3], split[5]
     if forecaster_name == "ForecasterRecursiveMultiSeries":
         is_observed = pd.notna(y_test).to_numpy()
@@ -2749,9 +2757,9 @@ def _calculate_metrics_backtesting_multiseries(
 def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     forecaster: object,
     series: pd.DataFrame | dict[str, pd.Series | pd.DataFrame],
-    X_train: pd.DataFrame,
+    X_train: np.ndarray | pd.DataFrame,
     y_train: pd.Series | dict[int, pd.Series],
-    X_test: pd.DataFrame,
+    X_test: np.ndarray | pd.DataFrame,
     y_test: pd.Series | dict[int, pd.Series],
     X_train_encoding: pd.Series | pd.Index,
     X_test_encoding: pd.Series | pd.Index,
@@ -2760,7 +2768,8 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     add_aggregated_metric: bool = True,
     sample_weight: np.ndarray | None = None,
     fit_kwargs: dict[str, Any] | None = None,
-    return_predictions: bool = True
+    return_predictions: bool = True,
+    feature_names: list[str] | None = None
 ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
     """   
     One-step-ahead predictions and metrics for each level and also for all levels
@@ -2784,12 +2793,14 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         dates are the true values, from which the predictions are reverted one
         step ahead (see `_revert_differentiation_one_step_ahead`). The metrics
         with the argument `y_train` also use its values.
-    X_train : pandas DataFrame
-        Training matrix.
+    X_train : numpy ndarray, pandas DataFrame
+        Training matrix. For ForecasterRecursiveMultiSeries, as it is passed
+        to the estimator: a numpy array, or a DataFrame when the estimator is
+        a CatBoost model with categorical features.
     y_train : pandas Series, dict
         Target values of the training set.
-    X_test : pandas DataFrame
-        Test matrix.
+    X_test : numpy ndarray, pandas DataFrame
+        Test matrix, as `X_train`.
     y_test : pandas Series, dict
         Target values of the test set.
     X_train_encoding : pandas Series, pandas Index
@@ -2820,6 +2831,11 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
     return_predictions : bool, default True
         If `True`, return the predictions DataFrame. If `False`, return `None`
         instead of predictions to avoid unnecessary computation.
+    feature_names : list, default None
+        Names of the columns of `X_train` and `X_test`, last output of
+        `_train_test_split_one_step_ahead` of ForecasterRecursiveMultiSeries.
+        Required for this forecaster, whose matrices are numpy arrays; not
+        used by ForecasterDirectMultiVariate.
 
     Returns
     -------
@@ -3005,35 +3021,53 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
 
         return metrics_levels, predictions
 
-    # ForecasterRecursiveMultiSeries path (pandas)
+    # ForecasterRecursiveMultiSeries path
     # ==========================================================================
     # X_train_encoding and X_test_encoding are series identifiers for each row 
     # of X_train and X_test, respectively.
-    # NOTE: X_train and X_test are created once by `_train_test_split_one_step_ahead`
-    # and reused by every candidate of the search. The cast below only copies
-    # them for CatBoost, so it is checked that the estimator does not modify
-    # X_train in place, which would change the metrics of the next candidates.
-    feature_names = X_train.columns.to_list()
-    X_train = cast_catboost_categorical_columns_dataframe(
-        X=X_train, fit_kwargs=fit_kwargs,
-        estimator=forecaster.estimator, feature_names=feature_names,
-    )
-    X_test = cast_catboost_categorical_columns_dataframe(
-        X=X_test, fit_kwargs=fit_kwargs,
-        estimator=forecaster.estimator, feature_names=feature_names,
+    # NOTE: X_train and X_test are created once by `_train_test_split_one_step_ahead`,
+    # already as the matrices the estimator receives, and reused by every
+    # candidate of the search, so it is checked that the estimator does not
+    # modify X_train in place, which would change the metrics of the next
+    # candidates.
+    if feature_names is None:
+        raise ValueError(
+            "`feature_names` is required for ForecasterRecursiveMultiSeries. It "
+            "is the last output of its `_train_test_split_one_step_ahead` method."
+        )
+
+    # NOTE: The categorical params that live on the estimator (XGBoost,
+    # HistGradientBoosting) are resolved for each candidate, from the params
+    # of its estimator, set only while it is fitted and restored afterwards,
+    # as in the `fit` method of the forecaster.
+    fit_kwargs, estimator_params, _ = (
+        forecaster._resolve_estimator_categorical_config(
+            fit_kwargs                  = {**fit_kwargs},
+            X_train_features_names_out_ = feature_names
+        )
     )
 
     X_train_rows = _copy_rows_to_check(X_train)
 
-    if sample_weight is not None:
-        forecaster.estimator.fit(
-            X             = X_train,
-            y             = y_train,
-            sample_weight = sample_weight,
-            **fit_kwargs
-        )
-    else:
-        forecaster.estimator.fit(X=X_train, y=y_train, **fit_kwargs)
+    user_params = {}
+    if estimator_params:
+        params = forecaster.estimator.get_params()
+        user_params = {k: params[k] for k in estimator_params}
+    try:
+        if estimator_params:
+            forecaster.estimator.set_params(**estimator_params)
+        if sample_weight is not None:
+            forecaster.estimator.fit(
+                X             = X_train,
+                y             = y_train,
+                sample_weight = sample_weight,
+                **fit_kwargs
+            )
+        else:
+            forecaster.estimator.fit(X=X_train, y=y_train, **fit_kwargs)
+    finally:
+        if estimator_params:
+            forecaster.estimator.set_params(**user_params)
 
     _check_in_place_fit(X=X_train, X_rows=X_train_rows)
 
@@ -3220,7 +3254,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
             .pivot(columns="_level_skforecast", values="y_pred")
             .rename_axis(columns=None, index=None)
         )
-        if isinstance(X_test.index, pd.DatetimeIndex):
+        if isinstance(y_test.index, pd.DatetimeIndex):
             predictions = predictions.reindex(
                 _date_range_from_index(
                     index = predictions.index,
@@ -3232,7 +3266,7 @@ def _predict_and_calculate_metrics_one_step_ahead_multiseries(
         else:
             predictions = predictions.reindex(
                 pd.RangeIndex(
-                    start=min(X_test.index), stop=max(X_test.index) + 1, step=freq
+                    start=min(y_test.index), stop=max(y_test.index) + 1, step=freq
                 )
             )
     else:

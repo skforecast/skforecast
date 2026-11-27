@@ -7,6 +7,7 @@ import re
 import subprocess
 import sys
 import textwrap
+import warnings
 from pathlib import Path
 import pytest
 from pytest import approx
@@ -23,6 +24,7 @@ from catboost import CatBoostRegressor
 from lightgbm import LGBMRegressor
 from xgboost import XGBRegressor
 
+from skforecast.exceptions import DataTypeWarning
 from skforecast.exceptions import MissingExogWarning
 from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
@@ -43,13 +45,13 @@ from .fixtures_forecaster_recursive_multiseries import (
 STR_DTYPE = pd.Series(['a']).dtype
 
 
-class LinearRegressionAddingColumn(LinearRegression):
+class LinearRegressionWritingColumn(LinearRegression):
     """
-    LinearRegression that adds a column to the training matrix in place.
+    LinearRegression that overwrites a column of the training matrix in place.
     """
 
     def fit(self, X, y, sample_weight=None):
-        X['extra'] = 1.0
+        X[:, 0] = 0.
         return super().fit(X, y, sample_weight=sample_weight)
 
 
@@ -65,20 +67,22 @@ transformer_exog = ColumnTransformer(
     "estimator",
     [LinearRegression(copy_X=False),
      make_pipeline(StandardScaler(copy=False), LinearRegression()),
-     LinearRegressionAddingColumn()],
+     LinearRegressionWritingColumn()],
     ids=['LinearRegression(copy_X=False)', 'pipeline StandardScaler(copy=False)',
-         'estimator adds a column']
+         'estimator writes a column']
 )
 @pytest.mark.parametrize(
     "encoding",
-    ['ordinal', 'onehot', None],
+    ['ordinal', 'ordinal_category', 'onehot', None],
     ids=lambda encoding: f'encoding: {encoding}'
 )
 def test_fit_ValueError_when_estimator_modifies_X_train_in_place(estimator, encoding):
     """
     Test ValueError is raised when the estimator modifies the training matrix
     in place, because the in-sample residuals are calculated afterwards with
-    the same matrix.
+    the same matrix. Also when the matrix has columns of several dtypes
+    (`encoding='ordinal_category'`), which are converted to a single array
+    before training.
     """
     forecaster = ForecasterRecursiveMultiSeries(
         estimator=estimator, lags=3, encoding=encoding
@@ -1570,3 +1574,496 @@ def test_fit_predict_output_when_CatBoost_with_categorical_features_fitted_again
     assert expected.shape == (10,)
     np.testing.assert_array_almost_equal(predictions["same"], expected)
     np.testing.assert_array_almost_equal(predictions["pickle"], expected)
+
+
+# ==============================================================================
+# Tests: the estimator receives in fit the same values as in predict (numpy)
+# ==============================================================================
+exog_category = pd.DataFrame(
+    {'exog_1': exog_wide_range['exog_1'].to_numpy(),
+     'exog_cat': pd.Categorical([10, 20, 30, 40, 50] * 10),
+     'exog_cat_2': pd.Categorical([3, 1, 2, 0, 4] * 10)}
+)
+
+
+def spy_fit(monkeypatch, estimator_class, error=None):
+    """
+    Record the training matrix, the keyword arguments and the params of the
+    estimator in each call to the `fit` method of `estimator_class`. If
+    `error` is given, it is raised instead of fitting. It must be called
+    after creating the forecaster, which inspects the signature of `fit`.
+    """
+    calls = []
+    original_fit = estimator_class.fit
+
+    def fit(self, X, y, **kwargs):
+        calls.append({'X': X, 'kwargs': kwargs, 'params': self.get_params()})
+        if error is not None:
+            raise error
+        return original_fit(self, X, y, **kwargs)
+
+    monkeypatch.setattr(estimator_class, 'fit', fit)
+
+    return calls
+
+
+@pytest.mark.parametrize(
+    "encoding, n_features",
+    [('ordinal', 7), ('ordinal_category', 7), ('onehot', 8), (None, 6)],
+    ids=lambda value: f'{value}'
+)
+def test_fit_estimator_receives_float_numpy_array(monkeypatch, encoding, n_features):
+    """
+    Test that the estimator is fitted with a float64 numpy array, as in
+    `predict`, where a `category` column not included in
+    `categorical_features` has its values, not its codes.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = LinearRegression(),
+                     lags                 = 3,
+                     encoding             = encoding,
+                     categorical_features = ['exog_cat_2']
+                 )
+    calls = spy_fit(monkeypatch, LinearRegression)
+    forecaster.fit(
+        series=series_wide_range, exog=exog_category, suppress_warnings=True
+    )
+    X = calls[0]['X']
+    exog_cat_position = forecaster.X_train_features_names_out_.index('exog_cat')
+
+    assert isinstance(X, np.ndarray)
+    assert X.dtype == np.float64
+    assert X.shape == (94, n_features)
+    np.testing.assert_array_equal(
+        X[:5, exog_cat_position], np.array([40., 50., 10., 20., 30.])
+    )
+    assert not hasattr(forecaster.estimator, 'feature_names_in_')
+
+
+def test_fit_estimator_receives_NaN_and_0_1_when_nullable_and_bool_exog(monkeypatch):
+    """
+    Test that the missing values of a nullable column reach the estimator as
+    NaN and the booleans as 0 and 1.
+    """
+    exog = pd.DataFrame(
+        {'exog_1': exog_wide_range['exog_1'].to_numpy(),
+         'exog_Int64': pd.array([1, None, 3, 4, 5] * 10, dtype='Int64'),
+         'exog_bool': [True, False, True, True, False] * 10}
+    )
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = HistGradientBoostingRegressor(max_iter=5),
+                     lags      = 3,
+                     encoding  = 'ordinal'
+                 )
+    calls = spy_fit(monkeypatch, HistGradientBoostingRegressor)
+    forecaster.fit(series=series_wide_range, exog=exog, suppress_warnings=True)
+    X = calls[0]['X']
+
+    assert isinstance(X, np.ndarray)
+    assert X.dtype == np.float64
+    np.testing.assert_array_equal(
+        X[:5, 5], np.array([4., 5., 1., np.nan, 3.])
+    )
+    np.testing.assert_array_equal(X[:5, 6], np.array([1., 0., 1., 0., 1.]))
+
+
+def test_fit_CatBoost_receives_DataFrame_with_integer_categorical_columns(monkeypatch):
+    """
+    Test that a CatBoost model with categorical features is fitted with a
+    DataFrame with the names of the features, where the categorical columns
+    (the encoded exogenous variable and the series identifier) are integers.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = CatBoostRegressor(
+                                     iterations=5, random_seed=123, verbose=0,
+                                     allow_writing_files=False
+                                 ),
+                     lags      = 3,
+                     encoding  = 'ordinal_category'
+                 )
+    calls = spy_fit(monkeypatch, CatBoostRegressor)
+    forecaster.fit(
+        series=series_wide_range, exog=exog_wide_range, suppress_warnings=True
+    )
+    X = calls[0]['X']
+
+    assert isinstance(X, pd.DataFrame)
+    assert X.columns.to_list() == [
+        'lag_1', 'lag_2', 'lag_3', '_level_skforecast', 'exog_1', 'exog_2'
+    ]
+    assert calls[0]['kwargs']['cat_features'] == [5, 3]
+    assert X.dtypes.astype(str).to_list() == [
+        'float64', 'float64', 'float64', 'int64', 'float64', 'int64'
+    ]
+    assert X['_level_skforecast'].to_list() == [0] * 47 + [1] * 47
+    assert forecaster.estimator.get_cat_feature_indices() == [3, 5]
+
+
+@pytest.mark.parametrize(
+    "categorical_features",
+    [None, ['exog_cat_2']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_fit_DataTypeWarning_when_category_exog_not_in_categorical_features(
+    categorical_features
+):
+    """
+    Test DataTypeWarning is issued when an exogenous variable of dtype
+    category is not included in `categorical_features`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = LinearRegression(),
+                     lags                 = 3,
+                     categorical_features = categorical_features
+                 )
+    not_managed = ['exog_cat', 'exog_cat_2'] if categorical_features is None else ['exog_cat']
+
+    warn_msg = re.escape(
+        f"The exogenous variables {not_managed} have dtype `category` but "
+        f"are not included in `categorical_features`, so the forecaster does "
+        f"not encode them: the estimator receives their values, not their "
+        f"category codes, as numeric columns. To treat them as categorical "
+        f"features, include them in `categorical_features` or use "
+        f"`categorical_features='auto'`."
+    )
+    with pytest.warns(DataTypeWarning, match=warn_msg):
+        forecaster.fit(series=series_wide_range, exog=exog_category)
+
+
+@pytest.mark.parametrize(
+    "estimator, categorical_features, fit_kwargs",
+    [(LinearRegression(), 'auto', None),
+     (LGBMRegressor(verbose=-1, n_estimators=5), None,
+      {'categorical_feature': ['exog_cat', 'exog_cat_2']}),
+     (LGBMRegressor(verbose=-1, n_estimators=5), None,
+      {'categorical_feature': [5, 6]}),
+     (HistGradientBoostingRegressor(
+         max_iter=5, categorical_features=['exog_cat', 'exog_cat_2']
+      ), None, None),
+     (XGBRegressor(
+         n_estimators=5, enable_categorical=True,
+         feature_types=['q', 'q', 'q', 'q', 'q', 'c', 'c']
+      ), None, None)],
+    ids=['auto', 'LGBMRegressor by name', 'LGBMRegressor by index',
+         'HistGradientBoostingRegressor by name', 'XGBRegressor feature_types']
+)
+def test_fit_no_DataTypeWarning_when_category_exog_is_managed(
+    estimator, categorical_features, fit_kwargs
+):
+    """
+    Test that no DataTypeWarning is issued when the exogenous variables of
+    dtype category are encoded by the forecaster, or the user has configured
+    them as categorical features on the estimator.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = estimator,
+                     lags                 = 3,
+                     categorical_features = categorical_features,
+                     fit_kwargs           = fit_kwargs
+                 )
+    exog = exog_category.assign(
+        exog_cat=pd.Categorical([1, 2, 3, 4, 0] * 10)
+    )
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter('always')
+        forecaster.fit(series=series_wide_range, exog=exog)
+
+    assert not [w for w in record if issubclass(w.category, DataTypeWarning)]
+
+
+@pytest.mark.parametrize(
+    "column, dtype_repr",
+    [(pd.Categorical(['a', 'b', 'c', 'd', 'e'] * 10), 'category'),
+     (pd.Categorical([0.5, 1.5, 2.5, 3.5, 4.5] * 10), 'category'),
+     (pd.Categorical(['1', '2', '3', '4', '5'] * 10), 'category')],
+    ids=['text', 'decimals', 'numeric strings']
+)
+def test_fit_TypeError_when_category_exog_without_integers_not_in_categorical_features(
+    column, dtype_repr
+):
+    """
+    Test TypeError is raised in `fit`, with the name of the column, when an
+    exogenous variable of dtype category whose categories are not integers is
+    not included in the list of `categorical_features`. The DataTypeWarning of
+    the columns passed as numeric is not issued for it before the error.
+    """
+    exog = exog_category.assign(exog_cat=column)
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = LinearRegression(),
+                     lags                 = 3,
+                     categorical_features = ['exog_cat_2']
+                 )
+
+    err_msg = re.escape(
+        f"The following exogenous variables cannot be passed to the estimator "
+        f"as numeric values: 'exog_cat' ({dtype_repr}). Include them in "
+        f"`categorical_features`, or use `categorical_features='auto'`, so "
+        f"that the forecaster encodes them. A column of dtype `category` that "
+        f"is not included in `categorical_features` must have integer "
+        f"categories."
+    )
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        with pytest.raises(TypeError, match=err_msg):
+            forecaster.fit(series=series_wide_range, exog=exog)
+
+    assert not [w for w in record if issubclass(w.category, DataTypeWarning)]
+
+
+@pytest.mark.parametrize(
+    "estimator, estimator_class, fit_kwargs, expected_fit, expected_after_fit",
+    [(LGBMRegressor(verbose=-1, n_estimators=5), LGBMRegressor, None,
+      lambda call, lags: call['kwargs']['categorical_feature'] == [lags],
+      lambda est: True),
+     (LGBMRegressor(verbose=-1, n_estimators=5), LGBMRegressor,
+      {'categorical_feature': ['exog_cat']},
+      lambda call, lags: call['kwargs']['categorical_feature'] == [lags + 2, lags],
+      lambda est: True),
+     (CatBoostRegressor(iterations=5, verbose=0, allow_writing_files=False),
+      CatBoostRegressor, {'cat_features': ['exog_cat']},
+      lambda call, lags: call['kwargs']['cat_features'] == [lags + 2, lags],
+      lambda est: True),
+     (XGBRegressor(n_estimators=5), XGBRegressor, None,
+      lambda call, lags: (
+          call['params']['feature_types']
+          == ['q'] * lags + ['c'] + ['q'] * 2
+          and call['params']['enable_categorical'] is True
+      ),
+      lambda est: est.get_params()['feature_types'] is None),
+     (HistGradientBoostingRegressor(max_iter=5, categorical_features=['exog_cat']),
+      HistGradientBoostingRegressor, None,
+      lambda call, lags: call['params']['categorical_features'] == [lags, lags + 2],
+      lambda est: est.get_params()['categorical_features'] == ['exog_cat'])],
+    ids=['LGBMRegressor', 'LGBMRegressor with names', 'CatBoostRegressor with names',
+         'XGBRegressor', 'HistGradientBoostingRegressor with names']
+)
+def test_fit_adds_level_to_user_categorical_config_when_ordinal_category_and_None(
+    monkeypatch, estimator, estimator_class, fit_kwargs, expected_fit,
+    expected_after_fit
+):
+    """
+    Test that, with `encoding='ordinal_category'` and
+    `categorical_features=None`, the series identifier is added to the
+    categorical features the user has configured (given by name or by index),
+    with the positions of the current matrix after `set_lags`. The params of
+    the estimator are those of the user after each fit, and `fit_kwargs` of
+    the forecaster is not modified.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = estimator,
+                     lags                 = 3,
+                     encoding             = 'ordinal_category',
+                     categorical_features = None,
+                     fit_kwargs           = fit_kwargs
+                 )
+    calls = spy_fit(monkeypatch, estimator_class)
+    exog = exog_category.drop(columns='exog_cat_2')
+
+    forecaster.fit(series=series_wide_range, exog=exog, suppress_warnings=True)
+    assert expected_fit(calls[-1], 3)
+    assert expected_after_fit(forecaster.estimator)
+
+    forecaster.set_lags(5)
+    forecaster.fit(series=series_wide_range, exog=exog, suppress_warnings=True)
+    assert expected_fit(calls[-1], 5)
+    assert expected_after_fit(forecaster.estimator)
+    assert forecaster.fit_kwargs == (fit_kwargs if fit_kwargs is not None else {})
+
+
+def test_fit_restores_estimator_categorical_params_when_fit_raises(monkeypatch):
+    """
+    Test that the categorical params of the estimator are those of the user
+    when its `fit` method raises an error.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = HistGradientBoostingRegressor(
+                                                categorical_features=['exog_cat']
+                                            ),
+                     lags                 = 3,
+                     encoding             = 'ordinal_category',
+                     categorical_features = None
+                 )
+    calls = spy_fit(
+        monkeypatch, HistGradientBoostingRegressor, error=RuntimeError('fit failed')
+    )
+
+    with pytest.raises(RuntimeError, match='fit failed'):
+        forecaster.fit(
+            series=series_wide_range, exog=exog_category, suppress_warnings=True
+        )
+
+    assert calls[0]['params']['categorical_features'] == [3, 5]
+    assert forecaster.estimator.get_params()['categorical_features'] == ['exog_cat']
+
+
+@pytest.mark.parametrize(
+    "cat_features",
+    [(3, 5), ('_level_skforecast', 'exog_cat')],
+    ids=lambda cf: f'cat_features: {cf}'
+)
+def test_fit_when_CatBoost_cat_features_in_constructor_include_level(cat_features):
+    """
+    Test that a CatBoost model with `cat_features` set in its constructor (a
+    tuple) is fitted without changing them when they include the series
+    identifier of `encoding='ordinal_category'`, and that its predictions are
+    those of the same column passed as integer. The series depend on the
+    category, so that the estimator uses the column.
+    """
+    rng = np.random.default_rng(123)
+    cat_values = np.array([10, 20, 30, 40, 50] * 10)
+    series = pd.DataFrame(
+        {'l1': rng.normal(size=50) + (cat_values - 10) / 5,
+         'l2': rng.normal(size=50) + 2 * (cat_values - 10) / 5}
+    )
+    exog_cat = pd.DataFrame(
+        {'exog_1': rng.normal(size=50),
+         'exog_cat': pd.Categorical(cat_values)}
+    )
+    exog_int = exog_cat.astype({'exog_cat': int})
+
+    predictions = []
+    for exog in (exog_cat, exog_int):
+        forecaster = ForecasterRecursiveMultiSeries(
+                         estimator            = CatBoostRegressor(
+                                                    iterations=20, random_seed=123,
+                                                    verbose=0,
+                                                    allow_writing_files=False,
+                                                    cat_features=cat_features
+                                                ),
+                         lags                 = 3,
+                         encoding             = 'ordinal_category',
+                         categorical_features = None
+                     )
+        forecaster.fit(series=series, exog=exog, suppress_warnings=True)
+        predictions.append(
+            forecaster.predict(
+                steps             = 5,
+                exog              = exog.set_axis(pd.RangeIndex(50, 100)),
+                suppress_warnings = True
+            )
+        )
+
+        assert forecaster.estimator.get_params()['cat_features'] == cat_features
+        assert forecaster.estimator.get_cat_feature_indices() == [3, 5]
+        assert forecaster.estimator.get_feature_importance()[5] > 0
+
+    pd.testing.assert_frame_equal(predictions[0], predictions[1])
+
+
+def test_fit_ValueError_when_CatBoost_cat_features_in_constructor_without_level():
+    """
+    Test ValueError is raised when `cat_features` is set in the constructor of
+    CatBoost without the series identifier, which has to be added with
+    `encoding='ordinal_category'` and `categorical_features=None`.
+    """
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = CatBoostRegressor(
+                                                iterations=5, verbose=0,
+                                                allow_writing_files=False,
+                                                cat_features=(5,)
+                                            ),
+                     lags                 = 3,
+                     encoding             = 'ordinal_category',
+                     categorical_features = None
+                 )
+
+    err_msg = re.escape(
+        "With `encoding='ordinal_category'` and `categorical_features=None`, "
+        "the series identifier (`_level_skforecast`) is added to the "
+        "categorical features of the estimator, which is not possible when "
+        "`cat_features` is set in the constructor of the CatBoost estimator. "
+        "Pass them with `fit_kwargs={'cat_features': [...]}` instead."
+    )
+    with pytest.raises(ValueError, match=err_msg):
+        forecaster.fit(
+            series            = series_wide_range,
+            exog              = exog_category.drop(columns='exog_cat_2'),
+            suppress_warnings = True
+        )
+
+
+@pytest.mark.parametrize(
+    "estimator",
+    [LGBMRegressor(verbose=-1, n_estimators=5), XGBRegressor(n_estimators=5)],
+    ids=['LGBMRegressor', 'XGBRegressor']
+)
+def test_fit_and_predict_when_names_have_characters_not_allowed_in_feature_names(
+    estimator
+):
+    """
+    Test that the forecaster is fitted when the names of the series (columns
+    of the training matrix with `encoding='onehot'`) or of the exogenous
+    variables have characters that LightGBM and XGBoost do not allow in
+    feature names, since the estimator receives a numpy array.
+    """
+    series = series_wide_range.rename(columns={'1': 'store[1]', '2': 'store[2]'})
+    exog = pd.DataFrame({'temp[C]': exog_wide_range['exog_1'].to_numpy()})
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator = estimator,
+                     lags      = 3,
+                     encoding  = 'onehot'
+                 )
+    forecaster.fit(series=series, exog=exog, suppress_warnings=True)
+    predictions = forecaster.predict(
+        steps=3, exog=exog.set_axis(pd.RangeIndex(50, 100)), suppress_warnings=True
+    )
+
+    assert forecaster.X_train_features_names_out_ == [
+        'lag_1', 'lag_2', 'lag_3', 'store[1]', 'store[2]', 'temp[C]'
+    ]
+    assert predictions['level'].to_list() == ['store[1]', 'store[2]'] * 3
+    assert predictions['pred'].notna().all()
+
+
+@pytest.mark.parametrize(
+    "encoding, expected_categorical_feature",
+    [('ordinal', [5]), ('ordinal_category', [5, 3])],
+    ids=lambda value: f'{value}'
+)
+def test_fit_when_LGBMRegressor_categorical_feature_by_name_in_constructor(
+    monkeypatch, encoding, expected_categorical_feature
+):
+    """
+    Test that the categorical features set by name in the constructor of
+    LightGBM are passed to `fit` by position when `categorical_features=None`,
+    since the estimator is fitted with a numpy array, and that the series
+    identifier of `encoding='ordinal_category'` is added to them. No
+    DataTypeWarning is issued for the column, and the predictions are those of
+    the same configuration given by position in `fit_kwargs`.
+    """
+    exog = exog_category.drop(columns='exog_cat_2')
+    exog_predict = exog.set_axis(pd.RangeIndex(50, 100))
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = LGBMRegressor(
+                                                verbose=-1, n_estimators=5,
+                                                min_child_samples=5,
+                                                categorical_feature=['exog_cat']
+                                            ),
+                     lags                 = 3,
+                     encoding             = encoding,
+                     categorical_features = None
+                 )
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+                       estimator            = LGBMRegressor(
+                                                  verbose=-1, n_estimators=5,
+                                                  min_child_samples=5
+                                              ),
+                       lags                 = 3,
+                       encoding             = encoding,
+                       categorical_features = None,
+                       fit_kwargs           = {'categorical_feature': [5]}
+                   )
+    calls = spy_fit(monkeypatch, LGBMRegressor)
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter('always')
+        forecaster.fit(series=series_wide_range, exog=exog)
+    predictions = forecaster.predict(steps=3, exog=exog_predict)
+
+    forecaster_2.fit(series=series_wide_range, exog=exog, suppress_warnings=True)
+    predictions_2 = forecaster_2.predict(steps=3, exog=exog_predict)
+
+    assert calls[0]['kwargs']['categorical_feature'] == expected_categorical_feature
+    assert not [w for w in record if issubclass(w.category, DataTypeWarning)]
+    assert forecaster.estimator.get_params()['categorical_feature'] == ['exog_cat']
+    pd.testing.assert_frame_equal(predictions, predictions_2)

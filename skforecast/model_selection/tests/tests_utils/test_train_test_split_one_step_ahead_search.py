@@ -31,7 +31,10 @@ def test_train_test_split_one_step_ahead_search_output_equal_to_forecaster_split
 ):
     """
     Test that the output is the split of the forecaster when the candidate
-    can be evaluated.
+    can be evaluated. In multi-series searches it has nine elements: the last
+    one is the names of the columns of the matrices of
+    ForecasterRecursiveMultiSeries, and `None` is added for
+    ForecasterDirectMultiVariate.
     """
     if data_name == 'y':
         kwargs = {'y': series['l1']}
@@ -51,7 +54,13 @@ def test_train_test_split_one_step_ahead_search_output_equal_to_forecaster_split
                    initial_train_size=45, **kwargs
                )
 
+    if type(forecaster).__name__ == 'ForecasterDirectMultiVariate':
+        assert len(expected) == 8
+        expected = (*expected, None)
     assert len(split) == len(expected)
+    if data_name == 'series':
+        assert len(split) == 9
+        assert split[8] == expected[8]
     np.testing.assert_array_equal(np.asarray(split[0]), np.asarray(expected[0]))
     np.testing.assert_array_equal(np.asarray(split[3]), np.asarray(expected[3]))
 
