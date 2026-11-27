@@ -14,6 +14,6 @@ number,several,other,90,ValueError: `initial_train_size` must be greater than th
 category,,hourly,336,ValueError: The `window_size` of the forecaster (168) leaves no valid ,ok,ok,ok,True
 category,,daily,90,ok,ok,ok,ok,True
 category,,weekly,104,ValueError: The `window_size` of the forecaster (52) leaves no valid `,"ValueError: shape mismatch: value array of shape (2,) could not be bro",ok,ok,True
-category,,monthly,36,ValueError: `initial_train_size` must be greater than the `window_size,"ValueError: shape mismatch: value array of shape (2,) could not be bro",ok,ok,True
+category,,monthly,36,ValueError: `initial_train_size` must be greater than the `window_size,ok,ok,ok,True
 category,,quarterly,24,ValueError: `initial_train_size` must be greater than the `window_size,ok,ok,ok,True
 category,,other,90,ok,ok,ok,ok,True

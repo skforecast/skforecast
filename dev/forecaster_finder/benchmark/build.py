@@ -3,8 +3,9 @@ Render every distinct snippet of the forecaster finder, run it on synthetic
 data of the frequency of the answers and write results/review/finder.json
 (rows, results of every combination and snippets): the data of the page.
 
-A snippet fails if it raises an error or any warning: what the user copies
-must run clean. The sentence shown with each result is checked against the
+Each snippet is run after its sample data block, in an empty namespace, as it
+would run pasted into a new notebook. It fails if it raises an error or any
+warning: what the user copies must run clean. The sentence shown with each result is checked against the
 results of the study (rules.py), and the figures of the section "How we chose
 these rules" are computed from them, not written by hand.
 
@@ -18,61 +19,60 @@ import traceback
 import warnings
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 import finder_tree as tree  # noqa: E402
 
 RES = Path(__file__).parent / "results" / "review"
-LENGTH = {"hourly": 24 * 60, "daily": 730, "weekly": 52 * 5, "monthly": 180, "quarterly": 80,
-          "other": 730}
-SEASON = {k: v["season"] for k, v in tree.FREQ.items()}
 # Warnings that depend on the data, not on the snippet: scikit-learn raises
 # this one when a category that is predicted does not appear in a short test
 # period (quarterly data: 8 values).
 DATA_WARNINGS = {"UserWarning: y_pred contains classes not in y_true"}
 
 
-def synthetic(a, n=None):
-    """Series (and exog) with the frequency, trend and seasonality of the answers."""
-    f = tree.FREQ[a["freq"]]
-    n = n or LENGTH[a["freq"]]
-    idx = pd.date_range("2018-01-01", periods=n, freq=f["alias"])
-    rng = np.random.default_rng(123)
-    t = np.arange(n)
-    s = SEASON[a["freq"]]
-    exog = pd.DataFrame({"promo": rng.integers(0, 2, n).astype(float),
-                         "temp": 20 + 5 * np.sin(2 * np.pi * t / max(s, 2))}, index=idx)
-
-    def one(level):
-        return (level + 0.02 * t + 10 * np.sin(2 * np.pi * t / s)
-                + 3 * exog["promo"].to_numpy() + rng.normal(0, 1, n))
-    ns = {"exog": exog}
-    if a["target"] == "category":
-        v = pd.Series(one(100), index=idx)
-        ns["y"] = pd.cut(v, bins=[-np.inf, v.quantile(0.2), v.quantile(0.8), np.inf],
-                         labels=["low", "medium", "high"]).astype(str)
-    elif a.get("series") == "several":
-        ns["series"] = {f"item_{i}": pd.Series(one(50 + 10 * i), index=idx, name=f"item_{i}")
-                        for i in range(5)}
-    else:
-        ns["y"] = pd.Series(one(100), index=idx, name="sales")
-    return ns
-
-
 def run(code, a, n=None):
-    """Run a snippet with the warnings recorded. Returns (error, warnings)."""
+    """
+    Run a snippet after its sample data block (finder_tree.sample_block), in
+    an empty namespace, as in a new notebook. Returns (error, warnings).
+    """
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         try:
-            exec(compile(code, "snippet", "exec"), synthetic(a, n))
+            exec(compile(tree.sample_block(a, n) + "\n" + code, "snippet", "exec"), {})
             error = None
         except Exception:
             error = traceback.format_exc(limit=2).strip().splitlines()[-1][:200]
     seen = sorted({f"{w.category.__name__}: {str(w.message).strip().splitlines()[0][:140]}"
                    for w in caught} - DATA_WARNINGS)
     return error, seen
+
+
+def key(a):
+    """Identifier of a set of answers, complete or not (also the hash of the page)."""
+    return "-".join(a.get(k) or "_" for k in ("target", "series", "freq", "extra"))
+
+
+def notebook():
+    """Colab notebook with an install cell and a cell to paste the script into."""
+    def cell(kind, source):
+        base = {"cell_type": kind, "metadata": {}, "source": source.splitlines(keepends=True)}
+        return base if kind == "markdown" else {**base, "outputs": [], "execution_count": None}
+    return {
+        "nbformat": 4, "nbformat_minor": 5,
+        "metadata": {"kernelspec": {"display_name": "Python 3", "name": "python3"}},
+        "cells": [
+            cell("markdown",
+                 "# Your first comparison with skforecast\n\n"
+                 "1. Run the first cell to install the libraries (about a minute).\n"
+                 "2. Paste the script you copied from the skforecast documentation into the "
+                 "second cell and run it.\n\n"
+                 "The script comes with sample data, so it runs as it is. To use your own "
+                 "data, replace the block marked as sample data."),
+            cell("code", "%pip install -q skforecast lightgbm chronos-forecasting"),
+            cell("code", "# Paste your script here (Ctrl+V or Cmd+V) and run this cell\n"),
+        ],
+    }
 
 
 def evidence():
@@ -113,14 +113,19 @@ def evidence():
 
 def main():
     facts = evidence()
+    docs = Path(__file__).resolve().parents[3] / "docs"
+    missing = [g for g in list(tree.GUIDES.values()) + [tree.EXOG_GUIDE]
+               if not any((docs / g).with_suffix(ext).exists() for ext in (".ipynb", ".md"))]
+    print(f"user guides that do not exist: {missing}")
     snippets, combos = {}, []
     for a in tree.all_answers():
         leaf = tree.decide(a)
         code = tree.render(a, leaf)
-        key = snippets.setdefault(code, {"id": f"s{len(snippets)}", "answers": a})["id"]
-        combos.append({"answers": a, "leaf": leaf["leaf"], "headline": leaf["headline"],
-                       "lineup": tree.lineup(a, leaf), "why": tree.reasons(leaf),
-                       "prompt": tree.prompt(a, leaf), "snippet": key})
+        sid = snippets.setdefault(code, {"id": f"s{len(snippets)}", "answers": a})["id"]
+        combos.append({"key": key(a), "answers": a, "leaf": leaf["leaf"],
+                       "why": tree.reasons(leaf), "prompt": tree.prompt(a, leaf, code),
+                       "sample": tree.sample_block(a), "snippet": sid})
+    partial = {key(a): tree.blocks(a) for a in tree.all_partial_answers()}
 
     print(f"{len(combos)} answer combinations, {len(snippets)} distinct snippets", flush=True)
     results = {}
@@ -136,14 +141,16 @@ def main():
     failed = [k for k, v in results.items() if v["status"] != "ok"]
     unsupported = [k for k, ok in facts["checks"].items() if not ok]
     print(f"sentences not supported by the study: {unsupported}")
-    out = {"rows": tree.ROWS, "default": tree.DEFAULT, "notes": tree.NOTES,
+    (RES / "first_comparison.ipynb").write_text(json.dumps(notebook(), indent=1))
+    out = {"rows": tree.ROWS, "notes": tree.NOTES, "partial": partial,
+           "script_steps": tree.SCRIPT_STEPS, "exog_guide": tree.EXOG_GUIDE,
            "intro": tree.INTRO.format(datasets=facts["datasets"]),
            "evidence": {k: facts[k] for k in ("datasets", "table", "stats")},
            "min_history": {k: v["min_history"] for k, v in tree.FREQ.items()},
            "combos": combos, "snippets": results}
     (RES / "finder.json").write_text(json.dumps(out, indent=1))
     print(f"failed (error or warning): {failed}")
-    return 1 if failed or unsupported else 0
+    return 1 if failed or unsupported or missing else 0
 
 
 if __name__ == "__main__":

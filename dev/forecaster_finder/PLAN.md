@@ -284,7 +284,8 @@ selección por defecto, y debajo el resultado, que cambia con cada clic. Título
 | 3 | Your data has one value per... *skforecast calls this the frequency of the series.* | Hour · Day · Week · Month · Quarter · Something else (15 minutes, a year...) | Always |
 | 4 | Will you know anything else in advance? *Things that affect the values and that you know for future dates. skforecast calls them exogenous variables.* | **Yes** (holidays, planned promotions, prices, weather forecasts) · **No** (also if you only know them up to today, like sensor readings) | Always |
 
-Selección por defecto: un número, una serie, un valor por día, no.
+Sin selección por defecto: al llegar no hay nada elegido. Las filas van numeradas y se
+pueden contestar en cualquier orden.
 
 Bajo el título del bloque, una frase fija: "We tested each kind of model on 26 public
 datasets, always with the same backtesting, to see where each one works best. Your answers
@@ -334,21 +335,53 @@ estudio (medido: el horizonte no cambia el orden entre familias).
 
 ### 6.4 Pantalla de resultado
 
-Más simple que en la versión anterior: sin tarjetas y sin cifras.
+Dos piezas, en este orden. Solo la primera es llamativa.
 
-1. Titular y una o dos frases (6.2).
-2. Una línea con los modelos que compara el script.
-3. Ventana de código con el estilo de la portada (`docs/stylesheets/home.css`, resaltador de
-   `docs/javascripts/home.js` como módulo compartido), botón Copy y la nota "Runs as it is:
-   tested on sample data every time the docs are built. Needs at least N values".
-4. Acciones: "Copy prompt for your AI assistant" (respuestas, plan, enlace a `llms-full.txt`
-   y "ask me for my data first") y "Compare models on your own data with skforecast-ai" (sin
-   prometer la misma comparación mientras sus reglas difieran: `REVISION.md` H12).
-5. "Good to know", plegado.
-6. Enlace compartible con las respuestas en el `#`.
-7. Debajo del bloque, la sección "How we chose these rules": qué se probó, la tabla por tipo
-   de datos y los límites.
-8. Sin JavaScript se ve la página estática completa (tabla de reglas y fragmentos).
+**1. Recuadro de respuesta** (fondo oscuro, como el hero de la portada). Se construye con
+cada respuesta, y el bloque que cambia se ilumina un momento:
+
+- Sin respuestas: tres bloques vacíos y "Answer the first question to see which models to
+  try", con el contador "0 of 4 answered".
+- Tras la primera: el titular y los bloques, uno por modelo, con su papel (First,
+  Challenger, Reference, Baseline), el nombre, la clase de skforecast, una línea de para
+  qué sirve y el enlace a su guía de usuario.
+- "How many time series?" resuelve la clase de LightGBM (`ForecasterRecursive` o
+  `ForecasterRecursiveMultiSeries`); la frecuencia dice qué repite el baseline y, en mensual
+  y trimestral de una serie, añade el bloque de ARIMA; "Yes" a la cuarta pone la etiqueta
+  "uses your known variables" en los modelos que las usan.
+- Con todas: la frase de 6.2 y el enlace a "How we chose these rules".
+
+Los estados parciales (105) los genera `finder_tree.blocks()`: la página no repite las
+reglas.
+
+**2. Script.** Mientras faltan respuestas, la ventana de código se ve con una sola línea:
+"# Your script appears here when you answer the 2 questions left." Al completarlas:
+
+1. "What the script does", en tres líneas.
+2. La ventana de código, con los imports plegados ("imports (16 lines)") y el botón Copy.
+3. "Runs as it is: tested on sample data every time the docs are built. Needs at least N
+   values".
+4. Dos botones: "Copy script" y "Run it in Google Colab".
+5. Plegado: "Using an AI assistant?" (copia el script con instrucciones) y "Good to know".
+
+**Google Colab**: un único notebook con dos celdas, la de instalación y otra vacía con
+"Paste your script here". El botón copia el script **con un bloque de datos de ejemplo
+delante** (`finder_tree.sample_block`) y abre el notebook, así que lo pegado se ejecuta sin
+tocar nada; el bloque dice "Replace this block with your own data". Esos datos son los
+mismos con los que CI ejecuta cada script (en un espacio de nombres vacío, como en un
+notebook nuevo). El notebook lo escribe `build.py` (`results/review/first_comparison.ipynb`);
+el enlace solo funciona cuando esté en una rama pública.
+
+**Prompt**: acción secundaria. Incluye el script probado y le dice al asistente que pida
+antes una muestra de los datos, que cambie solo la carga de datos y los valores de ejemplo, y
+que no toque los modelos hasta que el script se ejecute.
+
+**skforecast-ai** no aparece en el resultado: es un producto más amplio y esto es un primer
+paso. Queda como un enlace más en los siguientes pasos de la página.
+
+Además: enlace compartible con las respuestas en el `#` (solo con las respuestas completas);
+debajo del bloque, "How we chose these rules"; sin JavaScript se ve la página estática
+completa (tabla de reglas y scripts de ejemplo).
 
 ### 6.5 Ubicación y enlaces
 
@@ -414,8 +447,8 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
 1. Alineación: Chronos-2 small y LightGBM más un baseline estacional; clasificador más regla
    estacional para categorías. Solo se nombra Chronos-2 (único medido y Apache-2.0).
 2. **D1**: el bloque interactivo es un selector de una pantalla.
-3. **D2**: titular "Start with Chronos-2, then try to beat it with LightGBM". Con el estudio
-   ampliado vale para los tres tipos de datos (pendiente de confirmar: D6).
+3. **D2 y D6**: titular "Start with Chronos-2, then try to beat it with LightGBM" en los
+   tres tipos de datos.
 4. **D3**: sin pregunta de prioridad; notas fijas plegadas.
 5. **D4**: estudio ampliado a 26 datasets (4.6).
 6. **D5**: el arreglo de `Ets` y sus notas de versión van en esta misma rama; el enlace a la
@@ -426,6 +459,8 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
    una serie y sin exógenas.
 9. El resultado no enseña cifras: una frase por caso, comprobada contra el estudio, y las
    cifras en "How we chose these rules".
+   El prompt es una acción secundaria e incluye el script. skforecast-ai no va en el
+   resultado.
 10. Estudio de referencia: el de protocolo justo. Cifras por dataset, nunca "frente a la
     mejor variante de ML".
 11. Requisitos del fragmento de 6.3.
@@ -438,9 +473,12 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
 
 ### 7.2 Decisiones que necesitan respuesta
 
+Propuestas ya montadas en la maqueta, pendientes de confirmar:
+
 | ID | Decisión | Opciones | Recomendación |
 |:--|:--|:--|:--|
-| D6 | El mismo titular en los tres tipos de datos | (a) "Start with Chronos-2, then try to beat it with LightGBM" siempre, con una frase distinta por caso; (b) mantener "Race both" con variables conocidas a futuro, donde la ventaja es menor (5 de 7 datasets, 3 de ellos por menos de un 10 %) | (a). Es lo que dice el estudio ampliado y es más simple. Implementado así en el prototipo |
+| D7 | Qué se ve antes de contestar | (a) nada elegido: recuadro de respuesta que se rellena y ventana de código con una línea de espera; (b) ventana de código vacía del todo; (c) una selección por defecto con el script ya visible | (a). Quita la carga inicial y hace visible lo que aporta cada respuesta. Coste: cuatro clics antes de ver el script |
+| D8 | Google Colab | (a) un notebook con "Paste your script here" y el script copiado con datos de ejemplo; (b) un notebook generado por combinación (36); (c) sin Colab | (a). Un clic y un pegado, sin notebooks que mantener, y lo pegado es lo que prueba CI |
 
 ### 7.3 Fases
 

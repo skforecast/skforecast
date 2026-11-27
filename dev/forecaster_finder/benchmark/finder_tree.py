@@ -58,7 +58,6 @@ ROWS = [
         ],
     },
 ]
-DEFAULT = {"target": "number", "series": "one", "freq": "daily", "extra": "no"}
 
 # Example settings per frequency, so that the snippet runs as it is. They are
 # not tuned: season (offset of the baseline), horizon and number of test
@@ -131,6 +130,141 @@ NOTES = [
 ]
 
 
+# User guide of each skforecast class shown in the answer box (paths of the docs)
+GUIDES = {
+    "ForecasterFoundation": "user_guides/foundation-forecasting-models.html",
+    "ForecasterRecursive": "user_guides/autoregressive-forecaster.html",
+    "ForecasterRecursiveMultiSeries": "user_guides/independent-multi-time-series-forecasting.html",
+    "ForecasterStats": "user_guides/forecasting-sarimax-arima.html",
+    "ForecasterEquivalentDate": "user_guides/forecasting-baseline.html",
+    "ForecasterRecursiveClassifier": "user_guides/autoregressive-classification-forecasting.html",
+}
+EXOG_GUIDE = "user_guides/exogenous-variables.html"
+
+# What the script does, shown above the code
+SCRIPT_STEPS = {
+    "number": [
+        "Keeps your last periods apart as a test.",
+        "Forecasts them with each model, using only the data before each period.",
+        "Prints the error of each model: keep what beats the baseline.",
+    ],
+    "category": [
+        "Keeps your last periods apart as a test.",
+        "Forecasts them with the classifier, using only the data before each period.",
+        "Prints how often the classifier and the simple rule are right: keep the "
+        "classifier only if it beats the rule.",
+    ],
+}
+
+
+def blocks(a: dict) -> dict:
+    """
+    Answer box for the answers given so far (`a` may be incomplete): the
+    headline, the blocks (model, skforecast class, what it is, user guide) and
+    the rows still to answer. Each answer fills or adds something, so the box
+    is built as the user answers. A block whose class is not known yet has
+    `cls=None`.
+    """
+    target = a.get("target")
+    missing = [r["id"] for r in ROWS if r["id"] not in a
+               and all(a.get(k) == v for k, v in r.get("show_if", {}).items())]
+    if target is None:
+        return {"headline": None, "blocks": [], "missing": missing, "complete": False}
+    f = FREQ.get(a.get("freq"))
+    season = f["season_text"] if f else None
+    exog = a.get("extra") == "yes"
+    out = []
+
+    def block(role, name, cls, text, tags=()):
+        out.append({"role": role, "name": name, "cls": cls, "guide": GUIDES.get(cls),
+                    "text": text, "tags": list(tags)})
+
+    if target == "category":
+        headline = "Start with a machine learning classifier and compare it with a simple rule"
+        block("Model", "LightGBM classifier", "ForecasterRecursiveClassifier",
+              "Machine learning classifier", ["uses your known variables"] if exog else [])
+        block("Baseline", "Seasonal rule", None,
+              f"The category of the {season}" if season else "The category one season before")
+    else:
+        headline = "Start with Chronos-2, then try to beat it with LightGBM"
+        series = a.get("series")
+        ml_cls = {"one": "ForecasterRecursive", "several": "ForecasterRecursiveMultiSeries"}.get(series)
+        tags = ["uses your known variables"] if exog else []
+        block("First", "Chronos-2", "ForecasterFoundation", "Foundation model, no training", tags)
+        block("Challenger", "LightGBM", ml_cls,
+              "Machine learning model you can improve and explain" if series != "several" else
+              "One machine learning model for all your series", tags)
+        if series == "one" and a.get("freq") in ("monthly", "quarterly"):
+            headline += ", and keep ARIMA as a reference"
+            block("Reference", "ARIMA", "ForecasterStats", "Classic statistical model")
+        block("Baseline", "Seasonal baseline", "ForecasterEquivalentDate",
+              (f"Repeats the {season}" if season else "Repeats the value one season before")
+              + (", one per series" if series == "several" else ""))
+    return {"headline": headline, "blocks": out, "missing": missing, "complete": not missing}
+
+
+def all_partial_answers():
+    """Every set of answers, complete or not, that the rows can produce."""
+    combos = []
+    freqs = [None] + list(FREQ)
+    extras = [None, "yes", "no"]
+    for freq in freqs:
+        for extra in extras:
+            base = {k: v for k, v in (("freq", freq), ("extra", extra)) if v is not None}
+            combos.append(dict(base))
+            combos.append({"target": "category", **base})
+            for series in (None, "one", "several"):
+                combos.append({"target": "number", **({"series": series} if series else {}), **base})
+    return combos
+
+
+def sample_block(a: dict, n: int | None = None) -> str:
+    """
+    Code that creates sample data for the answers `a` (the objects that the
+    script expects: `y` or `series`, and `exog`), so that the script runs in an
+    empty notebook. build.py runs every snippet with exactly this data.
+    """
+    f = FREQ[a["freq"]]
+    n = n or SAMPLE_LENGTH[a["freq"]]
+    lines = [
+        "# Sample data so that the script runs here. Replace this block with your own data.",
+        "import numpy as np",
+        "import pandas as pd",
+        "",
+        f'index = pd.date_range("2018-01-01", periods={n}, freq="{f["alias"]}")',
+        "rng = np.random.default_rng(123)",
+        "t = np.arange(len(index))",
+        f"pattern = 0.02 * t + 10 * np.sin(2 * np.pi * t / {f['season']})",
+    ]
+    if a["extra"] == "yes":
+        lines += [
+            'exog = pd.DataFrame({"promotion": rng.integers(0, 2, len(index)).astype(float)}, index=index)',
+            'pattern = pattern + 3 * exog["promotion"].to_numpy()',
+        ]
+    if a["target"] == "category":
+        lines += [
+            "values = pd.Series(100 + pattern + rng.normal(0, 1, len(index)), index=index)",
+            "y = pd.cut(",
+            "    values, bins=[-np.inf, values.quantile(0.2), values.quantile(0.8), np.inf],",
+            '    labels=["low", "medium", "high"],',
+            ").astype(str)",
+        ]
+    elif a.get("series") == "several":
+        lines += [
+            "series = {",
+            '    f"item_{i}": pd.Series(50 + 10 * i + pattern + rng.normal(0, 1, len(index)), index=index)',
+            "    for i in range(5)",
+            "}",
+        ]
+    else:
+        lines.append('y = pd.Series(100 + pattern + rng.normal(0, 1, len(index)), index=index, name="sales")')
+    return "\n".join(lines) + "\n"
+
+
+SAMPLE_LENGTH = {"hourly": 24 * 60, "daily": 730, "weekly": 52 * 5, "monthly": 180,
+                 "quarterly": 80, "other": 730}
+
+
 def decide(a: dict) -> dict:
     """
     Leaf for the answers `a`: candidates in order, statistical reference,
@@ -185,22 +319,23 @@ def lineup(a: dict, leaf: dict) -> list:
     return cards
 
 
-def prompt(a: dict, leaf: dict) -> str:
-    """Prompt for an AI assistant with the answers and the plan."""
+def prompt(a: dict, leaf: dict, code: str) -> str:
+    """Prompt for an AI assistant: the answers, the tested script and what to do with it."""
     data = ("a category (classification)" if a["target"] == "category" else
             "several time series" if a["series"] == "several" else "one time series")
     freq = "an uncommon frequency" if a["freq"] == "other" else f"{a['freq']} data"
     extra = ("I also have variables whose future values I know." if a["extra"] == "yes"
              else "I have no variables known in advance.")
-    names = ", then ".join(c[1] for c in lineup(a, leaf))
     return (
-        f"I want to forecast {data} with skforecast ({freq}). {extra}\n"
-        f"Plan: compare these models with the same backtesting folds, in this order: "
-        f"{names}. Keep a model only if it beats the baseline.\n"
-        f"Before writing any code, ask me for a sample of my data and how far ahead I "
-        f"need to forecast. Use the skforecast API reference at "
-        f"https://skforecast.org/latest/llms-full.txt and do not tune anything until "
-        f"the comparison runs."
+        f"I want to forecast {data} with skforecast ({freq}). {extra}\n\n"
+        f"The script below comes from the skforecast documentation and is tested: it compares "
+        f"the models I should try first with the same backtesting. Help me adapt it to my "
+        f"data.\n"
+        f"- First ask me for a sample of my data and how far ahead I need to forecast.\n"
+        f"- Change only how the data is loaded and the settings marked as examples (steps, "
+        f"season, lags). Keep the models and the comparison as they are until the script runs.\n"
+        f"- If you need the skforecast API, use https://skforecast.org/latest/llms-full.txt.\n\n"
+        f"```python\n{code}```\n"
     )
 
 
