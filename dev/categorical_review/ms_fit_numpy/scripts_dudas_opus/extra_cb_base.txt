@@ -1,0 +1,6 @@
+skforecast from: <scratchpad>\base028\skforecast\__init__.py
+{"case": "int exog, CatBoost fit_kwargs by name, cf=None", "status": "error", "err": "TypeError: list indices must be integers or slices, not str"}
+{"case": "int exog, CatBoost fit_kwargs by position, cf=None", "status": "ok", "mae": 5.844, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "int64"}}
+{"case": "int exog, CatBoost constructor by position, cf=None", "status": "error", "err": "RuntimeError: Cannot clone object CatBoostRegressor(allow_writing_files=False, cat_features=[5], iterations=60, loss_function='RMSE', random_seed=0, thread_count=1, verbose=0), as the constructor either does not set or modifies parame"}
+{"case": "CatBoost, ordinal_category, cf=auto", "status": "ok", "mae": 7.822, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "float64"}}
+{"case": "CatBoost, ordinal_category, cf=None, int exog", "status": "error", "err": "CatBoostError: features data: pandas.DataFrame column '_level_skforecast' has dtype 'category' but is not in  cat_features list"}
