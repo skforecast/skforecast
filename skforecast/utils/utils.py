@@ -821,24 +821,33 @@ def cast_catboost_categorical_columns_dataframe(
     * `pandas.Categorical` — converted via `.cat.codes` (NaN -> -1 by default).
     * float (with NaN from the `OrdinalEncoder`) — `fillna(-1).astype(int)`.
 
-    No-op if `cat_features` is not in `fit_kwargs` or the estimator is not a
-    CatBoost model. A Pipeline is never cast, also when its last step is
-    CatBoost, since `configure_estimator_categorical_features` does not
-    configure native categorical features inside a Pipeline.
+    The categorical columns are those of `cat_features` in `fit_kwargs` or,
+    if it is not there, those of the `cat_features` given by the user in the
+    constructor of the estimator. Both can contain positions or names.
+
+    A float column with values that are not integers raises a `TypeError`,
+    since the cast would truncate them.
+
+    No-op if there are no `cat_features` or the estimator is not a CatBoost
+    model. A Pipeline is never cast, also when its last step is CatBoost,
+    since `configure_estimator_categorical_features` does not configure
+    native categorical features inside a Pipeline.
 
     Parameters
     ----------
     X : pandas DataFrame
         Training matrix.
     fit_kwargs : dict
-        Keyword arguments to pass to `estimator.fit`. Must contain the key
-        `'cat_features'` (a list of int indices) for the cast to run.
+        Keyword arguments to pass to `estimator.fit`. If it contains the key
+        `'cat_features'` (positions or names of columns), those are the
+        columns that are cast.
     estimator : object
         Estimator the matrix will be passed to. The cast only runs if this
-        is a CatBoost estimator.
+        is a CatBoost estimator. Its `cat_features` parameter is used when
+        `fit_kwargs` does not contain `'cat_features'`.
     feature_names : list of str
         Column names of `X` in positional order; used to translate the
-        integer indices in `fit_kwargs['cat_features']` to column labels.
+        integer indices of `cat_features` to column labels.
 
     Returns
     -------
@@ -848,19 +857,112 @@ def cast_catboost_categorical_columns_dataframe(
 
     """
 
-    if 'cat_features' not in fit_kwargs:
-        return X
-
     if type(estimator).__module__.split('.')[0] != 'catboost':
         return X
 
+    cat_features = fit_kwargs.get('cat_features')
+    if cat_features is None:
+        cat_features = estimator.get_params().get('cat_features')
+    if cat_features is None or len(cat_features) == 0:
+        return X
+
     X = X.copy()
-    cat_cols = [feature_names[i] for i in fit_kwargs['cat_features']]
+    cat_cols = [
+        col if isinstance(col, str) else feature_names[col]
+        for col in cat_features
+    ]
     for col in cat_cols:
         if hasattr(X[col].dtype, 'categories'):
             X[col] = X[col].cat.codes.astype(int)
         else:
+            if pd.api.types.is_float_dtype(X[col].dtype):
+                values = X[col].to_numpy(dtype=float, na_value=np.nan)
+                if not np.all(np.isnan(values) | (values == np.floor(values))):
+                    raise TypeError(
+                        f"The column '{col}' is included in `cat_features` of "
+                        f"the CatBoost estimator, but its values are not "
+                        f"integers. CatBoost only accepts integers or strings "
+                        f"as categorical features. Remove it from "
+                        f"`cat_features`, or include it in "
+                        f"`categorical_features` so that the forecaster "
+                        f"encodes it."
+                    )
             X[col] = X[col].fillna(-1).astype(int)
+
+    return X
+
+
+def _category_columns_to_values(
+    X: pd.DataFrame,
+    warn: bool = False
+) -> pd.DataFrame:
+    """
+    Replace the exogenous variables of dtype `category` of a matrix of
+    predictors `X` of `ForecasterRecursiveMultiSeries` by their values (their
+    categories, not their codes) as float, the values the estimator receives
+    in `predict`.
+
+    The categorical features encoded by the forecaster are float columns at
+    this point, so a column of dtype `category` is an exogenous variable that
+    is not included in `categorical_features` (`None`, or a list without it).
+    A pandas DataFrame with such a column gives its codes to estimators like
+    LightGBM or XGBoost, which would be fitted with the codes and predict
+    with the values. The series identifier of `encoding='ordinal_category'`
+    (`_level_skforecast`) is kept: its values are its codes.
+
+    Parameters
+    ----------
+    X : pandas DataFrame
+        Training or prediction values (predictors).
+    warn : bool, default False
+        If `True`, a `DataTypeWarning` names the columns that are replaced.
+
+    Returns
+    -------
+    X : pandas DataFrame
+        Matrix of predictors. The same object if there is nothing to replace,
+        otherwise a shallow copy with the columns replaced: the input is not
+        modified.
+
+    """
+
+    columns = [
+        col for col, dtype in X.dtypes.items()
+        if isinstance(dtype, pd.CategoricalDtype) and col != '_level_skforecast'
+    ]
+    if not columns:
+        return X
+
+    not_numeric = [
+        col for col in columns
+        if not (
+            pd.api.types.is_integer_dtype(X[col].cat.categories.dtype)
+            or pd.api.types.is_float_dtype(X[col].cat.categories.dtype)
+        )
+    ]
+    if not_numeric:
+        raise TypeError(
+            f"The exogenous variables {not_numeric} have dtype `category` and "
+            f"their categories are not numbers, so they cannot be passed to "
+            f"the estimator with their values. Include them in "
+            f"`categorical_features`, or use `categorical_features='auto'`, "
+            f"so that the forecaster encodes them."
+        )
+
+    if warn:
+        warnings.warn(
+            f"The exogenous variables {columns} have dtype `category` but are "
+            f"not included in `categorical_features`, so the forecaster does "
+            f"not encode them: the estimator receives their values, not their "
+            f"category codes. To let the forecaster handle them as "
+            f"categorical features, include them in `categorical_features` or "
+            f"use `categorical_features='auto'`.",
+            DataTypeWarning
+        )
+
+    X = X.copy(deep=False)
+    for col in columns:
+        X[col] = X[col].to_numpy(dtype=float, na_value=np.nan)
 
     return X
 

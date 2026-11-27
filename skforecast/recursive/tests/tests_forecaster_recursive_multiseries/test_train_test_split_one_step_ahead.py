@@ -11,6 +11,7 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
 from xgboost import XGBRegressor
+from skforecast.exceptions import DataTypeWarning
 from skforecast.preprocessing import RollingFeatures
 from ....recursive import ForecasterRecursiveMultiSeries
 
@@ -1874,3 +1875,94 @@ def test_train_test_split_one_step_ahead_when_series_names_are_integers(encoding
             X_test[['2', '10']].to_numpy(),
             np.array([[0., 1.]] * 5 + [[1., 0.]] * 5)
         )
+
+
+@pytest.mark.parametrize(
+    "categorical_features",
+    [None, ['exog_cat_2']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+def test_train_test_split_one_step_ahead_when_category_exog_not_in_categorical_features(
+    categorical_features
+):
+    """
+    Test _train_test_split_one_step_ahead when an exogenous variable of dtype
+    category, whose values (10, 20...) are not its codes, is not included in
+    `categorical_features`. `X_train` and `X_test` have its values as float,
+    not its codes, as the estimator receives them in `predict`, and a
+    DataTypeWarning is issued. The series identifier of
+    `encoding='ordinal_category'` keeps its dtype.
+    """
+    series_20 = pd.DataFrame(
+        {
+            "series_1": np.arange(20),
+            "series_2": np.arange(50, 70),
+        },
+        index=pd.date_range("2020-01-01", periods=20),
+        dtype=float,
+    ).to_dict(orient='series')
+    exog_20 = pd.DataFrame(
+        {
+            "exog_num": np.arange(100, 120, dtype=float),
+            "exog_cat": pd.Categorical([10, 20, 30, 40, 50] * 4),
+        },
+        index=pd.date_range("2020-01-01", periods=20),
+    )
+    if categorical_features is not None:
+        exog_20["exog_cat_2"] = pd.Categorical(['a', 'b'] * 10)
+    exog_20_copy = exog_20.copy()
+    exog_20 = {"series_1": exog_20, "series_2": exog_20}
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LGBMRegressor(verbose=-1, random_state=123),
+        lags=3,
+        encoding='ordinal_category',
+        categorical_features=categorical_features,
+    )
+
+    warn_msg = re.escape(
+        "The exogenous variables ['exog_cat'] have dtype `category` but are "
+        "not included in `categorical_features`, so the forecaster does not "
+        "encode them: the estimator receives their values, not their category "
+        "codes. To let the forecaster handle them as categorical features, "
+        "include them in `categorical_features` or use "
+        "`categorical_features='auto'`."
+    )
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter('always')
+        X_train, y_train, X_test, y_test, X_train_encoding, X_test_encoding, sample_weight, fit_kwargs = (
+            forecaster._train_test_split_one_step_ahead(
+                series=series_20, exog=exog_20, initial_train_size=15
+            )
+        )
+    data_type_warnings = [
+        w for w in record if issubclass(w.category, DataTypeWarning)
+    ]
+
+    assert len(data_type_warnings) == 1
+    assert re.match(warn_msg, str(data_type_warnings[0].message))
+    assert X_train['exog_cat'].dtype == np.float64
+    assert X_test['exog_cat'].dtype == np.float64
+    np.testing.assert_array_equal(
+        X_train['exog_cat'].to_numpy(),
+        np.array([40., 50., 10., 20., 30., 40., 50., 10., 20., 30., 40., 50.] * 2)
+    )
+    np.testing.assert_array_equal(
+        X_test['exog_cat'].to_numpy(),
+        np.array([10., 20., 30., 40., 50.] * 2)
+    )
+    assert isinstance(X_train['_level_skforecast'].dtype, pd.CategoricalDtype)
+    assert isinstance(X_test['_level_skforecast'].dtype, pd.CategoricalDtype)
+    if categorical_features is None:
+        assert X_train.columns.to_list() == [
+            'lag_1', 'lag_2', 'lag_3', '_level_skforecast', 'exog_num', 'exog_cat'
+        ]
+        assert fit_kwargs == {}
+    else:
+        assert X_train.columns.to_list() == [
+            'lag_1', 'lag_2', 'lag_3', '_level_skforecast', 'exog_num',
+            'exog_cat', 'exog_cat_2'
+        ]
+        assert X_train['exog_cat_2'].dtype == np.float64
+        assert fit_kwargs == {'categorical_feature': [6, 3]}
+    pd.testing.assert_frame_equal(exog_20['series_1'], exog_20_copy)

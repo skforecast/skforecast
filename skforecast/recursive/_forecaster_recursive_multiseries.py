@@ -57,6 +57,7 @@ from ..utils import (
     check_interval,
     configure_estimator_categorical_features,
     cast_catboost_categorical_columns_dataframe,
+    _category_columns_to_values,
     _get_catboost_cat_feature_indices,
     _is_fitted_catboost,
     _copy_rows_to_check,
@@ -145,6 +146,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         non-numeric dtype is treated as categorical.
         - If `list`: a list of column names to be treated as categorical.
         - If `None`: no categorical encoding is applied internally.
+
+        An exogenous variable of dtype `category` that is not treated as
+        categorical (`None`, or a list without it) is passed to the estimator
+        with its values, not with its category codes, both in `fit` and in
+        `predict`, so its categories must be numbers (integers with `None`).
+        A warning is issued.
         **New in version 0.22.0**
     weight_func : Callable, dict, default None
         Function that defines the individual weights for each sample based on the
@@ -1802,6 +1809,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         Notes
         -----
+        - An exogenous variable of dtype `category` that is not included in
+        `categorical_features` has its values as float in `X_train`, not its
+        category codes, as the estimator receives it.
         - If `series` is a wide-format pandas DataFrame, each column represents a
         different time series, and the index must be either a `DatetimeIndex` or 
         a `RangeIndex` with frequency or step size, as appropriate
@@ -1838,6 +1848,8 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
 
         if self.encoding is None:
             X_train = X_train.drop(columns='_level_skforecast')
+        # NOTE: The matrix the estimator receives in `fit`.
+        X_train = _category_columns_to_values(X_train)
 
         return X_train, y_train
 
@@ -1858,7 +1870,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
     ]:
         """
         Create matrices needed to train and test the forecaster for one-step-ahead
-        predictions.
+        predictions. They are the matrices the estimator receives: an exogenous
+        variable of dtype `category` that is not included in
+        `categorical_features` has its values as float, not its category
+        codes, as in `fit` and `predict`.
 
         Parameters
         ----------
@@ -2046,6 +2061,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         # set only has series used to train, so no identifier is missing.
         X_train_encoding = pd.Series(data=X_train_encoding, index=X_train.index)
         X_test_encoding = pd.Series(data=X_test_encoding, index=X_test.index)
+
+        # NOTE: As in `fit`, a `category` exog that `categorical_features` does
+        # not manage is replaced by its values, the ones it has in `predict`.
+        X_train = _category_columns_to_values(X_train, warn=True)
+        X_test = _category_columns_to_values(X_test)
 
         X_train_features_names_out_ = X_train.columns.to_list()
         if self.categorical_features is not None:
@@ -2395,6 +2415,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         modification limited to other rows is not detected, and it ignores the
         cells that were NaN before training, so a step that fills them in place
         (for example, `SimpleImputer(copy=False)`) is allowed.
+        - An exogenous variable of dtype `category` that is not included in
+        `categorical_features` is passed to the estimator with its values, not
+        with its category codes, as in `predict`, and a `DataTypeWarning` is
+        issued.
         
         """
 
@@ -2460,6 +2484,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             else X_train.drop(columns="_level_skforecast")
         )
         X_train_features_names_out_ = X_train_estimator.columns.to_list()
+        # NOTE: The estimator is fitted with a DataFrame and predicts with a
+        # numpy array. A `category` exog that `categorical_features` does not
+        # manage is replaced by its values, the ones it has in `predict`.
+        X_train_estimator = _category_columns_to_values(
+            X_train_estimator, warn=True
+        )
 
         if self.categorical_features is not None:
             all_categorical_names = (
@@ -3543,6 +3573,12 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
             Long-format DataFrame with the predictors. The columns are `level` and 
             one column for each predictor. The index is the same as the prediction 
             index.
+
+        Notes
+        -----
+        An exogenous variable of dtype `category` that is not included in
+        `categorical_features` has its values as float in `X_predict`, not
+        its category codes, as the estimator receives it.
         
         """
 
@@ -3665,7 +3701,15 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
                 for dtype in set(self.exog_dtypes_out_.values())
             )
             if categorical_features:
-                X_predict = compat.astype(X_predict, self.exog_dtypes_out_)
+                # NOTE: A `category` exog that `categorical_features` does not
+                # manage keeps its values, the ones the estimator receives.
+                X_predict = compat.astype(
+                    X_predict,
+                    {
+                        col: dtype for col, dtype in self.exog_dtypes_out_.items()
+                        if not isinstance(dtype, pd.CategoricalDtype)
+                    }
+                )
         
         if self.transformer_series is not None or self.differentiation is not None:
             warnings.warn(
@@ -4746,8 +4790,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
         self.in_sample_residuals_by_bin_ = {}
         y_train = y_train.to_numpy()
 
-        # NOTE: Same cast as in `fit`, with the categorical features of the
-        # fitted estimator.
+        # NOTE: Same matrix as in `fit`: the values of a `category` exog that
+        # `categorical_features` does not manage, and the cast of the
+        # categorical features of the fitted estimator.
+        X_train_estimator = _category_columns_to_values(X_train_estimator)
         cat_indices = _get_catboost_cat_feature_indices(self.estimator)
         if len(cat_indices) > 0:
             X_train_estimator = cast_catboost_categorical_columns_dataframe(

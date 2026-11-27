@@ -1,6 +1,7 @@
 # Unit test _predict_and_calculate_metrics_one_step_ahead_multiseries
 # ==============================================================================
 import re
+import warnings
 import pytest
 import numpy as np
 import pandas as pd
@@ -20,6 +21,7 @@ from skforecast.model_selection import backtesting_forecaster_multiseries
 from skforecast.model_selection._utils import _predict_and_calculate_metrics_one_step_ahead_multiseries
 from skforecast.model_selection._split import TimeSeriesFold
 from skforecast.metrics import mean_absolute_scaled_error
+from skforecast.exceptions import DataTypeWarning
 from skforecast.utils._pandas_compat import PANDAS_GE_3
 
 # Fixtures
@@ -1369,3 +1371,130 @@ def test_predict_and_calculate_metrics_one_step_ahead_multiseries_ForecasterDire
 
         np.testing.assert_array_equal(np.asarray(y_test), y_test_copy)
         pd.testing.assert_frame_equal(results[0], expected)
+
+
+@pytest.mark.parametrize(
+    "estimator, encoding, categorical_features, fit_kwargs",
+    [
+        (LGBMRegressor(n_estimators=50, verbose=-1, random_state=123),
+         'ordinal', None, None),
+        (XGBRegressor(n_estimators=50, random_state=123),
+         'ordinal', None, None),
+        (HistGradientBoostingRegressor(max_iter=50, random_state=123),
+         'ordinal_category', None, None),
+        (XGBRegressor(n_estimators=50, random_state=123),
+         'ordinal_category', None, None),
+        (LGBMRegressor(n_estimators=50, verbose=-1, random_state=123),
+         'ordinal_category', None, {'categorical_feature': ['exog_cat']}),
+        (CatBoostRegressor(
+             iterations=20, random_seed=123, verbose=0, thread_count=1,
+             allow_writing_files=False
+         ),
+         'ordinal', None, {'cat_features': ['exog_cat']}),
+        (LGBMRegressor(n_estimators=50, verbose=-1, random_state=123),
+         'ordinal', ['exog_cat_2'], None),
+    ],
+    ids=['LGBMRegressor', 'XGBRegressor',
+         'HistGradientBoostingRegressor, ordinal_category',
+         'XGBRegressor, ordinal_category',
+         'LGBMRegressor, categorical_feature by name',
+         'CatBoostRegressor, cat_features by name',
+         'LGBMRegressor, list without the column']
+)
+def test_predict_and_calculate_metrics_one_step_ahead_multiseries_equivalence_backtesting_category_exog_not_in_categorical_features(
+    estimator, encoding, categorical_features, fit_kwargs
+):
+    """
+    Test that the output of _predict_and_calculate_metrics_one_step_ahead_multiseries
+    is equivalent to the output of backtesting_forecaster_multiseries when steps=1
+    and refit=False, with an exogenous variable of dtype category that is not
+    included in `categorical_features` and whose values (10, 20, 30) are not its
+    codes (0, 1, 2). The estimator receives its values in the one-step-ahead
+    validation, as in `fit` and `predict`, also when the user configures the
+    column as categorical on the estimator.
+    """
+    n = len(series_wide_dt_item_sales)
+    np.random.seed(42)
+    exog_cat = pd.DataFrame(
+        {
+            'exog_num': np.random.rand(n),
+            'exog_cat': pd.Categorical(np.random.choice([10, 20, 30], size=n)),
+            'exog_cat_2': pd.Categorical(np.random.choice([1, 0], size=n)),
+        },
+        index=series_wide_dt_item_sales.index
+    )
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = estimator,
+                     lags                 = 5,
+                     encoding             = encoding,
+                     transformer_series   = StandardScaler(),
+                     categorical_features = categorical_features,
+                     fit_kwargs           = fit_kwargs
+                 )
+
+    initial_train_size = 927
+    metrics = ['mean_absolute_error']
+    levels = ['item_1', 'item_2', 'item_3']
+    series = series_dict_dt_item_sales
+
+    cv = TimeSeriesFold(
+             initial_train_size = initial_train_size,
+             steps              = 1,
+             refit              = False,
+         )
+
+    metrics_backtesting, pred_backtesting = backtesting_forecaster_multiseries(
+        series=series,
+        exog=exog_cat,
+        forecaster=forecaster,
+        cv=cv,
+        metric=metrics,
+        levels=levels,
+        add_aggregated_metric=True,
+        show_progress=False,
+        suppress_warnings=True
+    )
+    pred_backtesting = (
+        pred_backtesting
+        .pivot(columns='level', values='pred')
+        .rename_axis(None, axis=0)
+        .rename_axis(None, axis=1)
+        .asfreq('D')
+    )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', category=DataTypeWarning)
+        (
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+            X_train_encoding,
+            X_test_encoding,
+            sample_weight,
+            fit_kwargs_split
+        ) = forecaster._train_test_split_one_step_ahead(
+                series             = series,
+                exog               = exog_cat,
+                initial_train_size = initial_train_size,
+            )
+
+    metrics_one_step_ahead, pred_one_step_ahead = _predict_and_calculate_metrics_one_step_ahead_multiseries(
+        forecaster=forecaster,
+        series=series,
+        X_train=X_train,
+        y_train=y_train,
+        X_test=X_test,
+        y_test=y_test,
+        X_train_encoding=X_train_encoding,
+        X_test_encoding=X_test_encoding,
+        levels=levels,
+        metrics=metrics,
+        add_aggregated_metric=True,
+        sample_weight=sample_weight,
+        fit_kwargs=fit_kwargs_split
+    )
+
+    pd.testing.assert_frame_equal(metrics_one_step_ahead, metrics_backtesting)
+    pd.testing.assert_frame_equal(pred_one_step_ahead, pred_backtesting, check_dtype=False)

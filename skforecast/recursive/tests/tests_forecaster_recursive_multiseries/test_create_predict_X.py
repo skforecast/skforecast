@@ -422,10 +422,12 @@ def test_create_predict_X_output_when_categorical_features_native_implementation
 )
 def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor(categorical_features):
     """
-    Test create_predict_X when using LGBMRegressor and categorical variables.
-    Native implementation of categorical features in LGBMRegressor
-    should return the same predictions as the one obtained when using the Forecaster
-    to encode the categorical features.
+    Test create_predict_X when using LGBMRegressor and categorical variables
+    that `transformer_exog` returns as `category` columns of integers. With
+    `categorical_features='auto'`, or a list with them, the forecaster encodes
+    them and LGBMRegressor treats them as native categorical features, with
+    the same predictions as the ones obtained when the Forecaster encodes the
+    original columns.
     """
     df_exog = pd.DataFrame(
         {'exog_1': exog_wide_range['exog_1'],
@@ -463,7 +465,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor(ca
                      lags               = 5,
                      transformer_series = None,
                      transformer_exog   = transformer_exog,
-                     categorical_features = None
+                     categorical_features = categorical_features
                  )
     forecaster.fit(series=series_dict_range, exog=df_exog)
     results = forecaster.create_predict_X(steps=10, exog=exog_predict)
@@ -494,8 +496,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor(ca
                  columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                             '_level_skforecast', 'exog_2', 'exog_3', 'exog_1'],
                  index = pd.RangeIndex(start=50, stop=60, step=1)
-             ).astype({'exog_2': int, 'exog_3': int}
-             ).astype({'exog_2': 'category', 'exog_3': 'category'}),
+             ),
         'l2': pd.DataFrame(
                  data = np.array([
                      [0.34345601, 0.2408559 , 0.39887629, 0.15112745, 0.6917018 ,
@@ -521,8 +522,7 @@ def test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor(ca
                  columns = ['lag_1', 'lag_2', 'lag_3', 'lag_4', 'lag_5', 
                             '_level_skforecast', 'exog_2', 'exog_3', 'exog_1'],
                  index = pd.RangeIndex(start=50, stop=60, step=1)
-             ).astype({'exog_2': int, 'exog_3': int}
-             ).astype({'exog_2': 'category', 'exog_3': 'category'})
+             )
     }
     expected = expected_df_to_long_format(expected, method='bootstrapping')
 
@@ -1491,3 +1491,63 @@ def test_create_predict_X_output_when_encoding_onehot_and_unknown_level():
     )
 
     pd.testing.assert_frame_equal(results, expected)
+
+
+@pytest.mark.parametrize(
+    'categorical_features',
+    [None, ['exog_cat_2']],
+    ids=lambda cf: f'categorical_features: {cf}'
+)
+@pytest.mark.parametrize(
+    'exog_cat_predict, expected_values',
+    [(pd.Categorical([10, 20, 30, 40, 50] * 10),
+      [10., 10., 20., 20., 30., 30., 40., 40., 50., 50.]),
+     (pd.Categorical([10, 60, 20, 60, 30] * 10),
+      [10., 10., 60., 60., 20., 20., 60., 60., 30., 30.]),
+     (np.array([10, 60, 20, 60, 30] * 10),
+      [10., 10., 60., 60., 20., 20., 60., 60., 30., 30.])],
+    ids=['same dtype as in training', 'category with an unseen value',
+         'int column with an unseen value']
+)
+def test_create_predict_X_output_when_category_exog_not_in_categorical_features(
+    exog_cat_predict, expected_values, categorical_features
+):
+    """
+    Test create_predict_X output when an exogenous variable of dtype category
+    is not included in `categorical_features`: it has its values as float,
+    as the estimator receives it, so the predictions of the estimator with
+    this matrix are those of `predict`. A value that is not a category seen
+    in training (60), in a column of dtype category with other categories or
+    of dtype int, is returned as it is, not as NaN.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog_wide_range['exog_1'].to_numpy(),
+         'exog_cat': pd.Categorical([10, 20, 30, 40, 50] * 10)}
+    )
+    if categorical_features is not None:
+        df_exog['exog_cat_2'] = pd.Categorical(['a', 'b'] * 25)
+    exog_predict = df_exog.assign(exog_cat=exog_cat_predict)
+    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = LinearRegression(),
+                     lags                 = 3,
+                     transformer_series   = None,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(series=series_wide_range, exog=df_exog, suppress_warnings=True)
+    results = forecaster.create_predict_X(steps=5, exog=exog_predict)
+    predictions = forecaster.predict(steps=5, exog=exog_predict)
+
+    expected = pd.Series(
+                   data  = expected_values,
+                   index = pd.Index([50, 50, 51, 51, 52, 52, 53, 53, 54, 54]),
+                   name  = 'exog_cat'
+               )
+
+    pd.testing.assert_series_equal(results['exog_cat'], expected)
+    assert results['level'].to_list() == predictions['level'].to_list()
+    np.testing.assert_allclose(
+        forecaster.estimator.predict(results.drop(columns='level')),
+        predictions['pred'].to_numpy()
+    )

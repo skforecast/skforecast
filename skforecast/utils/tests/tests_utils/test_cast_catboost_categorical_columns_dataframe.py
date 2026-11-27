@@ -1,5 +1,6 @@
 # Unit test cast_catboost_categorical_columns_dataframe
 # ==============================================================================
+import re
 import numpy as np
 import pandas as pd
 import pytest
@@ -173,6 +174,125 @@ def test_mixed_categorical_and_float_columns():
     )
     np.testing.assert_array_equal(result['cat_b'].to_numpy(), np.array([0, -1, 1]))
     np.testing.assert_array_equal(result['lag_1'].to_numpy(), np.array([1.5, 2.5, 3.5]))
+
+
+# ==============================================================================
+# Tests: cat_features given by name or in the constructor of the estimator
+# ==============================================================================
+@pytest.mark.parametrize(
+    'cat_features',
+    [['cat_a', 'cat_b'], ['cat_a', 3], ('cat_b', 'cat_a')],
+    ids=lambda cf: f'cat_features: {cf}'
+)
+def test_catboost_cat_features_by_name_in_fit_kwargs(cat_features):
+    """
+    Test that the categorical columns are cast to int when `cat_features` of
+    `fit_kwargs` contains names of columns, alone or mixed with positions.
+    """
+    estimator = CatBoostRegressor(verbose=0, allow_writing_files=False)
+    X = pd.DataFrame({
+        'lag_1': [1.5, 2.5, 3.5],
+        'cat_a': [10.0, np.nan, 30.0],
+        'exog_1': [0.1, 0.2, 0.3],
+        'cat_b': [2.0, 0.0, 1.0],
+    })
+
+    result = cast_catboost_categorical_columns_dataframe(
+        X=X, fit_kwargs={'cat_features': cat_features}, estimator=estimator,
+        feature_names=['lag_1', 'cat_a', 'exog_1', 'cat_b'],
+    )
+
+    expected = pd.DataFrame({
+        'lag_1': [1.5, 2.5, 3.5],
+        'cat_a': [10, -1, 30],
+        'exog_1': [0.1, 0.2, 0.3],
+        'cat_b': [2, 0, 1],
+    })
+
+    pd.testing.assert_frame_equal(result, expected)
+
+
+@pytest.mark.parametrize(
+    'cat_features',
+    [(1,), [1], ['cat_a']],
+    ids=lambda cf: f'cat_features: {cf}'
+)
+def test_catboost_cat_features_in_constructor_when_not_in_fit_kwargs(cat_features):
+    """
+    Test that, when `fit_kwargs` has no `cat_features`, the columns that the
+    estimator has in the `cat_features` of its constructor (positions or
+    names) are cast to int.
+    """
+    estimator = CatBoostRegressor(
+        verbose=0, allow_writing_files=False, cat_features=cat_features
+    )
+    X = pd.DataFrame({'lag_1': [1.5, 2.5, 3.5], 'cat_a': [10.0, np.nan, 30.0]})
+
+    result = cast_catboost_categorical_columns_dataframe(
+        X=X, fit_kwargs={}, estimator=estimator,
+        feature_names=['lag_1', 'cat_a'],
+    )
+
+    expected = pd.DataFrame({'lag_1': [1.5, 2.5, 3.5], 'cat_a': [10, -1, 30]})
+
+    pd.testing.assert_frame_equal(result, expected)
+
+
+def test_catboost_cat_features_of_fit_kwargs_have_priority_over_constructor():
+    """
+    Test that `cat_features` of `fit_kwargs` is used, and not the one of the
+    constructor of the estimator, when both are given.
+    """
+    estimator = CatBoostRegressor(
+        verbose=0, allow_writing_files=False, cat_features=[0]
+    )
+    X = pd.DataFrame({'cat_a': [1.0, 2.0], 'cat_b': [0.0, np.nan]})
+
+    result = cast_catboost_categorical_columns_dataframe(
+        X=X, fit_kwargs={'cat_features': [1]}, estimator=estimator,
+        feature_names=['cat_a', 'cat_b'],
+    )
+
+    expected = pd.DataFrame({'cat_a': [1.0, 2.0], 'cat_b': [0, -1]})
+
+    pd.testing.assert_frame_equal(result, expected)
+
+
+@pytest.mark.parametrize(
+    'cat_features_constructor, fit_kwargs',
+    [(None, {'cat_features': [1]}),
+     (None, {'cat_features': ['cat_a']}),
+     ((1,), {}),
+     (('cat_a',), {})],
+    ids=['fit_kwargs by position', 'fit_kwargs by name',
+         'constructor by position', 'constructor by name']
+)
+def test_catboost_TypeError_when_cat_features_column_has_non_integer_values(
+    cat_features_constructor, fit_kwargs
+):
+    """
+    Test TypeError is raised, with the name of the column, when a float column
+    of `cat_features` (of `fit_kwargs` or of the constructor) has values that
+    are not integers, instead of truncating them. NaN is allowed.
+    """
+    estimator = CatBoostRegressor(
+        verbose=0, allow_writing_files=False,
+        cat_features=cat_features_constructor
+    )
+    X = pd.DataFrame({'lag_1': [1.5, 2.5, 3.5], 'cat_a': [0.2, np.nan, 3.0]})
+
+    err_msg = re.escape(
+        "The column 'cat_a' is included in `cat_features` of the CatBoost "
+        "estimator, but its values are not integers. CatBoost only accepts "
+        "integers or strings as categorical features. Remove it from "
+        "`cat_features`, or include it in `categorical_features` so that the "
+        "forecaster encodes it."
+    )
+    with pytest.raises(TypeError, match=err_msg):
+        cast_catboost_categorical_columns_dataframe(
+            X=X, fit_kwargs=fit_kwargs, estimator=estimator,
+            feature_names=['lag_1', 'cat_a'],
+        )
 
 
 # ==============================================================================

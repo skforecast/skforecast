@@ -11,6 +11,8 @@ from sklearn.exceptions import NotFittedError
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
 from catboost import CatBoostRegressor
+from lightgbm import LGBMRegressor
+from skforecast.exceptions import DataTypeWarning
 from skforecast.recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
@@ -303,6 +305,87 @@ def test_set_in_sample_residuals_same_as_fit_when_catboost_and_categorical_exog(
     assert list(residuals) == list(residuals_fit)
     for level in residuals_fit.keys():
         np.testing.assert_array_equal(residuals[level], residuals_fit[level])
+
+    residuals_bin = forecaster.in_sample_residuals_by_bin_
+    assert list(residuals_bin) == list(residuals_bin_fit)
+    for level in residuals_bin_fit.keys():
+        assert residuals_bin[level].keys() == residuals_bin_fit[level].keys()
+        for k in residuals_bin_fit[level].keys():
+            np.testing.assert_array_equal(
+                residuals_bin[level][k], residuals_bin_fit[level][k]
+            )
+
+
+@pytest.mark.parametrize("categorical_features",
+                         [None, ['exog_cat_2']],
+                         ids = lambda value: f'categorical_features: {value}')
+def test_set_in_sample_residuals_same_as_fit_when_category_exog_not_in_categorical_features(categorical_features):
+    """
+    Test that set_in_sample_residuals stores the same residuals as fit when an
+    exog of dtype category is not included in `categorical_features`. The
+    estimator receives its values, not its codes, so the residuals are also
+    those of a forecaster fitted with the column as integer. No DataTypeWarning
+    is issued, it is only issued in `fit`. The series depend on the category,
+    so that the estimator uses the column, and the categories are not declared
+    in the order of their values: otherwise their codes (0, 1, 2...) would
+    give the same splits as their values.
+    """
+    rng = np.random.default_rng(123)
+    cat_values = np.array([10, 20, 30, 40, 50] * 10)
+    series = {
+        'l1': pd.Series(rng.normal(size=50) + (cat_values - 10) / 5),
+        'l2': pd.Series(rng.normal(size=50) + 2 * (cat_values - 10) / 5)
+    }
+    exog_cat = pd.DataFrame(
+        {'exog_1': rng.normal(size=50),
+         'exog_cat': pd.Categorical(
+             cat_values, categories=[30, 10, 50, 20, 40]
+         ),
+         'exog_cat_2': pd.Categorical([3, 1, 2, 0, 4] * 10)}
+    )
+    exog_int = exog_cat.astype({'exog_cat': int})
+
+    forecaster = ForecasterRecursiveMultiSeries(
+        estimator=LGBMRegressor(
+            n_estimators=5, max_depth=2, min_child_samples=1, verbose=-1,
+            random_state=123
+        ),
+        lags=3, binner_kwargs={'n_bins': 3},
+        categorical_features=categorical_features
+    )
+    forecaster.fit(
+        series=series, exog=exog_cat, store_in_sample_residuals=True,
+        suppress_warnings=True
+    )
+    residuals_fit = copy.deepcopy(forecaster.in_sample_residuals_)
+    residuals_bin_fit = copy.deepcopy(forecaster.in_sample_residuals_by_bin_)
+
+    forecaster_int = ForecasterRecursiveMultiSeries(
+        estimator=LGBMRegressor(
+            n_estimators=5, max_depth=2, min_child_samples=1, verbose=-1,
+            random_state=123
+        ),
+        lags=3, binner_kwargs={'n_bins': 3},
+        categorical_features=categorical_features
+    )
+    forecaster_int.fit(
+        series=series, exog=exog_int, store_in_sample_residuals=True,
+        suppress_warnings=True
+    )
+
+    with warnings.catch_warnings(record=True) as record:
+        warnings.simplefilter("always")
+        forecaster.set_in_sample_residuals(series=series, exog=exog_cat)
+    assert not [w for w in record if issubclass(w.category, DataTypeWarning)]
+
+    residuals = forecaster.in_sample_residuals_
+    assert forecaster.estimator.feature_importances_[5] > 0
+    assert list(residuals) == list(residuals_fit)
+    for level in residuals_fit.keys():
+        np.testing.assert_array_equal(residuals[level], residuals_fit[level])
+        np.testing.assert_array_equal(
+            residuals[level], forecaster_int.in_sample_residuals_[level]
+        )
 
     residuals_bin = forecaster.in_sample_residuals_by_bin_
     assert list(residuals_bin) == list(residuals_bin_fit)
