@@ -15,7 +15,11 @@
   (fases 1 a 3), `FEAT-finder-probabilistic` (fase 4); `BUG-ets-freeze-params` y
   `QW-ets-m-over-24-silent` (arregladas en esta rama, sin fusionar) y
   `QW-shared-cv-refit-warnings` (nueva).
-- Informe visual de la versión 1 (no actualizado):
+- Maqueta navegable del selector con los datos del prototipo (36 combinaciones):
+  `mock.html`, generada por `benchmark/mock.py` y publicada en
+  https://claude.ai/artifact/VMvLQwo7Wf9xoK3VYAbgV6 (privada; se comparte desde su menú
+  Share).
+- Informe visual de la versión 1 (no actualizado, sus cifras son las del ML congelado):
   https://claude.ai/artifact/LdLnbpz9LXdJ4rqPaocysX.
 
 Contenido de la carpeta:
@@ -29,6 +33,7 @@ Contenido de la carpeta:
 | `benchmark/recount.py` | Recuentos por ejecución, por dataset y por tipo de datos |
 | `benchmark/finder_tree.py`, `build.py` | Prototipo de la fuente única con el diseño de la sección 6: 4 filas, reglas por tipo de datos, 36 fragmentos. `build.py` los ejecuta con los avisos como errores, calcula las cifras del respaldo y escribe `results/review/finder.json` (los datos de la página) |
 | `benchmark/check_snippets.py` | Comprueba que cada tipo de fragmento se ejecuta con su historia mínima |
+| `benchmark/mock.py`, `mock.html` | Maqueta de la página: las 4 filas y el resultado de cada combinación, con los datos de `finder.json` |
 | `benchmark/repro_ets_freeze_params.py` | Reproducción de `BUG-ets-freeze-params` |
 | `benchmark/summarize.py`, `evidence.py`, `report_data.py` | Resúmenes de la versión 1 (leen `results/*.csv`) |
 | `benchmark/results/` | CSV del estudio original |
@@ -45,6 +50,7 @@ python -I review.py --snippet    # el LightGBM del fragmento, tal como se escrib
 python -I recount.py             # cifras de las secciones 4 y 6
 python -I build.py               # 36 combinaciones, 36 fragmentos, medio minuto
 python -I check_snippets.py      # historia mínima de cada tipo de fragmento
+python -I mock.py                # maqueta navegable (../mock.html)
 ```
 
 Entorno: Python 3.12.3, skforecast 0.28.0, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1,
