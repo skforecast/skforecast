@@ -29,6 +29,7 @@ from ....recursive import ForecasterRecursiveMultiSeries
 
 # Fixtures
 from .fixtures_forecaster_recursive_multiseries import (
+    series_wide_range,
     series_wide_dt,
     series_dict_range,
     series_dict_dt,
@@ -2399,3 +2400,85 @@ def test_predict_output_when_HistGradientBoostingRegressor_and_nullable_exog_has
 
     assert predictions.shape == (10, 2)
     assert not predictions['pred'].isna().any()
+
+
+@pytest.mark.parametrize(
+    'categorical_features, cat_values',
+    [(None, [10, 20, 30, 40, 50]),
+     (['exog_cat_2'], [10, 20, 30, 40, 50]),
+     (['exog_cat_2'], [0.1, 0.2, 0.3, 0.4, 0.5])],
+    ids=['None, integers', 'list, integers', 'list, decimals']
+)
+def test_predict_output_when_category_exog_not_in_categorical_features(
+    categorical_features, cat_values
+):
+    """
+    Test predict output when an exogenous variable of dtype category, whose
+    values (10, 20... or 0.1, 0.2...) are not its codes (0, 1...), is not
+    included in `categorical_features`. The estimator receives its values in
+    `fit` and in `predict`, so the predictions and the in-sample residuals are
+    those obtained when the column is passed as a numeric column.
+    """
+    df_exog = pd.DataFrame(
+        {'exog_1': exog_wide_range['exog_1'].to_numpy(),
+         'exog_cat': pd.Categorical(cat_values * 10)}
+    )
+    if categorical_features is not None:
+        df_exog['exog_cat_2'] = pd.Categorical(['a', 'b'] * 25)
+    exog_predict = df_exog.copy()
+    exog_predict.index = pd.RangeIndex(start=50, stop=100)
+    numeric_dtype = type(cat_values[0])
+
+    forecaster = ForecasterRecursiveMultiSeries(
+                     estimator            = LGBMRegressor(
+                                                random_state=123, verbose=-1,
+                                                min_child_samples=5
+                                            ),
+                     lags                 = 3,
+                     transformer_series   = None,
+                     categorical_features = categorical_features
+                 )
+    forecaster.fit(
+        series=series_wide_range, exog=df_exog, store_in_sample_residuals=True,
+        suppress_warnings=True
+    )
+    predictions = forecaster.predict(steps=5, exog=exog_predict)
+
+    forecaster_2 = ForecasterRecursiveMultiSeries(
+                       estimator            = LGBMRegressor(
+                                                  random_state=123, verbose=-1,
+                                                  min_child_samples=5
+                                              ),
+                       lags                 = 3,
+                       transformer_series   = None,
+                       categorical_features = categorical_features
+                   )
+    forecaster_2.fit(
+        series=series_wide_range, exog=df_exog.astype({'exog_cat': numeric_dtype}),
+        store_in_sample_residuals=True
+    )
+    predictions_2 = forecaster_2.predict(
+        steps=5, exog=exog_predict.astype({'exog_cat': numeric_dtype})
+    )
+
+    assert forecaster.in_sample_residuals_.keys() == forecaster_2.in_sample_residuals_.keys()
+    for level in forecaster.in_sample_residuals_:
+        np.testing.assert_array_equal(
+            forecaster.in_sample_residuals_[level],
+            forecaster_2.in_sample_residuals_[level]
+        )
+    pd.testing.assert_frame_equal(predictions, predictions_2)
+
+    if categorical_features is None:
+        expected = pd.DataFrame(
+                       data = np.array([[0.2413741597, 0.6702828832],
+                                        [0.2414664066, 0.3484745396],
+                                        [0.60716893  , 0.3812666934],
+                                        [0.7319796428, 0.6414308224],
+                                        [0.6809769968, 0.8503834086]]),
+                       index   = pd.RangeIndex(start=50, stop=55, step=1),
+                       columns = ['1', '2']
+                   )
+        expected = expected_df_to_long_format(expected)
+
+        pd.testing.assert_frame_equal(predictions, expected)

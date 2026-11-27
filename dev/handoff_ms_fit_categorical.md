@@ -3,9 +3,18 @@
 ## 1. Estado
 
 - Fecha: 2026-11-27.
+- **Arreglo con pandas: implementado el 2026-11-27** en la rama
+  `fix/ms-category-exog-values`, creada desde `origin/0.28.x` (`ca0f2f4af`).
+  **PR #1548 abierta** ese día contra `0.28.x`: commits `210086978` (código
+  y tests) y `9d83b5664` (nota de versión, guía y contexto IA), más el del
+  enlace en la nota de versión y los `dev:` del roadmap y de este handoff,
+  que va en la PR por decisión de Joaquín (llega a `0.28.x` al fusionar).
+  `verify` con pandas 2.3.3 y 3.1.1 en la sección 5.
 - Rama `fix/ms-fit-numpy-estimator`, creada desde `0.28.x` en `a7c7a869d` y
-  subida a `origin`. Va 3 commits por detrás de `origin/0.28.x` (los de #1547),
-  sin conflictos. No tiene PR y no es para fusionar tal cual.
+  subida a `origin`. Va 4 commits por detrás de `origin/0.28.x` (los 3 de
+  #1547 y el del roadmap, `ca0f2f4af`) y 2 por delante (`082cf9c52` y
+  `ed6b152ee`, que es el mismo commit del roadmap, con el mismo contenido en
+  `dev/`), sin conflictos. No tiene PR y no es para fusionar tal cual.
 - El trabajo de numpy está en su commit `082cf9c52`: 22 ficheros de
   `skforecast/` (2 de test nuevos y 1 eliminado), su documentación
   (`releases.md`, la guía de categóricas, `llms-base.txt`, el skill
@@ -75,6 +84,31 @@ el cambio de mensaje de `check_exog_dtypes` (función compartida, tests de cinco
 forecasters), el aviso repetido en cada fold, pyarrow y los nombres con
 caracteres especiales.
 
+**Decisiones de la PR de arreglo (Joaquín, 2026-11-27, con medidas):**
+
+- **Convertir siempre** la `category` sin gestionar a sus valores, no solo
+  cuando sus códigos difieren de ellos. Con la variante, CatBoost con `None`
+  fallaba con categorías `0..5` y funcionaba con 10..60, y el tipo de modelo
+  dependía de qué valores había en el entrenamiento (con `astype('category')`,
+  LightGBM categórico con `0..5` y numérico si falta un valor).
+  `ForecasterRecursive` ya da un modelo numérico en ese caso.
+- **Una `category` de decimales fuera de la lista se convierte a sus valores**,
+  sin `TypeError` (cambia lo decidido el 2026-11-26): con pandas es coherente
+  entre `fit` y `predict` en los 6 estimadores probados, es lo que hace
+  `ForecasterRecursive`, y el `TypeError` rompía HistGradientBoosting y Ridge,
+  que en la base funcionaban bien. Con `None` no cambia nada: salta antes el
+  `TypeError` de `check_exog_dtypes`. El `TypeError` que nombra la columna
+  queda para las categorías que no son números (texto, fechas, booleanos).
+- **`DataTypeWarning`** de texto neutro en `fit` y, una vez, en la división
+  one-step-ahead; no en `set_in_sample_residuals`.
+- **Descartado exigir que la lista incluya todas las `category`**: no
+  simplifica esta PR y rompe configuraciones que hoy son correctas. Queda como
+  propuesta para todos los forecasters (API-categorical-list-all-category).
+- Matriz de 48 escenarios (6 estimadores, 4 tipos de categoría, `None` y lista;
+  one-step-ahead frente a un backtesting equivalente), igual con los dos
+  pandas: base, 20 coherentes, 13 incoherentes y 15 errores de `fit`; arreglo,
+  42, 0 y 6 (los 6, `None` con decimales).
+
 **Para la PR de numpy: regla de las dos puertas** (propuesta que a Joaquín le
 gusta; confirmar antes de implementarla):
 
@@ -110,6 +144,34 @@ la nota en la guía).
 
 ## 3. Hecho
 
+**Arreglo con pandas (rama `fix/ms-category-exog-values`, PR #1548).**
+
+- `skforecast/utils/utils.py`: `_category_columns_to_values` (nueva), y
+  `cast_catboost_categorical_columns_dataframe` acepta `cat_features` por
+  nombre y usa el del constructor del estimador si no viene en `fit_kwargs`.
+- `skforecast/recursive/_forecaster_recursive_multiseries.py`: cuatro llamadas
+  (`fit`, `set_in_sample_residuals`, `_train_test_split_one_step_ahead` y,
+  desde la revisión final, `create_train_X_y`), las columnas `category` fuera
+  del `astype` final de `create_predict_X` y docstrings. La división sigue devolviendo 8 elementos y `model_selection`
+  no se toca. En total, +164 / -15 líneas en 3 ficheros.
+- Tests, escritos antes del arreglo: sin él, 30 fallaban, 10 pasaban (las
+  guardas) y los unitarios de la función nueva no se podían importar. Nuevos
+  en `test_fit.py`, `test_predict.py`, `test_set_in_sample_residuals.py` y
+  `test_train_test_split_one_step_ahead.py` de multiserie, en
+  `test_predict_and_calculate_metrics_one_step_ahead_multiseries.py`, en
+  `test_cast_catboost_categorical_columns_dataframe.py` y en
+  `test_category_columns_to_values.py` (nuevo). Fijan lo que el paso a numpy
+  puede romper: `monotonic_cst`, `monotone_constraints` e
+  `interaction_constraints` por nombre, y el nivel categórico en un LightGBM
+  envuelto con `ordinal_category`.
+- Test adaptado: `test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor`
+  usa su parámetro (`'auto'` y la lista) en lugar de `None` y conserva los
+  valores esperados: `'auto'` reproduce el modelo anterior.
+- Documentación: nota de versión (una línea en "Before upgrading", una entrada
+  en Changed y dos en Fixed, sin enlace a la PR), las dos notas y la tabla de
+  `categorical-features.ipynb` (celdas de texto, sin reejecutar),
+  `llms-base.txt`, el skill `feature-engineering` y los ficheros generados.
+
 **Rama de numpy (`fix/ms-fit-numpy-estimator`, commit `082cf9c52`).**
 
 - `skforecast/utils/utils.py`: `_train_matrix_to_numpy`,
@@ -143,52 +205,147 @@ cuatro informes, los diff del arreglo con pandas de cada revisor y sus scripts.
   PERF-ms-xgboost-mixed-copy (requiere MAINT-ms-fit-numpy-estimator) y
   QW-ms-category-warning-per-fold.
 - La sección 11 (selección de la 0.28.0, P1 y cadena C2) recoge el replanteo.
-- Sin revisar: MAINT-ms-predict-core sigue teniendo como requisito
-  BUG-ms-fit-dataframe-categorical, y la fila de
-  BUG-predict-readonly-wrapped-catboost cita los 48 casos que la PR 1 con numpy
-  dejaba en ese error. Comprobar si siguen siendo ciertos con el arreglo con
-  pandas.
+- Revisado el 2026-11-27 con el arreglo con pandas: la fila de
+  BUG-predict-readonly-wrapped-catboost está corregida (los 48 casos que la
+  PR 1 con numpy dejaba en ese error siguen fallando en `fit` con el arreglo
+  con pandas); el requisito de MAINT-ms-predict-core se mantiene sin cambios
+  (el arreglo no toca `predict`, deducido del código).
+- Fila nueva API-categorical-list-all-category, y corregidas en la fila del
+  bug la lista del cambio de modelo y la frase de los decimales.
 
 ## 4. Pendiente
 
 **Para el autor:**
 
-1. Confirmar la variante del arreglo: convertir siempre (recomendada: es la
-   semántica ya decidida, D-NP2 = (a'), y la que tendrá numpy) o no convertir
-   cuando los códigos ya son los valores (ningún test de la base cambia, pero
-   es más difícil de explicar).
-2. Confirmar la regla de las dos puertas antes de la PR de numpy.
-3. Decidir la prioridad de MAINT-ms-fit-numpy-estimator (en el roadmap, P2
+1. Hecho el 2026-11-27: commits, rama subida y PR #1548 abierta contra
+   `0.28.x`. Queda revisarla y fusionarla.
+2. Hecho el 2026-11-27: enlace a #1548 en las 3 entradas de la nota de
+   versión y en la línea de "Before upgrading". Este handoff va en la PR.
+3. Al fusionar: mover BUG-ms-fit-dataframe-categorical y las dos filas DOC a
+   la sección de hechos del roadmap, y retirar QW-ms-category-warning.
+4. Confirmar la regla de las dos puertas antes de la PR de numpy.
+5. Decidir la prioridad de MAINT-ms-fit-numpy-estimator (en el roadmap, P2
    como propuesta) y si entra en la 0.28.0.
 
-**Para la siguiente sesión (PR de arreglo con pandas), en orden:**
+**Encontrado durante el arreglo (2026-11-27), sin tocar:**
 
-1. Comprobar que el roadmap, este handoff y
-   `dev/categorical_review/ms_fit_numpy/` ya están en `0.28.x`.
-2. Rama nueva desde `origin/0.28.x` con `--no-track`.
-3. Plan del arreglo, a partir de
-   [`fable_minimo.diff`](categorical_review/ms_fit_numpy/arreglo_pandas/fable_minimo.diff)
-   y [`opus_minimo.diff`](categorical_review/ms_fit_numpy/arreglo_pandas/opus_minimo.diff).
-   Puntos a resolver en el plan:
-   - Una `category` de decimales sin gestionar: el 2026-11-26 se decidió
-     `TypeError`, pero pensando en numpy. Comprobar si con pandas es coherente
-     entre `fit` y `predict` antes de mantener el error.
-   - El cambio de modelo que el arreglo comparte con la rama: con `None`,
-     HistGradientBoosting con categorías 10, 20, 30 y LightGBM con categorías
-     0, 1, 2 pasan de categórico a numérico. El test
-     `test_create_predict_X_when_categorical_features_auto_detect_LGBMRegressor`
-     falla y hay que adaptarlo. Va en "Before upgrading".
-   - LightGBM con `'name:col'` en el constructor pasa de resultado erróneo en
-     silencio a `LightGBMError`.
-4. Tests: primero los que fallan sin el arreglo. Los de comportamiento de la
-   rama ya pasan contra los prototipos (predicciones con `None` iguales a las
-   de la columna entera, residuos de `set_in_sample_residuals`, one-step-ahead
-   igual a backtesting con LightGBM, XGBoost e HistGradientBoosting); el de
-   equivalencia con backtesting necesita adaptar la firma interna.
-5. Documentación: revisar qué celdas de `categorical-features.ipynb`, del skill
-   y de `llms-base.txt` siguen siendo ciertas con pandas; reescribir la nota de
-   versión (casi todas las entradas de Changed de la rama dejan de aplicar).
-6. `verify`, con los dos pandas.
+- Lista del cambio de modelo: con `None` también cambian XGBoost (con sus
+  parámetros por defecto) e HistGradientBoosting con categorías `0..k`, no
+  solo los dos casos que citaba este handoff.
+- `CatBoostRegressor(cat_features=[...])` con una lista en el constructor no
+  se puede clonar (`RuntimeError` de scikit-learn en el `__init__` de
+  cualquier forecaster). Con una tupla funciona. Es ajeno a este cambio.
+- LightGBM con `'name:col'` en el constructor y `None`: pasa de resultado
+  erróneo en silencio (MAE 31,9) a `LightGBMError` en `fit`.
+- Una `category` de decimales fuera de la lista: `fit` y `predict` funcionan,
+  pero si la exog futura trae un dtype `category` con otras categorías,
+  `predict` lanza el `TypeError` de `check_exog_dtypes`. Igual en
+  `ForecasterRecursive` hoy.
+- El `DataTypeWarning` sale también en la división one-step-ahead. Medido
+  (filtros `default` y `always`): 1 aviso en `fit`; 1 en una búsqueda con
+  `OneStepAheadFold` de 3 configuraciones de lags por 2 de parámetros, con y
+  sin `return_best`; 1 en una búsqueda con `TimeSeriesFold` sin refit; 8 en un
+  backtesting de 8 folds con refit. La repetición es solo la de
+  QW-ms-category-warning-per-fold.
+- LightGBM con `categorical_feature` en el constructor y `None` queda como en
+  `ForecasterRecursive` hoy: por posición funciona (MAE 0,87; en la base,
+  58,7) y con `'name:col'` da el mismo `LightGBMError`.
+- En la sesión, `python` del `PATH` era el del sistema, sin pandas
+  (`SKFORECAST_PYTHON_ENV` sin efecto): se llamó al intérprete de cada
+  entorno por su ruta.
+
+**Revisión final (2026-11-27):** dos lecturas del diff (la de la sesión y una
+independiente, sin conocer las conclusiones de la primera) y un profiling. Sin
+fallos en el arreglo: `fit`, `predict`, `set_in_sample_residuals`, la división
+one-step-ahead y el backtesting dan al estimador los mismos valores en todos
+los casos probados, con los dos pandas (NaN en la `category`, categorías sin
+usar, ordenadas, `Int64` y `uint8`, las cuatro codificaciones, `Pipeline`,
+`TransformedTargetRegressor`, exog en diccionario y en formato largo).
+
+- Corregido tras la revisión:
+  - La nota de versión y el docstring de la clase decían que el `TypeError`
+    que nombra la columna sale siempre. Solo sale con una lista: con `None`
+    salta antes el de `check_exog_dtypes`, que no la nombra y que también
+    rechaza los decimales (medido con texto, decimales, booleanos y fechas).
+  - La frase de `llms-base.txt` y del skill sobre configurar las categóricas
+    en el estimador con `None` pasa a condicional, como en la guía. En
+    `ForecasterRecursive` solo funcionan las posiciones en `fit_kwargs`
+    (medido por la revisión independiente).
+  - Nota en el docstring de `create_predict_X` (la `category` sin gestionar
+    conserva su dtype), que solo estaba en `create_train_X_y`.
+  - Test nuevo
+    `test_create_predict_X_output_when_category_exog_not_in_categorical_features`
+    (`None` y lista): al adaptar el test anterior, lo que dice la nota de
+    versión de `create_predict_X` se había quedado sin test.
+- Resuelto después en la misma rama, a petición de Joaquín (2026-11-27),
+  con los tests antes (14 casos fallaban sin el cambio):
+  - Matrices públicas con una `category` sin gestionar: no reproducían lo
+    que recibe el estimador (LightGBM y CatBoost fallaban y XGBoost
+    difería en silencio). Ahora `create_train_X_y` y `create_predict_X`
+    devuelven la columna con sus valores, como float: una llamada a
+    `_category_columns_to_values` al final de cada uno, sin tocar
+    `_create_train_X_y` ni `exog_dtypes_out_`. Joaquín reconsideró la
+    decisión de no hacerlo solo en multiserie. Los demás forecasters
+    siguen devolviendo `category` (API-public-matrices-none-category).
+    Cambia también la columna en los predictores que devuelve el
+    backtesting (`return_predictors`), que usa `create_predict_X`
+    (deducido del código, sin ejecutar ese caso).
+  - `cat_features` de CatBoost sobre una columna float con decimales (una
+    exog, o un lag): `cast_catboost_categorical_columns_dataframe` lanza
+    un `TypeError` que nombra la columna, en lugar de truncar. Medido en
+    la base: por posición en `fit_kwargs` truncaba en silencio (0,2, 0,4
+    y 0,6 pasaban a 0), por nombre daba un `TypeError` de índices y en el
+    constructor, `CatBoostError`. Aplica a las dos vías. Coste de la
+    comprobación: en torno a 1 ms por columna categórica con 300 000
+    filas y 12 ms con 3 millones (medido sin fijar el núcleo). Límite: si
+    los decimales llegan solo en la exog de `predict`, se siguen
+    truncando (camino de predicción, sin tocar).
+  - `create_predict_X` devolvía NaN donde el estimador recibe un valor que
+    no es una categoría del entrenamiento (la exog de `predict` trae la
+    columna con otras categorías o como entero): la vuelta al dtype
+    `category` de `exog_dtypes_out_` lo perdía, también en la base. Medido
+    en 45 casos (4 codificaciones, `None` y lista, categorías enteras y
+    decimales, exog en diccionario, con un booleano, NaN), igual con los dos
+    pandas: 15 diferían en la base y en la rama, 0 con el arreglo. Arreglo:
+    esas columnas quedan fuera del `astype`, que ya no necesita la llamada a
+    `_category_columns_to_values`; la condición del `astype` no cambia,
+    porque sacarlas también de ella hacía float las columnas enteras (medido).
+    Test: el de las matrices públicas de `create_predict_X`, parametrizado
+    con un valor no visto como `category` y como entero (4 casos que fallaban
+    sin el arreglo). Los demás forecasters tienen el mismo `astype`: anotado
+    en API-public-matrices-none-category. Con backtesting y
+    `return_predictors` no ocurre (la exog sale de un único DataFrame).
+- Riesgos que quedan, sin tocar:
+  - Con CatBoost y categóricas gestionadas (`'auto'` o lista), las dos
+    matrices públicas dan `CatBoostError` al pasarlas al estimador: esas
+    columnas salen como float y CatBoost las quiere enteras. Ya pasa en
+    la base (medido en la base y en la rama).
+  - Tres reglas para una `category` aceptable: la función nueva admite
+    categorías enteras o decimales; `check_exog_dtypes` y la conversión de
+    `predict`, solo enteras. Con lista, decimales y un `pd.NA` en la exog de
+    `predict`: `TypeError` (también en la base). Va con
+    QW-check-exog-dtypes-column-names.
+- Profiling (base y rama en el mismo proceso, bloques alternados, núcleo
+  fijado; Python 3.13.18, numpy 2.5.5, scikit-learn 1.9.1, lightgbm 4.7.0;
+  23 800 y 292 800 filas de entrenamiento, 24 lags, 4 exógenas; script y
+  salidas no versionados):
+  - Sin nada que convertir (sin `category`, o con `'auto'`): la función
+    nueva tarda de 0,1 a 0,7 ms en total, del 0,01 al 0,25 % de `fit`, de la
+    división one-step-ahead (dos llamadas) y de `set_in_sample_residuals`.
+  - Convirtiendo dos columnas `category` (`None`): de 0,8 a 1,7 ms con
+    23 800 filas y de 6 a 12 ms con 292 800; del 0,3 al 0,4 % de `fit` con
+    LightGBM y del 1,2 al 1,4 % con Ridge.
+  - Base frente a rama: diferencias de signo cambiante, dentro del ruido (con
+    pandas 3.1.1, de -4,0 a +3,1 % en los mínimos de la pasada limpia; la
+    primera pasada y la de pandas 2.3.3 tienen bloques con más dispersión).
+  - Salidas tempranas de `cast_catboost_categorical_columns_dataframe`:
+    0,2 µs sin CatBoost y 2,4 µs con CatBoost sin `cat_features` (0,1 µs en
+    la base).
+  - Alternativa medida y descartada: indexar las categorías ya convertidas
+    con los códigos es 2 veces más rápido (1,5 frente a 2,7 ms por columna con
+    300 000 filas; 15 frente a 30 ms con 3 millones), pero ahorra en torno
+    al 0,2 % de un `fit` con LightGBM y al 1 % con Ridge, y solo en la
+    configuración que avisa.
 
 **Para la PR de numpy, después:**
 
@@ -207,6 +364,45 @@ cuatro informes, los diff del arreglo con pandas de cada revisor y sus scripts.
   versión anterior.
 
 ## 5. Verificación
+
+Estado del árbol del arreglo con pandas (`fix/ms-category-exog-values`,
+2026-11-27, Python 3.13.18, numpy 2.5.5, lightgbm 4.7.0, xgboost 3.4.1,
+catboost 1.2.10, scikit-learn 1.9.1):
+
+- `python .claude/skills/verify/affected.py`: 19 ficheros cambiados antes de
+  añadir lo de `dev/`.
+- Lint (ruff 0.17.6): los ficheros cambiados pasan, salvo
+  `skforecast/utils/__init__.py`, con 29 avisos del patrón que ya tenía (28
+  F401 y 1 F403; eran 27 y 1, la exportación nueva suma uno).
+- Tests afectados (carpetas de multiserie, `utils`, y `tests_utils` y
+  `tests_search` de `model_selection`): 3017 passed con pandas 2.3.3; 3014
+  passed y 3 skipped con pandas 3.1.1. Sin ejecutar: las carpetas de los demás
+  forecasters, `preprocessing`, `stats` y el resto de paquetes (las dos
+  funciones cambiadas de `utils` solo las usan multiserie y
+  `model_selection/_utils.py`).
+- `python tools/ai/generate_ai_context_files.py --check`,
+  `python tools/docs/hooks/page_meta.py` y `execute_notebooks.py --check` de
+  `categorical-features.ipynb`: en verde. El notebook no se reejecutó (solo
+  cambian celdas de texto).
+- Tras la revisión final y los dos cambios posteriores (matrices públicas y
+  comprobación de enteros en CatBoost): lint igual; tests afectados, ahora
+  con las carpetas `tests_validation` de `model_selection` y
+  `feature_selection` (usan `create_predict_X` y `create_train_X_y`), 3558
+  passed con pandas 2.3.3, y 3555 passed y 3 skipped con pandas 3.1.1; las
+  tres comprobaciones de documentación y contexto IA, en verde.
+- Antes de los commits de la PR #1548, sobre el árbol con el arreglo de
+  `create_predict_X` para los valores no vistos: lint igual; los mismos
+  tests afectados, 3562 passed con pandas 2.3.3, y 3558 passed, 3 skipped y
+  1 failed con pandas 3.1.1. El fallo es
+  `test_bayesian_search_forecaster_warnings_of_folds_in_processes_with_trials_in_threads`
+  (`ForecasterRecursive` con Ridge; el intermitente que ya tiene fila en el
+  roadmap): repetido solo, 5 de 5. Las tres comprobaciones de documentación
+  y contexto IA, en verde.
+- Tests nuevos frente a la base: 61 casos. Con el código de `0.28.x`
+  (pandas 2.3.3), 43 fallan, los 7 de `test_category_columns_to_values.py`
+  no se pueden importar y 11 pasan (las guardas).
+- No se ha ejecutado la suite completa, ni Linux, macOS o las versiones
+  mínimas de las dependencias.
 
 Estado del árbol de numpy al final de la sesión (2026-11-27):
 
