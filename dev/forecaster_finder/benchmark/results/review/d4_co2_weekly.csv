@@ -1,0 +1,8 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
+co2_weekly,full,472,Seasonal naive,Baseline,3.6979006656425963,0.0060871539999425295,,1.0,1,co2,,"one series, nothing known in advance"
+co2_weekly,full,472,LightGBM [refit],ML,1.9171766186626222,0.49322954899992055,,0.518450005019123,1,co2,,"one series, nothing known in advance"
+co2_weekly,full,472,LightGBM+ [refit],ML,1.7707615832576098,0.8698928919999389,,0.47885590862671235,1,co2,,"one series, nothing known in advance"
+co2_weekly,full,472,LightGBM snippet v2 [refit],ML,1.9871907908737014,0.3178367990000197,,0.5373834968950906,1,co2,,"one series, nothing known in advance"
+co2_weekly,full,472,Chronos-2,Foundation,1.4113630205926906,0.4723572030000014,,0.3816660176152767,1,co2,,"one series, nothing known in advance"
+co2_weekly,full,472,AutoETS,Statistical,2.2871936311814336,0.13251220600000124,,0.6185113765850658,1,co2,,"one series, nothing known in advance"
+co2_weekly,full,472,AutoARIMA,Statistical,1.0019505164464388,74.78437115199995,,0.27095117122956214,1,co2,,"one series, nothing known in advance"

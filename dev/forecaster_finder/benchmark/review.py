@@ -25,6 +25,8 @@ Usage:
     python -I review.py --horizon    # same test period with a horizon 4 times shorter
     python -I review.py --stats      # only the statistical models, replaced in the CSV files
     python -I review.py --snippet    # the ML block of the finder snippets, as written
+    python -I review.py --d4         # the cases of cases_d4.py (more datasets per type of data)
+    python -I review.py --arima      # AutoARIMA (also with exog) in daily, monthly and quarterly series
 """
 
 from __future__ import annotations
@@ -414,6 +416,184 @@ def run_snippet():
             pd.concat([old[old["model"] != label], rows[old.columns]]).to_csv(path, index=False)
 
 
+def snippet_forecaster(case, multi):
+    """ML forecaster of the finder snippets, as finder_tree.py writes it."""
+    import ast
+
+    import finder_tree as tree
+    f = tree.FREQ[{24: "hourly", 7: "daily", 52: "weekly", 12: "monthly", 4: "quarterly"}[case.season]]
+    kwargs = dict(
+        estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),
+        lags=ast.literal_eval(f["lags"]),
+        window_features=RollingFeatures("mean", f["window"]) if f["window"] else None,
+        # Series with artificial dates have no calendar features, as in the main run
+        calendar_features=(CalendarFeatures(features=ast.literal_eval(f["calendar"]))
+                           if case.calendar else None),
+    )
+    if multi:
+        return ForecasterRecursiveMultiSeries(transformer_series=StandardScaler(), **kwargs)
+    return ForecasterRecursive(**kwargs)
+
+
+def run_d4(words):
+    """
+    Cases of cases_d4.py (decision D4: six or more datasets per type of data),
+    with the models that the rules use: seasonal naive, LightGBM refitted,
+    LightGBM+, the LightGBM of the snippets, Chronos-2 small, and AutoETS and
+    AutoARIMA in the series of one season of 24 or less. Full history only.
+    Writes d4_<case>.csv, with the dataset and the kind of known variables.
+    """
+    from cases_d4 import D4_CASES
+    for case, dataset, exog_kind in D4_CASES:
+        if words and not any(w in case.name for w in words):
+            continue
+        print(f"\n=== d4 {case.name}: {case.question}", flush=True)
+        series, exog = case.loader()
+        test_start = len(series) - case.steps * case.n_folds
+        multi = series.shape[1] > 1
+        target = series.columns[0]
+        levels = list(series.columns)
+        use_exog = case.exog_mode == "future"
+        X = exog if use_exog else None
+        data = series if multi else series[target]
+
+        def cv(refit):
+            return TimeSeriesFold(steps=case.steps, initial_train_size=test_start, refit=refit,
+                                  fixed_train_size=False, verbose=False)
+        res = {}
+
+        def timed(name, fn, note=""):
+            t0 = time.perf_counter()
+            try:
+                res[name] = (fn(), time.perf_counter() - t0, note)
+            except Exception as error:
+                print(f"    {name:<32} FAILED: {type(error).__name__}: {str(error)[:120]}", flush=True)
+                return
+            print(f"    {name:<32} {res[name][1]:7.1f} s", flush=True)
+        timed("Seasonal naive", lambda: pd.concat([
+            B.to_long(backtesting_forecaster(
+                ForecasterEquivalentDate(offset=case.season), y=series[col], cv=cv(False),
+                metric="mean_absolute_error", show_progress=False)[1], col)
+            for col in series.columns]))
+        for label, kind in [("LightGBM [refit]", "lgbm"), ("LightGBM+ [refit]", "strong")]:
+            timed(label, lambda kind=kind: backtest_ml(
+                make_ml(case, kind, None, use_exog, multi, test_start, len(levels)), data, X,
+                cv(True), multi, target))
+        timed("LightGBM snippet v2 [refit]", lambda: backtest_ml(
+            snippet_forecaster(case, multi), data, X, cv(True), multi, target))
+        timed("Chronos-2", lambda: B.to_long(backtesting_foundation(
+            chronos("Chronos-2"), series=data, cv=cv(False), exog=X,
+            metric="mean_absolute_error", show_progress=False)[1]).assign(
+                level=lambda d: d["level"] if multi else target))
+        if not multi:
+            stats_models(case, series, cv(False), multi, True, timed)
+        t, _ = tables(res, series, test_start, levels, case.steps)
+        t.insert(0, "history_obs", test_start)
+        t.insert(0, "history", "full")
+        t.insert(0, "case", case.name)
+        t["rel"] = t["MASE"] / t.loc[t.model == "Seasonal naive", "MASE"].iloc[0]
+        t["n_series"] = len(levels)
+        t["dataset"] = dataset
+        t["exog_kind"] = exog_kind
+        t["cell"] = ("several series" if multi else
+                     "one series, known in advance" if use_exog else
+                     "one series, nothing known in advance")
+        t.to_csv(OUT / f"d4_{case.name}.csv", index=False)
+        print(t[["model", "rel", "seconds"]].round(3).to_string(index=False), flush=True)
+
+    # AutoARIMA per series in the quarterly multi-series case of the main run
+    if not words or any(w in "tourism_arima" for w in words):
+        case = next(c for c in B.CASES if c.name == "australia_tourism_quarterly")
+        print("\n=== d4 australia_tourism_quarterly: AutoARIMA per series", flush=True)
+        series, _ = case.loader()
+        test_start = len(series) - case.steps * case.n_folds
+        fold = TimeSeriesFold(steps=case.steps, initial_train_size=test_start, refit=False,
+                              fixed_train_size=False, verbose=False)
+        t0 = time.perf_counter()
+        pred = pd.concat([
+            B.to_long(backtesting_stats(
+                ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=case.season)),
+                y=series[col], cv=fold, metric="mean_absolute_error", show_progress=False,
+                n_jobs=1)[1], col)
+            for col in series.columns])
+        res = {"AutoARIMA": (pred, time.perf_counter() - t0, "one model per series")}
+        t, d = tables(res, series, test_start, list(series.columns), case.steps)
+        for frame in (t, d):
+            frame.insert(0, "history_obs", test_start)
+            frame.insert(0, "history", "full")
+            frame.insert(0, "case", case.name)
+        d = d.groupby(["case", "history", "history_obs", "model", "level"],
+                      as_index=False).agg(mae=("mae", "mean"), scale=("scale", "first"))
+        old = pd.read_csv(OUT / f"{case.name}.csv")
+        t["rel"] = t["MASE"] / old.loc[old.model == "Seasonal naive", "MASE"].iloc[0]
+        t["n_series"] = series.shape[1]
+        pd.concat([old[old.model != "AutoARIMA"], t[old.columns]]).to_csv(
+            OUT / f"{case.name}.csv", index=False)
+        old_d = pd.read_csv(OUT / "detail" / f"{case.name}.csv")
+        pd.concat([old_d[old_d.model != "AutoARIMA"], d.round(6)[old_d.columns]]).to_csv(
+            OUT / "detail" / f"{case.name}.csv", index=False)
+        print(t[["model", "rel", "seconds"]].round(3).to_string(index=False), flush=True)
+
+
+def run_arima():
+    """
+    AutoARIMA in every single-series case with a season of 12 or less (daily,
+    monthly, quarterly), full history: without exog ('AutoARIMA') where it is
+    not measured yet, and with the variables known in advance where there are
+    ('AutoARIMA (exog)'), as on the home page of the documentation. To decide
+    which statistical model the finder shows, and with which frequencies.
+    """
+    from cases_d4 import D4_CASES
+    todo = [(c, OUT / f"{c.name}.csv") for c in B.CASES if c.exog_mode != "past"]
+    todo += [(c, OUT / f"d4_{c.name}.csv") for c, _, _ in D4_CASES]
+    for case, path in todo:
+        if case.season > 12:
+            continue
+        series, exog = case.loader()
+        if series.shape[1] > 1:
+            continue
+        print(f"\n=== arima {case.name}", flush=True)
+        test_start = len(series) - case.steps * case.n_folds
+        target = series.columns[0]
+        y = series[target]
+        fold = TimeSeriesFold(steps=case.steps, initial_train_size=test_start, refit=False,
+                              fixed_train_size=False, verbose=False)
+        old = pd.read_csv(path)
+        full = old[old.history == "full"]
+        res = {}
+        variants = []
+        if not (full.model == "AutoARIMA").any():
+            variants.append(("AutoARIMA", None))
+        if case.exog_mode == "future" and exog is not None:
+            variants.append(("AutoARIMA (exog)", exog))
+        for label, x in variants:
+            t0 = time.perf_counter()
+            try:
+                pred = B.to_long(backtesting_stats(
+                    ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=case.season)),
+                    y=y, exog=x, cv=fold, metric="mean_absolute_error", show_progress=False)[1],
+                    target)
+            except Exception as error:
+                print(f"    {label:<20} FAILED: {type(error).__name__}: {str(error)[:120]}", flush=True)
+                continue
+            res[label] = (pred, time.perf_counter() - t0, "")
+            print(f"    {label:<20} {res[label][1]:7.1f} s", flush=True)
+        if not res:
+            continue
+        t, _ = tables(res, series, test_start, [target], case.steps)
+        naive = full.loc[full.model == "Seasonal naive"].iloc[0]
+        t.insert(0, "history_obs", test_start)
+        t.insert(0, "history", "full")
+        t.insert(0, "case", case.name)
+        t["rel"] = t["MASE"] / naive["MASE"]
+        for c in old.columns:
+            if c not in t:
+                t[c] = naive[c]
+        pd.concat([old[~((old.history == "full") & old.model.isin(res))], t[old.columns]]).to_csv(
+            path, index=False)
+        print(t[["model", "rel", "seconds"]].round(3).to_string(index=False), flush=True)
+
+
 def run_stats():
     """
     Run again only the statistical models and replace their rows in the CSV
@@ -676,9 +856,10 @@ if __name__ == "__main__":
     env["python"] = sys.version.split()[0]
     env["chronos_models"] = CHRONOS
     env["git_commit"] = os.popen("git rev-parse --short HEAD 2>/dev/null").read().strip()
-    name = "environment_stats.json" if "--stats" in sys.argv else "environment.json"
-    partial = any(flag in sys.argv for flag in ("--extra", "--horizon", "--snippet"))
-    if name == "environment_stats.json" or not partial:
+    name = ("environment_stats.json" if "--stats" in sys.argv else
+            "environment_d4.json" if "--d4" in sys.argv else "environment.json")
+    partial = any(flag in sys.argv for flag in ("--extra", "--horizon", "--snippet", "--arima"))
+    if name != "environment.json" or not partial:
         (OUT / name).write_text(json.dumps(env, indent=2))
     print(env, flush=True)
     if "--extra" in sys.argv:
@@ -689,6 +870,10 @@ if __name__ == "__main__":
         run_stats()
     elif "--snippet" in sys.argv:
         run_snippet()
+    elif "--d4" in sys.argv:
+        run_d4(args)
+    elif "--arima" in sys.argv:
+        run_arima()
     else:
         for case in B.CASES:
             if not args or any(w in case.name for w in args):

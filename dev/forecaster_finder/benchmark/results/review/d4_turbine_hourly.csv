@@ -1,0 +1,6 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
+turbine_hourly,full,8928,Seasonal naive,Baseline,3.416419348868522,0.0136916139999812,,1.0,1,turbine_emission,weather,"one series, known in advance"
+turbine_hourly,full,8928,LightGBM [refit],ML,3.461505521383857,4.929005093000001,,1.013196908198716,1,turbine_emission,weather,"one series, known in advance"
+turbine_hourly,full,8928,LightGBM+ [refit],ML,3.1430051906534286,20.38470685300001,,0.9199705509495943,1,turbine_emission,weather,"one series, known in advance"
+turbine_hourly,full,8928,LightGBM snippet v2 [refit],ML,3.4410582391978526,2.931760426999972,,1.0072119045741532,1,turbine_emission,weather,"one series, known in advance"
+turbine_hourly,full,8928,Chronos-2,Foundation,3.173451863945239,11.116936353000028,,0.9288824174925274,1,turbine_emission,weather,"one series, known in advance"

@@ -36,14 +36,15 @@ ROWS = [
     },
     {
         "id": "freq",
-        "text": "How often are the values recorded?",
+        "text": "Your data has one value per...",
+        "hint": "skforecast calls this the frequency of the series.",
         "options": [
-            ("hourly", "Every hour", ""),
-            ("daily", "Every day", ""),
-            ("weekly", "Every week", ""),
-            ("monthly", "Every month", ""),
-            ("quarterly", "Every quarter", ""),
-            ("other", "Something else", "Every 15 minutes, every year..."),
+            ("hourly", "Hour", ""),
+            ("daily", "Day", ""),
+            ("weekly", "Week", ""),
+            ("monthly", "Month", ""),
+            ("quarterly", "Quarter", ""),
+            ("other", "Something else", "15 minutes, a year..."),
         ],
     },
     {
@@ -91,11 +92,34 @@ FM = "foundation"
 LINEUP = {
     FM: ("Chronos-2", "ForecasterFoundation", "Foundation model, no training"),
     ML: ("LightGBM", "{ml_class}", "Machine learning model you can improve and explain"),
-    "stats": ("AutoETS", "ForecasterStats", "Statistical reference"),
+    "stats": ("ARIMA", "ForecasterStats", "Statistical reference, automatic order selection"),
     "baseline": ("Seasonal baseline", "ForecasterEquivalentDate", "{season_text}"),
     "classifier": ("LightGBM classifier", "ForecasterRecursiveClassifier",
                    "Machine learning classifier"),
     "rule": ("Seasonal rule", "y.shift(season)", "The category of the {season_text}"),
+}
+
+INTRO = (
+    "We tested each kind of model on {datasets} public datasets, always with the same "
+    "backtesting, to see where each one works best. Your answers pick a starting point; "
+    "the comparison on your own data decides."
+)
+
+# One plain sentence per result. The figures behind each one are on the section
+# "How we chose these rules"; build.py fails if the results of the study stop
+# supporting a sentence (CHECKS in build.py).
+REASON = {
+    "one-none": "In our tests on single series like yours, Chronos-2 was usually the most "
+                "accurate without any setup, and LightGBM often needed work on its features "
+                "to beat the baseline.",
+    "one-known": "In our tests Chronos-2 was ahead more often, also with variables known in "
+                 "advance, but this is where LightGBM came closest and sometimes won.",
+    "several": "In our tests with several series Chronos-2 was ahead more often, and "
+               "LightGBM won in some datasets.",
+    "stats": "ARIMA is the classic reference for monthly and quarterly data: in our tests it "
+             "often did better than LightGBM out of the box.",
+    "category": "A classifier is the model for categories. In our test it did not clearly "
+                "beat the simple rule, so keep the rule as your baseline.",
 }
 
 NOTES = [
@@ -110,39 +134,35 @@ NOTES = [
 def decide(a: dict) -> dict:
     """
     Leaf for the answers `a`: candidates in order, statistical reference,
-    headline and the key of the evidence shown with it (build.py turns it
-    into figures from the results of the study).
+    headline and the key of the sentence shown with it (REASON; build.py
+    checks each sentence against the results of the study).
 
-    RULES (PLAN.md 6.2; evidence in REVISION.md):
+    RULES (PLAN.md 6.2; evidence in REVISION.md, section 7):
     - A category: classifier and the seasonal rule, by capability.
-    - A number: Chronos-2, LightGBM and the seasonal baseline, always.
-      - One series and nothing known in advance: Chronos-2 first.
-      - One series with variables known in advance, or several series: no
-        favorite.
-    - One monthly or quarterly series: AutoETS as a statistical reference.
+    - A number: Chronos-2 first, then LightGBM, and the seasonal baseline.
+      Chronos-2 had the lower error in most datasets of the three types of
+      data (one series with and without variables known in advance, several
+      series), so the answers change the sentence and the code, not the order.
+    - One monthly or quarterly series: ARIMA as a statistical reference.
     """
     if a["target"] == "category":
         return {
             "leaf": "category", "order": ["classifier"], "stats": False,
             "headline": "Start with a machine learning classifier and compare it with "
                         "a simple rule",
-            "evidence": "category",
         }
     several = a["series"] == "several"
     stats = (not several) and a["freq"] in ("monthly", "quarterly")
-    if several:
-        leaf, order = "several", [FM, ML]
-        headline = "Race Chronos-2 against LightGBM"
-    elif a["extra"] == "yes":
-        leaf, order = "one-known", [ML, FM]
-        headline = "Race LightGBM against Chronos-2"
-    else:
-        leaf, order = "one-none", [FM, ML]
-        headline = "Start with Chronos-2, then try to beat it with LightGBM"
+    leaf = "several" if several else "one-known" if a["extra"] == "yes" else "one-none"
+    headline = "Start with Chronos-2, then try to beat it with LightGBM"
     if stats:
-        headline += ", and keep AutoETS as a statistical reference"
-    return {"leaf": leaf, "order": order, "stats": stats, "headline": headline,
-            "evidence": leaf}
+        headline += ", and keep ARIMA as a reference"
+    return {"leaf": leaf, "order": [FM, ML], "stats": stats, "headline": headline}
+
+
+def reasons(leaf: dict) -> list:
+    """Sentences shown under the headline."""
+    return [REASON[leaf["leaf"]]] + ([REASON["stats"]] if leaf["stats"] else [])
 
 
 def lineup(a: dict, leaf: dict) -> list:
@@ -155,9 +175,7 @@ def lineup(a: dict, leaf: dict) -> list:
     if leaf["leaf"] == "category":
         keys = [("Candidate", "classifier"), ("Baseline", "rule")]
     else:
-        keys = [("Candidate", k) for k in leaf["order"]]
-        if leaf["leaf"] == "one-none":
-            keys = [("First", leaf["order"][0]), ("Challenger", leaf["order"][1])]
+        keys = [("First", leaf["order"][0]), ("Challenger", leaf["order"][1])]
         if leaf["stats"]:
             keys.append(("Reference", "stats"))
         keys.append(("Baseline", "baseline"))
@@ -304,14 +322,17 @@ def render(a: dict, leaf: dict) -> str:
 
     if leaf["stats"]:
         imp["skforecast.recursive"].add("ForecasterStats")
-        imp["skforecast.stats"] = {"Ets"}
+        imp["skforecast.stats"] = {"Arima"}
         imp["skforecast.model_selection"].add("backtesting_stats")
         blocks.append(
-            f"# {n}. Statistical reference: AutoETS\n"
-            f"ets = ForecasterStats(estimator=Ets(m=season))\n"
-            f"metric_ets, _ = backtesting_stats(ets, y=y, cv=cv, metric={metric})"
+            f"# {n}. Statistical reference: ARIMA with automatic order selection\n"
+            f"arima = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=season))\n"
+            f"metric_arima, _ = backtesting_stats(\n"
+            f"    arima, y=y, cv=cv, metric={metric},\n"
+            f"    suppress_warnings=True,  # convergence notices of the orders it tries\n"
+            f")"
         )
-        results.append(("AutoETS", "metric_ets"))
+        results.append(("ARIMA", "metric_arima"))
         n += 1
 
     if several:

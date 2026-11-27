@@ -1,0 +1,18 @@
+{
+  "skforecast": "0.28.0",
+  "numpy": "2.5.5",
+  "pandas": "3.1.1",
+  "sklearn": "1.9.1",
+  "lightgbm": "4.7.0",
+  "torch": "2.15.0+cpu",
+  "numba": "0.68.1",
+  "scipy": "1.18.1",
+  "chronos-forecasting": "2.3.2",
+  "python": "3.12.3",
+  "chronos_models": {
+    "Chronos-2": "autogluon/chronos-2-small",
+    "Chronos-2 base": "amazon/chronos-2",
+    "Chronos-2 synth": "autogluon/chronos-2-synth"
+  },
+  "git_commit": "1ead1bd"
+}

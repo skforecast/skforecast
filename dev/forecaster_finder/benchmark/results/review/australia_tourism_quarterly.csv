@@ -17,3 +17,4 @@ australia_tourism_quarterly,full,68,Chronos-2 base,Foundation,0.8767403965124047
 australia_tourism_quarterly,full,68,Chronos-2 synth,Foundation,0.8800071622672432,5.407923187000051,,0.8596339130759069,304
 australia_tourism_quarterly,full,68,AutoETS,Statistical,0.8793897990041564,39.18283163600063,one model per series,0.8590308425324021,304
 australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],ML,0.9428685814137413,1.4271450790001836,as written by finder_tree.py,0.9210400129798967,304
+australia_tourism_quarterly,full,68,AutoARIMA,Statistical,0.8990895452762312,130.70819534800012,one model per series,0.878274515425741,304

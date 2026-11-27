@@ -10,6 +10,9 @@
   (`5f020a0`), el estudio se volvió a medir con el arreglo y el prototipo del selector está
   reescrito con el diseño propuesto. Lo que cambia respecto al texto de abajo está en la
   sección 6 y en las líneas "Estado" de H3, H4 y H7.**
+- **Tercera pasada (mismo día), tras las respuestas a D1 a D5: estudio ampliado a 26
+  datasets, ARIMA como referencia estadística y un resultado más simple. Está en la sección
+  7 y corrige H2: con más datasets, Chronos-2 va por delante en los tres tipos de datos.**
 - Etiquetas: **[Medido]** ejecutado en esta revisión, **[Código]** verificado leyendo el código
   de skforecast 0.28.0, **[Plausible]** razonado, sin prueba concluyente.
 
@@ -167,6 +170,10 @@ paquete público `skforecast-ai` 0.5.0 de PyPI (leído, no ejecutado). Ver H12.
 - Límite: la celda con variables conocidas a futuro son 2 datasets (`vic_electricity`,
   `bike_sharing`); en `bike_sharing` horario y en `bdg2` (varias series, con temperatura)
   gana Chronos-2. La regla que sale es "sin favorito", no "ML primero".
+- **Estado (tercera pasada)**: corregido por el estudio ampliado. Con 7 y 10 datasets en
+  lugar de 2 y 4, Chronos-2 va por delante también con variables conocidas a futuro (5 de
+  7) y con varias series (8 de 10). El límite que se señalaba aquí era el relevante: la
+  conclusión "sin favorito" no se sostiene. Ver 7.1.
 - Propuesta: las reglas de 3.2. Cada regla lleva en la página su respaldo (ejecuciones y
   datasets), y la débil se presenta como tal.
 
@@ -587,3 +594,76 @@ of 22 runs". Si se quiere el del estudio (300 árboles, `learning_rate=0.05`, 15
 Lo que el prototipo no resuelve: el horizonte y el número de bloques del fragmento no son
 los del estudio (H13 mide que el horizonte no cambia el orden), y la clasificación solo
 tiene un dataset.
+
+## 7. Tercera pasada: estudio ampliado, ARIMA y un resultado más simple
+
+Mismo entorno. Scripts: `cases_d4.py`, `review.py --d4`, `review.py --arima`, `rules.py`.
+Resultados: `results/review/d4_*.csv`, `rules_runs.csv`, `rules_cells.csv`, `rules_stats.csv`.
+
+### 7.1 D4: de 12 a 26 datasets [Medido]
+
+20 casos nuevos, con toda la historia, el mismo protocolo y solo los modelos que usan las
+reglas. Un voto por dataset en cada tipo de datos; LightGBM es el que escribe el fragmento.
+
+| Tipo de datos | Datasets (antes) | Chronos-2 con menos error | LightGBM con más de un 5 % de ventaja | LightGBM peor que el naive | Chronos-2 peor que el naive |
+|:--|--:|--:|--:|--:|--:|
+| Una serie, nada conocido a futuro | 16 (8) | 14 | 0 | 7 | 0 |
+| Una serie, variables conocidas a futuro | 7 (2) | 5 | 1 | 1 | 0 |
+| Varias series | 10 (4) | 8 | 1 | 2 | 0 |
+
+- **Corrige H2 y la tabla de 3.2.** "Sin favorito" con variables conocidas a futuro o con
+  varias series salía de 2 y 4 datasets. Con 7 y 10, Chronos-2 va por delante en 5 y en 8.
+  La regla queda en una sola: Chronos-2 primero y LightGBM como el modelo que se trabaja.
+- Donde LightGBM queda más cerca es con variables conocidas a futuro: gana en
+  `vic_electricity` (4 %) y `h2o_exog` (6 %), y en 3 de los 5 datasets que pierde lo hace por
+  menos de un 10 %.
+- Variables de verdad conocidas (calendario, eventos de M5, las dos de `h2o_exog`): Chronos-2
+  por delante en 1 de 2 datasets. Con meteorología observada: 4 de 5. Sigue siendo la celda
+  con menos datos y con el supuesto más favorable (valores observados como si fueran
+  pronósticos).
+- Frente a `LightGBM+`: 12 de 13, 4 de 7 y 8 de 10.
+- Chronos-2 no queda peor que el naive en ningún dataset (en 1 de 61 ejecuciones).
+
+### 7.2 AutoETS o AutoARIMA como referencia [Medido]
+
+| Frecuencia (una serie) | Datasets | AutoETS con menos error que AutoARIMA | Menos error que Chronos-2 (ETS / ARIMA) | Menos error que LightGBM (ETS / ARIMA) | Peor que el naive con toda la historia (ETS / ARIMA) |
+|:--|--:|--:|:--|:--|:--|
+| Mensual | 6 | 4 | 0 / 1 | 4 / 4 | 1 de 6 / 3 de 6 |
+| Trimestral | 2 | 1 | 1 / 2 | 2 / 2 | 0 / 0 |
+| Semanal | 2 | 0 | 0 / 1 | 1 / 1 | |
+| Diario | 8 | 4 | 0 / 1 | 3 / 2 | |
+
+- 304 series trimestrales, un modelo por serie: AutoETS 0,84 de mediana (mejor que
+  Chronos-2 en el 52 %, 39 s); AutoARIMA 0,86 (50 %, 131 s); Chronos-2 0,88 (2,4 s).
+- **Corrige H7**: el modelo estadístico no "empata con Chronos-2" en mensual (le gana en 0 o
+  1 de 6 datasets; salía de 3 datasets con varias historias cada uno). Lo que el estudio
+  respalda es que supera al LightGBM sin ajustar en 6 de 8 datasets mensuales y
+  trimestrales, y en trimestral sí queda a la altura de Chronos-2.
+- Entre los dos no hay una diferencia clara. A favor de AutoETS: falla menos frente al naive
+  en mensual (1 de 6 frente a 3 de 6) y no emite avisos. A favor de ARIMA: es el modelo de
+  la portada y el más reconocido, y sirve con `m=52`. Decisión del usuario: ARIMA.
+- Costes de ARIMA, medidos: la selección automática emite avisos de convergencia también con
+  datos sintéticos limpios (el fragmento usa `suppress_warnings=True`, como la guía
+  *Comparing forecasting models*), y con las variables conocidas a futuro es errático (mejora
+  en 2 de 5 casos y empeora en 2, hasta 1,56 veces el naive en `vic_electricity`), así que
+  el fragmento lo usa sin ellas.
+
+### 7.3 Las tres dudas del usuario
+
+1. **"How often are the values recorded?"** pasa a "Your data has one value per..." con las
+   opciones Hour, Day, Week, Month, Quarter y Something else, y la pista "skforecast calls
+   this the frequency of the series". Es una frase que se completa, sin la palabra
+   "recorded" ni "frequency" en la pregunta. [Plausible]
+2. **Complejidad**: de acuerdo en simplificar. El resultado ya no enseña fracciones como
+   "lower error in 1 of 2 datasets": una frase fija bajo el título dice que cada tipo de
+   modelo se probó en 26 datasets, cada resultado lleva una frase sin cifras, y las cifras
+   están en "How we chose these rules". Con el estudio ampliado, además, el titular es el
+   mismo en todos los casos de número. Se quitan las tarjetas; las notas van plegadas.
+   Para que la frase no se quede vieja, `build.py` comprueba cada una contra los resultados
+   del estudio y falla si dejan de respaldarla.
+3. **ETS o ARIMA**: ARIMA (7.2).
+
+### 7.4 Estado del prototipo
+
+36 combinaciones, 36 fragmentos, 0 avisos, las 5 frases respaldadas por el estudio, los 18
+tipos de fragmento se ejecutan con su historia mínima. Maqueta: `mock.html`.

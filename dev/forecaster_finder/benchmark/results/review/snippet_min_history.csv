@@ -2,8 +2,8 @@ target,series,freq,min_history,x0.5,x0.75,x1.0,x1.5,passes
 number,one,hourly,336,ValueError: The `window_size` of the forecaster (168) leaves no valid ,ok,ok,ok,True
 number,one,daily,90,ValueError: `initial_train_size` must be greater than the `window_size,ok,ok,ok,True
 number,one,weekly,104,ValueError: The `window_size` of the forecaster (52) leaves no valid `,ok,ok,ok,True
-number,one,monthly,36,ValueError: `initial_train_size` must be greater than the `window_size,UserWarning: Not enough data (15 obs) for 14 parameters. Trying simple,ok,ok,True
-number,one,quarterly,24,ValueError: `initial_train_size` must be greater than the `window_size,UserWarning: Not enough data (10 obs) for 6 parameters. Trying simpler,ok,ok,True
+number,one,monthly,36,ValueError: `initial_train_size` must be greater than the `window_size,ok,ok,ok,True
+number,one,quarterly,24,ValueError: `initial_train_size` must be greater than the `window_size,ok,ok,ok,True
 number,one,other,90,ValueError: `initial_train_size` must be greater than the `window_size,ok,ok,ok,True
 number,several,hourly,336,ValueError: The `window_size` of the forecaster (168) leaves no valid ,ok,ok,ok,True
 number,several,daily,90,ValueError: `initial_train_size` must be greater than the `window_size,ok,ok,ok,True

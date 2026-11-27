@@ -1,0 +1,4 @@
+cell,runs,datasets,Chronos-2 ahead (datasets),ahead by more than 5%,LightGBM ahead by more than 5%,Chronos-2 ahead of study LightGBM,Chronos-2 ahead of LightGBM+,LightGBM >= naive (runs),LightGBM >= naive (datasets),Chronos-2 >= naive (runs),Chronos-2 >= naive (datasets),median Chronos-2,median LightGBM
+"one series, known in advance",16,7,5,4,1,5,4 of 7,1,1,0,0,0.675,0.75
+"one series, nothing known in advance",31,16,14,13,0,14,12 of 13,18,7,1,0,0.695,0.95
+several series,14,10,8,7,1,7,8 of 10,2,2,0,0,0.738,0.898

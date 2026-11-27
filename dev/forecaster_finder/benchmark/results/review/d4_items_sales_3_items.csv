@@ -1,0 +1,6 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
+items_sales_3_items,full,929,Seasonal naive,Baseline,1.1208198006724885,0.01667375300007734,,1.0,3,items_sales,,several series
+items_sales_3_items,full,929,LightGBM [refit],ML,0.9225578960810011,0.9260515459999397,,0.8231099196565489,3,items_sales,,several series
+items_sales_3_items,full,929,LightGBM+ [refit],ML,0.9054187354431328,3.073923516000036,,0.8078182905939779,3,items_sales,,several series
+items_sales_3_items,full,929,LightGBM snippet v2 [refit],ML,0.9202791147251143,0.6782541469999614,,0.8210767816315785,3,items_sales,,several series
+items_sales_3_items,full,929,Chronos-2,Foundation,0.7660998927405925,0.8178681580000102,,0.6835174506026168,3,items_sales,,several series

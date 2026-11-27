@@ -1,0 +1,6 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
+air_quality_8_series,full,9264,Seasonal naive,Baseline,4.341049763161283,0.04542400200000429,,1.0,8,air_quality_valencia,,several series
+air_quality_8_series,full,9264,LightGBM [refit],ML,3.911380674436769,5.824077806000105,,0.9010218467498938,8,air_quality_valencia,,several series
+air_quality_8_series,full,9264,LightGBM+ [refit],ML,3.8847255730005443,23.425522049999927,,0.8948816035160053,8,air_quality_valencia,,several series
+air_quality_8_series,full,9264,LightGBM snippet v2 [refit],ML,3.8252198731348015,3.5270324059999894,,0.8811739283885014,8,air_quality_valencia,,several series
+air_quality_8_series,full,9264,Chronos-2,Foundation,3.535405971872972,11.289979741000025,,0.8144126800560753,8,air_quality_valencia,,several series

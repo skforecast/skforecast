@@ -73,3 +73,4 @@ public_transport_madrid,90,90,LightGBM snippet v2 [refit],ML,0.6420428181614768,
 public_transport_madrid,182,182,LightGBM snippet v2 [refit],ML,0.6378585682161338,0.4271753789998911,as written by finder_tree.py,1.1057770918993521,1
 public_transport_madrid,365,365,LightGBM snippet v2 [refit],ML,0.6307279737943945,0.4844618139995873,as written by finder_tree.py,1.0934156557502135,1
 public_transport_madrid,full,547,LightGBM snippet v2 [refit],ML,0.7388047909435644,0.5086716810001235,as written by finder_tree.py,1.2807751654032256,1
+public_transport_madrid,full,547,AutoARIMA,Statistical,0.918166304959071,0.7922036479999406,,1.591712202623564,1

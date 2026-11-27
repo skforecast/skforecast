@@ -1,0 +1,11 @@
+freq,model,runs,datasets,< Chronos-2 (runs),< Chronos-2 (datasets),< LightGBM (datasets),>= naive (runs),median,median Chronos-2
+daily,ets,18,8,0,0,3,10,1.017,0.683
+daily,arima,8,8,1,1,2,2,0.911,0.67
+daily,arima_exog,4,4,0,0,0,2,1.038,0.64
+monthly,ets,15,6,5,0,4,1,0.852,0.713
+monthly,arima,15,6,4,1,4,5,0.887,0.713
+monthly,arima_exog,1,1,1,1,1,0,0.777,0.832
+quarterly,ets,3,2,2,1,2,0,0.451,0.493
+quarterly,arima,3,2,2,2,2,0,0.352,0.493
+weekly,ets,4,2,1,0,1,3,1.041,0.66
+weekly,arima,2,2,1,1,1,0,0.599,0.487

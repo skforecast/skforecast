@@ -1,0 +1,8 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
+wikipedia_visits,full,2796,Seasonal naive,Baseline,1.6447176309167386,0.005408235000004424,,1.0,1,wikipedia_visits,,"one series, nothing known in advance"
+wikipedia_visits,full,2796,LightGBM [refit],ML,1.6440077973522929,0.8614159080000263,,0.9995684161517439,1,wikipedia_visits,,"one series, nothing known in advance"
+wikipedia_visits,full,2796,LightGBM+ [refit],ML,1.4844117637898808,3.324449862999927,,0.9025328943318338,1,wikipedia_visits,,"one series, nothing known in advance"
+wikipedia_visits,full,2796,LightGBM snippet v2 [refit],ML,1.4333292617444493,0.5660501600000316,,0.871474370312146,1,wikipedia_visits,,"one series, nothing known in advance"
+wikipedia_visits,full,2796,Chronos-2,Foundation,1.1581174130870147,0.64960398300002,,0.7041436118377955,1,wikipedia_visits,,"one series, nothing known in advance"
+wikipedia_visits,full,2796,AutoETS,Statistical,1.4896729064938175,2.811120797000058,,0.9057317064592408,1,wikipedia_visits,,"one series, nothing known in advance"
+wikipedia_visits,full,2796,AutoARIMA,Statistical,1.579330259891692,9.48294730800012,,0.9602440140508491,1,wikipedia_visits,,"one series, nothing known in advance"

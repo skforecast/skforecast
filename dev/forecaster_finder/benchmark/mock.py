@@ -17,6 +17,8 @@ page = {
     "rows": data["rows"],
     "default": data["default"],
     "notes": data["notes"],
+    "intro": data["intro"],
+    "evidence": data["evidence"],
     "min_history": data["min_history"],
     "combos": data["combos"],
     "snippets": {k: v["code"] for k, v in data["snippets"].items()},
@@ -86,14 +88,13 @@ a{color:var(--accent)}
 .opt small{display:block;font-size:.76rem;font-weight:400;opacity:.85}
 .result{min-width:0;display:flex;flex-direction:column;gap:1rem}
 .headline{font-family:var(--display);font-weight:600;font-size:1.35rem;color:var(--heading);text-wrap:balance}
-.lineup{display:grid;grid-template-columns:repeat(auto-fit,minmax(11rem,1fr));gap:.6rem}
-.card{border:1px solid var(--line);border-radius:8px;padding:.6rem .75rem;min-width:0;display:flex;flex-direction:column;gap:.1rem}
-.card .role{font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
-.card .name{font-family:var(--display);font-weight:600;color:var(--heading)}
-.card .cls{font-family:var(--mono);font-size:.85rem;color:var(--ink-2);overflow-wrap:anywhere}
-.card .what{font-size:.82rem;color:var(--ink-2)}
-.why{margin:0;padding-left:1.1rem;font-size:.93rem;display:flex;flex-direction:column;gap:.3rem}
-.why a{white-space:nowrap}
+.reason{display:flex;flex-direction:column;gap:.35rem;font-size:.95rem}
+.models{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;font-size:.85rem;color:var(--ink-2)}
+.models b{font-family:var(--display);font-weight:600;color:var(--heading);border:1px solid var(--line);border-radius:999px;padding:.1rem .6rem}
+details.more{font-size:.86rem;color:var(--ink-2)}
+details.more summary{cursor:pointer;font-weight:600;color:var(--ink)}
+details.more ul{margin:.4rem 0 0;padding-left:1.1rem;display:flex;flex-direction:column;gap:.2rem}
+.caption{font-size:.8rem;color:var(--ink-2)}
 .window{background:var(--code-bg);border:1px solid var(--code-line);border-radius:10px;overflow:hidden;min-width:0}
 .window-bar{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid var(--code-line)}
 .window-bar i{width:10px;height:10px;border-radius:50%;background:#2a3a55;display:block}
@@ -103,12 +104,11 @@ a{color:var(--accent)}
 .window pre{margin:0;padding:14px 16px;font-family:var(--mono);font-size:14px;line-height:1.55;color:var(--code-ink);overflow:auto;max-height:30rem;white-space:pre;tab-size:4}
 .window pre code{background:none;padding:0;border-radius:0;color:inherit;font-size:inherit}
 .tk-k{color:var(--tk-key)}.tk-c{color:var(--tk-cls)}.tk-s{color:var(--tk-str)}.tk-n{color:var(--tk-num)}.tk-m{color:var(--tk-com)}
-.tested{font-size:.82rem;color:var(--good);background:var(--good-soft);border-radius:6px;padding:.35rem .6rem}
+.tested{font-size:.82rem;color:var(--ink-2)}
 .actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
 .btn{font-size:.9rem;font-weight:600;border-radius:8px;padding:.45rem .85rem;border:1px solid var(--line);background:var(--surface);text-decoration:none;color:var(--ink)}
 .btn.primary{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--accent-ink)}
 .status{font-size:.82rem;color:var(--good);min-height:1.2em}
-.notes{margin:0;padding-left:1.1rem;font-size:.86rem;color:var(--ink-2);display:flex;flex-direction:column;gap:.2rem}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:1.1rem 1.25rem;display:flex;flex-direction:column;gap:.7rem}
 .tbl{overflow-x:auto}
 table{border-collapse:collapse;width:100%;font-size:.9rem}
@@ -123,7 +123,7 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
   <header class="intro">
     <div class="eyebrow">skforecast · maqueta del selector · 27 nov 2026</div>
     <h1>Qué vería el usuario en cada caso</h1>
-    <p class="lede">Maqueta del bloque "Build your first comparison" con los datos que genera el prototipo: 36 combinaciones de respuestas, cada una con su titular, sus candidatos, su respaldo medido y el código que se ejecuta sin avisos en cada compilación. El bloque está en inglés, como iría en la documentación. Cambia cualquier opción y el resultado se actualiza.</p>
+    <p class="lede">Maqueta del bloque "Build your first comparison" con los datos que genera el prototipo: 36 combinaciones de respuestas, cada una con su titular, una frase que lo explica y el código que se ejecuta sin avisos en cada compilación. Las cifras del estudio no van en el resultado: viven en la sección "How we chose these rules". El bloque está en inglés, como iría en la documentación. Cambia cualquier opción y el resultado se actualiza.</p>
     <div class="presets" id="presets"><span>Casos de ejemplo:</span></div>
   </header>
 
@@ -132,6 +132,7 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
       <div class="eyebrow">Not sure where to start?</div>
       <h2>Build your first comparison</h2>
       <p class="lede">Pick what describes your data. You get the models to try, what to compare them with and a script that runs as it is.</p>
+      <p class="caption" id="intro"></p>
     </div>
     <form class="rows" id="rows" onsubmit="return false"></form>
     <div class="result" id="result" aria-live="polite"></div>
@@ -143,11 +144,20 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
       <thead><tr><th>Fila</th><th>Cambia la recomendación</th><th>Cambia el código</th></tr></thead>
       <tbody>
         <tr><td>What do you want to forecast?</td><td>Sí: un número lleva a Chronos-2 y LightGBM; una categoría, a un clasificador y una regla estacional</td><td>Clase, métrica y baseline</td></tr>
-        <tr><td>How many time series?</td><td>Sí: con varias series no hay favorito</td><td>Clase multiserie, series escaladas, un baseline por serie</td></tr>
-        <tr><td>How often are the values recorded?</td><td>Solo en mensual y trimestral de una serie: añade AutoETS</td><td>Estación, horizonte, lags, calendario</td></tr>
-        <tr><td>Will you know anything else in advance?</td><td>Sí: con una serie, pasa de "Chronos-2 primero" a "sin favorito"</td><td>Añade <code>exog</code> a los dos candidatos</td></tr>
+        <tr><td>How many time series?</td><td>No: solo la frase que acompaña al titular</td><td>Clase multiserie, series escaladas, un baseline por serie</td></tr>
+        <tr><td>Your data has one value per...</td><td>Solo en mensual y trimestral de una serie: añade ARIMA como referencia</td><td>Estación, horizonte, lags, calendario</td></tr>
+        <tr><td>Will you know anything else in advance?</td><td>No: solo la frase que acompaña al titular</td><td>Añade <code>exog</code> a los dos candidatos</td></tr>
       </tbody>
     </table></div>
+  </section>
+
+  <section class="panel" id="how">
+    <div class="eyebrow">Sección de la página, debajo del bloque</div>
+    <h2>How we chose these rules</h2>
+    <p class="lede" id="how-intro"></p>
+    <div class="tbl"><table id="evidence"><thead><tr><th>Your data</th><th>Datasets</th><th>Chronos-2 had the lower error</th><th>LightGBM had the lower error</th><th>LightGBM did worse than the baseline</th></tr></thead><tbody></tbody></table></div>
+    <p class="caption" id="how-stats"></p>
+    <p class="caption">One configuration per model, not tuned. Chronos-2 is the small model, on CPU. LightGBM uses the settings of the script above. A tuned LightGBM with good features can do better than these figures: that is why it is the model to work on.</p>
   </section>
 
   <section class="panel">
@@ -231,19 +241,16 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     const code = D.snippets[c.snippet];
     el.innerHTML =
       '<div><div class="eyebrow">Your starting point</div><p class="headline">' + esc(c.headline) + "</p></div>" +
-      '<div class="lineup">' + c.lineup.map(k =>
-        '<div class="card"><span class="role">' + esc(k[0]) + '</span><span class="name">' + esc(k[1]) +
-        '</span><span class="cls">' + esc(k[2]) + '</span><span class="what">' + esc(k[3]) + "</span></div>").join("") + "</div>" +
-      '<ul class="why">' + c.why.map(w => "<li>" + esc(w) + "</li>").join("") +
-      '<li>These are starting points, not a ranking: compare them on your own data. See <em>How we chose these rules</em>.</li></ul>' +
+      '<div class="reason">' + c.why.map(w => "<p>" + esc(w) + "</p>").join("") + "</div>" +
+      '<div class="models"><span>The script compares:</span>' + c.lineup.map(k => "<b>" + esc(k[1]) + "</b>").join("") + "</div>" +
       '<div class="window"><div class="window-bar"><i></i><i></i><i></i><span>first_comparison.py</span>' +
       '<button type="button" id="copy-code">Copy</button></div><pre><code>' + highlight(code) + "</code></pre></div>" +
-      '<div class="tested">This script is run on sample data, with warnings treated as errors, every time the docs are built. It needs at least ' +
+      '<div class="tested">Runs as it is: tested on sample data every time the docs are built. Needs at least ' +
       D.min_history[state.freq] + " values" + (state.freq === "other" ? "" : " (" + ({hourly:"2 weeks", daily:"3 months", weekly:"2 years", monthly:"3 years", quarterly:"6 years"}[state.freq]) + ")") + ".</div>" +
       '<div class="actions"><button type="button" class="btn primary" id="copy-prompt">Copy prompt for your AI assistant</button>' +
       '<a class="btn" href="https://ai.skforecast.org/" target="_blank" rel="noopener">Compare models on your own data with skforecast-ai</a>' +
       '<span class="status" id="status" role="status"></span></div>' +
-      '<ul class="notes">' + D.notes.map(n => "<li>" + esc(n).replace(/`([^`]+)`/g, "<code>$1</code>") + "</li>").join("") + "</ul>";
+      '<details class="more"><summary>Good to know</summary><ul>' + D.notes.map(n => "<li>" + esc(n).replace(/`([^`]+)`/g, "<code>$1</code>") + "</li>").join("") + "</ul></details>";
     el.dataset.code = code;
     el.dataset.prompt = c.prompt;
   }
@@ -289,6 +296,15 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
   document.querySelector("#history tbody").innerHTML = D.rows.find(r => r.id === "freq").options
     .filter(o => o[0] !== "other")
     .map(o => "<tr><td>" + esc(o[1]) + '</td><td class="num">' + D.min_history[o[0]] + "</td><td>" + SPAN[o[0]] + "</td></tr>").join("");
+  document.getElementById("intro").textContent = D.intro;
+  document.getElementById("how-intro").textContent = "Each model was run with the same backtesting on " + D.evidence.datasets +
+    " public datasets, with every model using all the data before each test period. Lower error means a lower MASE. One vote per dataset.";
+  document.querySelector("#evidence tbody").innerHTML = D.evidence.table.map(r =>
+    "<tr><td>" + esc(r.data) + '</td><td class="num">' + r.datasets + '</td><td class="num">' + r.chronos_ahead + " of " + r.datasets +
+    '</td><td class="num">' + r.lightgbm_ahead + " of " + r.datasets + '</td><td class="num">' + r.lightgbm_below_baseline + " of " + r.datasets + "</td></tr>").join("");
+  document.getElementById("how-stats").textContent = "Monthly and quarterly single series (" + D.evidence.stats.datasets +
+    " datasets): ARIMA had a lower error than LightGBM in " + D.evidence.stats.arima_ahead_of_lightgbm + " and than Chronos-2 in " +
+    D.evidence.stats.arima_ahead_of_chronos + ".";
   window.addEventListener("hashchange", () => { fromHash(); renderRows(); renderResult(); });
   fromHash(); update();
 })();

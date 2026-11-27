@@ -1,0 +1,8 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
+elnino_monthly,full,672,Seasonal naive,Baseline,1.2050349849918716,0.006066659999987678,,1.0,1,elnino,,"one series, nothing known in advance"
+elnino_monthly,full,672,LightGBM [refit],ML,1.038422708075908,0.5411948790000451,,0.861736564505563,1,elnino,,"one series, nothing known in advance"
+elnino_monthly,full,672,LightGBM+ [refit],ML,0.9281708676927823,0.8902064410000321,,0.7702439176062953,1,elnino,,"one series, nothing known in advance"
+elnino_monthly,full,672,LightGBM snippet v2 [refit],ML,0.9055125954949645,0.36356430199998613,,0.7514409181249394,1,elnino,,"one series, nothing known in advance"
+elnino_monthly,full,672,Chronos-2,Foundation,0.9294667183172792,0.3951637599999458,,0.7713192810941907,1,elnino,,"one series, nothing known in advance"
+elnino_monthly,full,672,AutoETS,Statistical,1.4068645316374142,1.9141264910000473,,1.1674885369796164,1,elnino,,"one series, nothing known in advance"
+elnino_monthly,full,672,AutoARIMA,Statistical,0.946598776318796,8.308589392000044,,0.785536343847462,1,elnino,,"one series, nothing known in advance"

@@ -1,0 +1,9 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
+bdg2_one_building,full,563,Seasonal naive,Baseline,2.580761938346359,0.005890618999956132,,1.0,1,bdg2_daily,weather,"one series, known in advance"
+bdg2_one_building,full,563,LightGBM [refit],ML,1.7525383042292102,0.7486730530000614,,0.6790778638622365,1,bdg2_daily,weather,"one series, known in advance"
+bdg2_one_building,full,563,LightGBM+ [refit],ML,1.786233787844678,1.3520219619999807,,0.6921342729462368,1,bdg2_daily,weather,"one series, known in advance"
+bdg2_one_building,full,563,LightGBM snippet v2 [refit],ML,1.7543779153531958,0.4739883859999736,,0.6797906809170184,1,bdg2_daily,weather,"one series, known in advance"
+bdg2_one_building,full,563,Chronos-2,Foundation,1.6800891183652762,0.5919257909999942,,0.651005074664812,1,bdg2_daily,weather,"one series, known in advance"
+bdg2_one_building,full,563,AutoETS,Statistical,3.7662759567851865,1.7765530419999322,,1.4593658953287467,1,bdg2_daily,weather,"one series, known in advance"
+bdg2_one_building,full,563,AutoARIMA,Statistical,2.8185018212344977,0.9993054130000019,,1.09212003608534,1,bdg2_daily,weather,"one series, known in advance"
+bdg2_one_building,full,563,AutoARIMA (exog),Statistical,2.8183751396629284,0.7143559369999366,,1.092070949197593,1,bdg2_daily,weather,"one series, known in advance"

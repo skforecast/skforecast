@@ -4,8 +4,9 @@ data of the frequency of the answers and write results/review/finder.json
 (rows, results of every combination and snippets): the data of the page.
 
 A snippet fails if it raises an error or any warning: what the user copies
-must run clean. The figures shown with each rule come from the results of the
-study (results/review/recount_runs.csv), not from text written by hand.
+must run clean. The sentence shown with each result is checked against the
+results of the study (rules.py), and the figures of the section "How we chose
+these rules" are computed from them, not written by hand.
 
 Usage:
     python -I build.py
@@ -27,13 +28,9 @@ RES = Path(__file__).parent / "results" / "review"
 LENGTH = {"hourly": 24 * 60, "daily": 730, "weekly": 52 * 5, "monthly": 180, "quarterly": 80,
           "other": 730}
 SEASON = {k: v["season"] for k, v in tree.FREQ.items()}
-FUTURE_EXOG = ["vic_electricity_daily", "bike_sharing_daily", "bike_sharing_hourly"]
-MONTHLY = ["h2o_monthly", "fuel_gasoline_monthly", "expenditures_australia_monthly"]
 # Warnings that depend on the data, not on the snippet: scikit-learn raises
 # this one when a category that is predicted does not appear in a short test
 # period (quarterly data: 8 values).
-# Column of recount_runs.csv with LightGBM as the snippets write it
-ML = "ml_page"
 DATA_WARNINGS = {"UserWarning: y_pred contains classes not in y_true"}
 
 
@@ -79,48 +76,39 @@ def run(code, a, n=None):
 
 
 def evidence():
-    """Sentence with the figures of each rule, from the results of the study."""
-    a = pd.read_csv(RES / "recount_runs.csv")
-    one = a[a.n == 1]
-    known = one[one.case.isin(FUTURE_EXOG)]
-    none = one[~one.case.isin(FUTURE_EXOG)]
-    several = a[a.n > 1]
-
-    def by_dataset(d, full=False):
-        d = d[d.full] if full else d
-        g = d.groupby("dataset")[["fm", ML]].mean()
-        return int((g.fm < g[ML]).sum()), len(g)
-
-    fm_none, n_none = by_dataset(none)
-    lg_known = known.groupby("dataset")[["fm", ML]].mean()
-    fm_sev, n_sev = by_dataset(several, full=True)
-    monthly = a[a.case.isin(MONTHLY)]
+    """
+    Figures of the section "How we chose these rules" and the checks of the
+    sentences shown with each result (finder_tree.REASON), from the results
+    of the study (rules.py). A sentence that the results stop supporting
+    makes the build fail: the rule has to be rewritten.
+    """
+    cells = pd.read_csv(RES / "rules_cells.csv").set_index("cell")
+    runs = pd.read_csv(RES / "rules_runs.csv")
     clf = pd.read_csv(RES / "extra_classification.csv").set_index("model")
-    return {
-        "one-none": (
-            f"In our tests, Chronos-2 had a lower error than LightGBM in {fm_none} of "
-            f"{n_none} datasets of this kind, and LightGBM did worse than the seasonal "
-            f"baseline in {int((none[ML] >= 1).sum())} of {len(none)} runs."),
-        "one-known": (
-            f"No clear winner in our tests: with variables known in advance, LightGBM had "
-            f"a lower error than Chronos-2 in {int((lg_known[ML] < lg_known.fm).sum())} "
-            f"of {len(lg_known)} datasets, and both always beat the seasonal baseline."),
-        "several": (
-            f"No clear winner in our tests: Chronos-2 had a lower error than LightGBM in "
-            f"{fm_sev} of {n_sev} datasets, by small margins, and both always beat the "
-            f"seasonal baseline."),
-        "stats": (
-            f"On monthly data AutoETS matched Chronos-2 (lower error in "
-            f"{int((monthly.ets < monthly.fm).sum())} of {len(monthly)} runs) and never did "
-            f"worse than the seasonal baseline."),
-        "category": (
-            f"On one dataset the classifier was right more often than the rule "
-            f"({clf.loc['LightGBM classifier [refit]', 'accuracy']:.0%} against "
-            f"{clf.loc['Same hour yesterday', 'accuracy']:.0%}), but not on balanced "
-            f"accuracy ({clf.loc['LightGBM classifier [refit]', 'balanced_accuracy']:.2f} "
-            f"against {clf.loc['Same hour yesterday', 'balanced_accuracy']:.2f}): keep the "
-            f"rule as your baseline."),
-    }
+    low = runs[(runs.n_series == 1) & runs.freq.isin(["monthly", "quarterly"])]
+    low = low.groupby("dataset")[["fm", "ml", "arima"]].mean()
+    names = {"one series, nothing known in advance": ("one-none", "One series, nothing known in advance"),
+             "one series, known in advance": ("one-known", "One series, variables known in advance"),
+             "several series": ("several", "Several series")}
+    table, checks = [], {}
+    for cell, (leaf, label) in names.items():
+        c = cells.loc[cell]
+        n, ahead = int(c["datasets"]), int(c["Chronos-2 ahead (datasets)"])
+        worse = int(c["LightGBM >= naive (datasets)"])
+        table.append({"data": label, "datasets": n, "chronos_ahead": ahead,
+                      "lightgbm_ahead": n - ahead, "lightgbm_below_baseline": worse,
+                      "chronos_below_baseline": int(c["Chronos-2 >= naive (datasets)"])})
+        if leaf == "one-none":
+            checks[leaf] = ahead >= 0.75 * n and worse >= 0.25 * n
+        else:
+            checks[leaf] = ahead > 0.5 * n and ahead < n
+    checks["stats"] = (low.arima < low.ml).mean() > 0.5
+    checks["category"] = (clf.loc["LightGBM classifier [refit]", "balanced_accuracy"]
+                          <= clf.loc["Same hour yesterday", "balanced_accuracy"] + 0.02)
+    stats = {"datasets": len(low), "arima_ahead_of_lightgbm": int((low.arima < low.ml).sum()),
+             "arima_ahead_of_chronos": int((low.arima < low.fm).sum())}
+    return {"datasets": int(runs.dataset.nunique()), "table": table, "stats": stats,
+            "checks": checks}
 
 
 def main():
@@ -130,9 +118,8 @@ def main():
         leaf = tree.decide(a)
         code = tree.render(a, leaf)
         key = snippets.setdefault(code, {"id": f"s{len(snippets)}", "answers": a})["id"]
-        why = [facts[leaf["evidence"]]] + ([facts["stats"]] if leaf["stats"] else [])
         combos.append({"answers": a, "leaf": leaf["leaf"], "headline": leaf["headline"],
-                       "lineup": tree.lineup(a, leaf), "why": why,
+                       "lineup": tree.lineup(a, leaf), "why": tree.reasons(leaf),
                        "prompt": tree.prompt(a, leaf), "snippet": key})
 
     print(f"{len(combos)} answer combinations, {len(snippets)} distinct snippets", flush=True)
@@ -147,12 +134,16 @@ def main():
               json.dumps(info["answers"]), flush=True)
 
     failed = [k for k, v in results.items() if v["status"] != "ok"]
+    unsupported = [k for k, ok in facts["checks"].items() if not ok]
+    print(f"sentences not supported by the study: {unsupported}")
     out = {"rows": tree.ROWS, "default": tree.DEFAULT, "notes": tree.NOTES,
+           "intro": tree.INTRO.format(datasets=facts["datasets"]),
+           "evidence": {k: facts[k] for k in ("datasets", "table", "stats")},
            "min_history": {k: v["min_history"] for k, v in tree.FREQ.items()},
            "combos": combos, "snippets": results}
     (RES / "finder.json").write_text(json.dumps(out, indent=1))
     print(f"failed (error or warning): {failed}")
-    return 1 if failed else 0
+    return 1 if failed or unsupported else 0
 
 
 if __name__ == "__main__":

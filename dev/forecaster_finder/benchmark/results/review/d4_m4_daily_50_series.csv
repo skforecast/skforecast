@@ -1,0 +1,6 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
+m4_daily_50_series,full,1088,Seasonal naive,Baseline,3.7281736038687727,0.23581878699997105,,1.0,50,m4_daily,,several series
+m4_daily_50_series,full,1088,LightGBM [refit],ML,3.5348058980374306,2.5457120639999857,,0.9481333954967435,50,m4_daily,,several series
+m4_daily_50_series,full,1088,LightGBM+ [refit],ML,3.739902821070958,4.7899342929999875,,1.0031461027431807,50,m4_daily,,several series
+m4_daily_50_series,full,1088,LightGBM snippet v2 [refit],ML,3.5430410301678235,1.302349626000023,,0.9503422873042084,50,m4_daily,,several series
+m4_daily_50_series,full,1088,Chronos-2,Foundation,3.5420247627644077,3.1939309949999597,,0.9500696960808918,50,m4_daily,,several series

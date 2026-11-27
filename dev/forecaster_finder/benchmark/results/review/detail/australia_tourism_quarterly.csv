@@ -5471,3 +5471,307 @@ australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Yorke Peninsula 
 australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Yorke Peninsula | Holiday,21.6234,32.311607
 australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Yorke Peninsula | Other,3.051148,1.744932
 australia_tourism_quarterly,full,68,LightGBM snippet v2 [refit],Yorke Peninsula | Visiting,9.604149,10.754905
+australia_tourism_quarterly,full,68,AutoARIMA,Adelaide Hills | Business,3.622967,2.911222
+australia_tourism_quarterly,full,68,AutoARIMA,Adelaide Hills | Holiday,6.106981,6.297901
+australia_tourism_quarterly,full,68,AutoARIMA,Adelaide Hills | Other,1.785925,1.299552
+australia_tourism_quarterly,full,68,AutoARIMA,Adelaide Hills | Visiting,8.201361,6.584068
+australia_tourism_quarterly,full,68,AutoARIMA,Adelaide | Business,23.769971,40.769237
+australia_tourism_quarterly,full,68,AutoARIMA,Adelaide | Holiday,26.492537,26.949111
+australia_tourism_quarterly,full,68,AutoARIMA,Adelaide | Other,14.860503,11.961508
+australia_tourism_quarterly,full,68,AutoARIMA,Adelaide | Visiting,27.701569,39.230396
+australia_tourism_quarterly,full,68,AutoARIMA,Alice Springs | Business,10.27506,6.404097
+australia_tourism_quarterly,full,68,AutoARIMA,Alice Springs | Holiday,9.023237,21.08746
+australia_tourism_quarterly,full,68,AutoARIMA,Alice Springs | Other,4.726945,3.241928
+australia_tourism_quarterly,full,68,AutoARIMA,Alice Springs | Visiting,3.612003,4.808121
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's Coral Coast | Business,23.365466,15.190484
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's Coral Coast | Holiday,33.901911,22.101146
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's Coral Coast | Other,7.079859,4.270417
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's Coral Coast | Visiting,9.618806,10.881101
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's Golden Outback | Business,30.194946,18.34099
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's Golden Outback | Holiday,20.809901,16.102546
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's Golden Outback | Other,2.930837,4.919158
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's Golden Outback | Visiting,13.878501,13.423349
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's North West | Business,45.469636,22.867491
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's North West | Holiday,13.857722,29.443609
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's North West | Other,2.384459,3.008453
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's North West | Visiting,8.151687,9.503763
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's South West | Business,32.701611,17.335301
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's South West | Holiday,44.581097,87.316519
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's South West | Other,13.754565,6.607009
+australia_tourism_quarterly,full,68,AutoARIMA,Australia's South West | Visiting,42.706021,27.723984
+australia_tourism_quarterly,full,68,AutoARIMA,Ballarat | Business,9.230284,12.062278
+australia_tourism_quarterly,full,68,AutoARIMA,Ballarat | Holiday,10.824736,14.843572
+australia_tourism_quarterly,full,68,AutoARIMA,Ballarat | Other,6.579623,7.050868
+australia_tourism_quarterly,full,68,AutoARIMA,Ballarat | Visiting,14.19653,19.138326
+australia_tourism_quarterly,full,68,AutoARIMA,Barkly | Business,3.556397,4.328659
+australia_tourism_quarterly,full,68,AutoARIMA,Barkly | Holiday,4.535005,8.205824
+australia_tourism_quarterly,full,68,AutoARIMA,Barkly | Other,0.705127,1.000847
+australia_tourism_quarterly,full,68,AutoARIMA,Barkly | Visiting,3.52111,1.828452
+australia_tourism_quarterly,full,68,AutoARIMA,Barossa | Business,3.37174,4.772985
+australia_tourism_quarterly,full,68,AutoARIMA,Barossa | Holiday,6.028849,12.741725
+australia_tourism_quarterly,full,68,AutoARIMA,Barossa | Other,1.244815,1.609014
+australia_tourism_quarterly,full,68,AutoARIMA,Barossa | Visiting,5.941478,7.256757
+australia_tourism_quarterly,full,68,AutoARIMA,Bendigo Loddon | Business,14.077689,13.401433
+australia_tourism_quarterly,full,68,AutoARIMA,Bendigo Loddon | Holiday,22.564435,17.834257
+australia_tourism_quarterly,full,68,AutoARIMA,Bendigo Loddon | Other,7.687442,7.233904
+australia_tourism_quarterly,full,68,AutoARIMA,Bendigo Loddon | Visiting,19.147616,28.96079
+australia_tourism_quarterly,full,68,AutoARIMA,Blue Mountains | Business,8.344087,13.302844
+australia_tourism_quarterly,full,68,AutoARIMA,Blue Mountains | Holiday,30.971313,26.057901
+australia_tourism_quarterly,full,68,AutoARIMA,Blue Mountains | Other,5.794074,3.845509
+australia_tourism_quarterly,full,68,AutoARIMA,Blue Mountains | Visiting,17.812872,16.19176
+australia_tourism_quarterly,full,68,AutoARIMA,Brisbane | Business,90.803127,76.204749
+australia_tourism_quarterly,full,68,AutoARIMA,Brisbane | Holiday,42.217795,59.380907
+australia_tourism_quarterly,full,68,AutoARIMA,Brisbane | Other,28.656955,31.37997
+australia_tourism_quarterly,full,68,AutoARIMA,Brisbane | Visiting,43.628097,60.497276
+australia_tourism_quarterly,full,68,AutoARIMA,Bundaberg | Business,11.13454,15.773886
+australia_tourism_quarterly,full,68,AutoARIMA,Bundaberg | Holiday,8.563191,18.619926
+australia_tourism_quarterly,full,68,AutoARIMA,Bundaberg | Other,5.047392,6.773803
+australia_tourism_quarterly,full,68,AutoARIMA,Bundaberg | Visiting,16.501528,18.968311
+australia_tourism_quarterly,full,68,AutoARIMA,Canberra | Business,43.849497,42.16986
+australia_tourism_quarterly,full,68,AutoARIMA,Canberra | Holiday,39.632366,40.780764
+australia_tourism_quarterly,full,68,AutoARIMA,Canberra | Other,13.59595,13.219864
+australia_tourism_quarterly,full,68,AutoARIMA,Canberra | Visiting,36.843474,26.930602
+australia_tourism_quarterly,full,68,AutoARIMA,Capital Country | Business,10.231543,15.302514
+australia_tourism_quarterly,full,68,AutoARIMA,Capital Country | Holiday,19.730723,21.6348
+australia_tourism_quarterly,full,68,AutoARIMA,Capital Country | Other,7.697791,6.687232
+australia_tourism_quarterly,full,68,AutoARIMA,Capital Country | Visiting,21.222974,24.312515
+australia_tourism_quarterly,full,68,AutoARIMA,Central Coast | Business,8.417689,11.406407
+australia_tourism_quarterly,full,68,AutoARIMA,Central Coast | Holiday,15.103199,64.458119
+australia_tourism_quarterly,full,68,AutoARIMA,Central Coast | Other,4.607868,5.547739
+australia_tourism_quarterly,full,68,AutoARIMA,Central Coast | Visiting,31.55932,31.856213
+australia_tourism_quarterly,full,68,AutoARIMA,Central Highlands | Business,7.483626,6.473906
+australia_tourism_quarterly,full,68,AutoARIMA,Central Highlands | Holiday,13.666399,18.320451
+australia_tourism_quarterly,full,68,AutoARIMA,Central Highlands | Other,1.749919,2.960617
+australia_tourism_quarterly,full,68,AutoARIMA,Central Highlands | Visiting,7.240901,10.220552
+australia_tourism_quarterly,full,68,AutoARIMA,Central Murray | Business,4.971393,9.634888
+australia_tourism_quarterly,full,68,AutoARIMA,Central Murray | Holiday,19.0473,36.763379
+australia_tourism_quarterly,full,68,AutoARIMA,Central Murray | Other,2.666726,3.767156
+australia_tourism_quarterly,full,68,AutoARIMA,Central Murray | Visiting,13.223133,15.807131
+australia_tourism_quarterly,full,68,AutoARIMA,Central NSW | Business,26.364741,28.218438
+australia_tourism_quarterly,full,68,AutoARIMA,Central NSW | Holiday,19.687401,35.331138
+australia_tourism_quarterly,full,68,AutoARIMA,Central NSW | Other,16.776415,12.854166
+australia_tourism_quarterly,full,68,AutoARIMA,Central NSW | Visiting,33.523583,32.653367
+australia_tourism_quarterly,full,68,AutoARIMA,Central Queensland | Business,33.62672,23.765034
+australia_tourism_quarterly,full,68,AutoARIMA,Central Queensland | Holiday,23.261854,38.86512
+australia_tourism_quarterly,full,68,AutoARIMA,Central Queensland | Other,7.065504,10.906437
+australia_tourism_quarterly,full,68,AutoARIMA,Central Queensland | Visiting,21.833982,26.410052
+australia_tourism_quarterly,full,68,AutoARIMA,Clare Valley | Business,4.044777,4.412815
+australia_tourism_quarterly,full,68,AutoARIMA,Clare Valley | Holiday,8.022335,7.602591
+australia_tourism_quarterly,full,68,AutoARIMA,Clare Valley | Other,1.117336,1.378552
+australia_tourism_quarterly,full,68,AutoARIMA,Clare Valley | Visiting,4.599778,5.939278
+australia_tourism_quarterly,full,68,AutoARIMA,Darling Downs | Business,34.001879,27.442716
+australia_tourism_quarterly,full,68,AutoARIMA,Darling Downs | Holiday,21.434324,33.785827
+australia_tourism_quarterly,full,68,AutoARIMA,Darling Downs | Other,8.319887,11.367656
+australia_tourism_quarterly,full,68,AutoARIMA,Darling Downs | Visiting,31.705007,34.106379
+australia_tourism_quarterly,full,68,AutoARIMA,Darwin | Business,25.721367,15.516656
+australia_tourism_quarterly,full,68,AutoARIMA,Darwin | Holiday,7.706828,37.169477
+australia_tourism_quarterly,full,68,AutoARIMA,Darwin | Other,4.191749,4.244971
+australia_tourism_quarterly,full,68,AutoARIMA,Darwin | Visiting,14.452059,11.77468
+australia_tourism_quarterly,full,68,AutoARIMA,East Coast | Business,3.088996,3.762823
+australia_tourism_quarterly,full,68,AutoARIMA,East Coast | Holiday,17.887873,41.142371
+australia_tourism_quarterly,full,68,AutoARIMA,East Coast | Other,1.301622,1.868168
+australia_tourism_quarterly,full,68,AutoARIMA,East Coast | Visiting,5.145871,4.491463
+australia_tourism_quarterly,full,68,AutoARIMA,Experience Perth | Business,53.209256,41.139351
+australia_tourism_quarterly,full,68,AutoARIMA,Experience Perth | Holiday,37.575329,44.238539
+australia_tourism_quarterly,full,68,AutoARIMA,Experience Perth | Other,13.47542,14.918345
+australia_tourism_quarterly,full,68,AutoARIMA,Experience Perth | Visiting,86.090622,36.813738
+australia_tourism_quarterly,full,68,AutoARIMA,Eyre Peninsula | Business,8.344318,10.931281
+australia_tourism_quarterly,full,68,AutoARIMA,Eyre Peninsula | Holiday,6.856548,13.863333
+australia_tourism_quarterly,full,68,AutoARIMA,Eyre Peninsula | Other,3.610074,2.242638
+australia_tourism_quarterly,full,68,AutoARIMA,Eyre Peninsula | Visiting,8.096675,9.260778
+australia_tourism_quarterly,full,68,AutoARIMA,Fleurieu Peninsula | Business,7.234392,6.086604
+australia_tourism_quarterly,full,68,AutoARIMA,Fleurieu Peninsula | Holiday,17.024828,42.684526
+australia_tourism_quarterly,full,68,AutoARIMA,Fleurieu Peninsula | Other,3.219555,2.597899
+australia_tourism_quarterly,full,68,AutoARIMA,Fleurieu Peninsula | Visiting,14.276901,12.378086
+australia_tourism_quarterly,full,68,AutoARIMA,Flinders Ranges and Outback | Business,15.945988,12.245878
+australia_tourism_quarterly,full,68,AutoARIMA,Flinders Ranges and Outback | Holiday,9.603209,28.442023
+australia_tourism_quarterly,full,68,AutoARIMA,Flinders Ranges and Outback | Other,3.472458,4.146928
+australia_tourism_quarterly,full,68,AutoARIMA,Flinders Ranges and Outback | Visiting,9.650984,10.768581
+australia_tourism_quarterly,full,68,AutoARIMA,Fraser Coast | Business,7.038028,11.85635
+australia_tourism_quarterly,full,68,AutoARIMA,Fraser Coast | Holiday,16.179156,26.495447
+australia_tourism_quarterly,full,68,AutoARIMA,Fraser Coast | Other,3.144666,4.079381
+australia_tourism_quarterly,full,68,AutoARIMA,Fraser Coast | Visiting,9.042636,13.888593
+australia_tourism_quarterly,full,68,AutoARIMA,Geelong and the Bellarine | Business,13.467676,13.668667
+australia_tourism_quarterly,full,68,AutoARIMA,Geelong and the Bellarine | Holiday,28.870234,57.527236
+australia_tourism_quarterly,full,68,AutoARIMA,Geelong and the Bellarine | Other,11.42166,9.198652
+australia_tourism_quarterly,full,68,AutoARIMA,Geelong and the Bellarine | Visiting,29.571763,26.751539
+australia_tourism_quarterly,full,68,AutoARIMA,Gippsland | Business,10.42648,13.13597
+australia_tourism_quarterly,full,68,AutoARIMA,Gippsland | Holiday,32.156371,46.730159
+australia_tourism_quarterly,full,68,AutoARIMA,Gippsland | Other,5.062098,7.199869
+australia_tourism_quarterly,full,68,AutoARIMA,Gippsland | Visiting,23.904591,28.291037
+australia_tourism_quarterly,full,68,AutoARIMA,Gold Coast | Business,20.110555,23.524436
+australia_tourism_quarterly,full,68,AutoARIMA,Gold Coast | Holiday,45.35719,75.954106
+australia_tourism_quarterly,full,68,AutoARIMA,Gold Coast | Other,13.362505,10.791715
+australia_tourism_quarterly,full,68,AutoARIMA,Gold Coast | Visiting,32.4316,43.742935
+australia_tourism_quarterly,full,68,AutoARIMA,Goulburn | Business,12.853248,10.38062
+australia_tourism_quarterly,full,68,AutoARIMA,Goulburn | Holiday,12.996518,12.152907
+australia_tourism_quarterly,full,68,AutoARIMA,Goulburn | Other,6.679675,4.990214
+australia_tourism_quarterly,full,68,AutoARIMA,Goulburn | Visiting,9.801343,16.979256
+australia_tourism_quarterly,full,68,AutoARIMA,Great Ocean Road | Business,20.73821,15.340649
+australia_tourism_quarterly,full,68,AutoARIMA,Great Ocean Road | Holiday,33.717895,141.134496
+australia_tourism_quarterly,full,68,AutoARIMA,Great Ocean Road | Other,5.204104,5.726712
+australia_tourism_quarterly,full,68,AutoARIMA,Great Ocean Road | Visiting,18.483201,29.936551
+australia_tourism_quarterly,full,68,AutoARIMA,High Country | Business,7.533433,13.93256
+australia_tourism_quarterly,full,68,AutoARIMA,High Country | Holiday,45.56412,64.503366
+australia_tourism_quarterly,full,68,AutoARIMA,High Country | Other,3.077732,7.153902
+australia_tourism_quarterly,full,68,AutoARIMA,High Country | Visiting,20.600718,17.950011
+australia_tourism_quarterly,full,68,AutoARIMA,Hobart and the South | Business,11.839465,14.607143
+australia_tourism_quarterly,full,68,AutoARIMA,Hobart and the South | Holiday,26.505464,65.523764
+australia_tourism_quarterly,full,68,AutoARIMA,Hobart and the South | Other,4.596479,5.597749
+australia_tourism_quarterly,full,68,AutoARIMA,Hobart and the South | Visiting,16.782265,18.267475
+australia_tourism_quarterly,full,68,AutoARIMA,Hunter | Business,33.653205,28.016794
+australia_tourism_quarterly,full,68,AutoARIMA,Hunter | Holiday,51.686922,58.193113
+australia_tourism_quarterly,full,68,AutoARIMA,Hunter | Other,9.829231,12.035448
+australia_tourism_quarterly,full,68,AutoARIMA,Hunter | Visiting,55.664248,40.521927
+australia_tourism_quarterly,full,68,AutoARIMA,Kakadu Arnhem | Business,10.272264,7.200537
+australia_tourism_quarterly,full,68,AutoARIMA,Kakadu Arnhem | Holiday,8.200494,20.361176
+australia_tourism_quarterly,full,68,AutoARIMA,Kakadu Arnhem | Other,1.030159,1.677344
+australia_tourism_quarterly,full,68,AutoARIMA,Kakadu Arnhem | Visiting,8.161029,3.861309
+australia_tourism_quarterly,full,68,AutoARIMA,Kangaroo Island | Business,3.375044,2.273677
+australia_tourism_quarterly,full,68,AutoARIMA,Kangaroo Island | Holiday,4.194456,9.845476
+australia_tourism_quarterly,full,68,AutoARIMA,Kangaroo Island | Other,0.384229,0.611544
+australia_tourism_quarterly,full,68,AutoARIMA,Kangaroo Island | Visiting,1.98369,2.866699
+australia_tourism_quarterly,full,68,AutoARIMA,Katherine Daly | Business,13.651967,8.027162
+australia_tourism_quarterly,full,68,AutoARIMA,Katherine Daly | Holiday,7.481003,22.858751
+australia_tourism_quarterly,full,68,AutoARIMA,Katherine Daly | Other,2.274044,2.410908
+australia_tourism_quarterly,full,68,AutoARIMA,Katherine Daly | Visiting,6.807963,5.254213
+australia_tourism_quarterly,full,68,AutoARIMA,Lakes | Business,5.615571,9.430884
+australia_tourism_quarterly,full,68,AutoARIMA,Lakes | Holiday,14.939862,49.264841
+australia_tourism_quarterly,full,68,AutoARIMA,Lakes | Other,6.612345,4.020351
+australia_tourism_quarterly,full,68,AutoARIMA,Lakes | Visiting,11.853107,13.568536
+australia_tourism_quarterly,full,68,AutoARIMA,Lasseter | Business,5.609451,5.367844
+australia_tourism_quarterly,full,68,AutoARIMA,Lasseter | Holiday,15.461176,15.237184
+australia_tourism_quarterly,full,68,AutoARIMA,Lasseter | Other,1.531983,1.408878
+australia_tourism_quarterly,full,68,AutoARIMA,Lasseter | Visiting,1.574614,1.723671
+australia_tourism_quarterly,full,68,AutoARIMA,"Launceston, Tamar and the North | Business",11.140083,11.815504
+australia_tourism_quarterly,full,68,AutoARIMA,"Launceston, Tamar and the North | Holiday",15.775815,41.784392
+australia_tourism_quarterly,full,68,AutoARIMA,"Launceston, Tamar and the North | Other",3.098126,3.871544
+australia_tourism_quarterly,full,68,AutoARIMA,"Launceston, Tamar and the North | Visiting",14.405407,15.735455
+australia_tourism_quarterly,full,68,AutoARIMA,Limestone Coast | Business,9.33212,10.915661
+australia_tourism_quarterly,full,68,AutoARIMA,Limestone Coast | Holiday,12.213836,24.096631
+australia_tourism_quarterly,full,68,AutoARIMA,Limestone Coast | Other,3.283927,2.624565
+australia_tourism_quarterly,full,68,AutoARIMA,Limestone Coast | Visiting,8.723333,12.374663
+australia_tourism_quarterly,full,68,AutoARIMA,MacDonnell | Business,5.443924,4.41816
+australia_tourism_quarterly,full,68,AutoARIMA,MacDonnell | Holiday,5.303987,6.53668
+australia_tourism_quarterly,full,68,AutoARIMA,MacDonnell | Other,0.436669,0.722587
+australia_tourism_quarterly,full,68,AutoARIMA,MacDonnell | Visiting,1.817535,1.50449
+australia_tourism_quarterly,full,68,AutoARIMA,Macedon | Business,7.576605,6.16868
+australia_tourism_quarterly,full,68,AutoARIMA,Macedon | Holiday,9.370955,8.652825
+australia_tourism_quarterly,full,68,AutoARIMA,Macedon | Other,2.207836,2.282773
+australia_tourism_quarterly,full,68,AutoARIMA,Macedon | Visiting,8.292618,12.399605
+australia_tourism_quarterly,full,68,AutoARIMA,Mackay | Business,18.516023,22.989428
+australia_tourism_quarterly,full,68,AutoARIMA,Mackay | Holiday,14.353517,24.795271
+australia_tourism_quarterly,full,68,AutoARIMA,Mackay | Other,7.757516,7.787144
+australia_tourism_quarterly,full,68,AutoARIMA,Mackay | Visiting,10.989439,16.04309
+australia_tourism_quarterly,full,68,AutoARIMA,Mallee | Business,11.177923,15.106431
+australia_tourism_quarterly,full,68,AutoARIMA,Mallee | Holiday,5.480327,18.958684
+australia_tourism_quarterly,full,68,AutoARIMA,Mallee | Other,6.152035,6.165801
+australia_tourism_quarterly,full,68,AutoARIMA,Mallee | Visiting,14.147842,16.199948
+australia_tourism_quarterly,full,68,AutoARIMA,Melbourne East | Business,7.777252,5.644874
+australia_tourism_quarterly,full,68,AutoARIMA,Melbourne East | Holiday,15.989576,13.098081
+australia_tourism_quarterly,full,68,AutoARIMA,Melbourne East | Other,3.579525,4.234405
+australia_tourism_quarterly,full,68,AutoARIMA,Melbourne East | Visiting,19.006577,13.612412
+australia_tourism_quarterly,full,68,AutoARIMA,Melbourne | Business,101.530105,72.730166
+australia_tourism_quarterly,full,68,AutoARIMA,Melbourne | Holiday,54.455268,55.955316
+australia_tourism_quarterly,full,68,AutoARIMA,Melbourne | Other,14.719612,19.765724
+australia_tourism_quarterly,full,68,AutoARIMA,Melbourne | Visiting,61.197545,77.223247
+australia_tourism_quarterly,full,68,AutoARIMA,Murray East | Business,3.474544,5.940831
+australia_tourism_quarterly,full,68,AutoARIMA,Murray East | Holiday,5.221225,6.030895
+australia_tourism_quarterly,full,68,AutoARIMA,Murray East | Other,1.278846,2.314952
+australia_tourism_quarterly,full,68,AutoARIMA,Murray East | Visiting,8.284707,7.761988
+australia_tourism_quarterly,full,68,AutoARIMA,Murraylands | Business,4.764005,7.386005
+australia_tourism_quarterly,full,68,AutoARIMA,Murraylands | Holiday,8.609139,15.004092
+australia_tourism_quarterly,full,68,AutoARIMA,Murraylands | Other,1.728709,2.149538
+australia_tourism_quarterly,full,68,AutoARIMA,Murraylands | Visiting,4.288207,7.161333
+australia_tourism_quarterly,full,68,AutoARIMA,New England North West | Business,22.516893,20.151315
+australia_tourism_quarterly,full,68,AutoARIMA,New England North West | Holiday,16.586478,25.772956
+australia_tourism_quarterly,full,68,AutoARIMA,New England North West | Other,8.373853,10.402799
+australia_tourism_quarterly,full,68,AutoARIMA,New England North West | Visiting,16.154732,20.92596
+australia_tourism_quarterly,full,68,AutoARIMA,North Coast NSW | Business,27.471853,29.508721
+australia_tourism_quarterly,full,68,AutoARIMA,North Coast NSW | Holiday,82.879889,137.940201
+australia_tourism_quarterly,full,68,AutoARIMA,North Coast NSW | Other,21.650727,15.052831
+australia_tourism_quarterly,full,68,AutoARIMA,North Coast NSW | Visiting,48.596417,53.503245
+australia_tourism_quarterly,full,68,AutoARIMA,North West | Business,8.468517,7.583869
+australia_tourism_quarterly,full,68,AutoARIMA,North West | Holiday,12.060254,32.839324
+australia_tourism_quarterly,full,68,AutoARIMA,North West | Other,3.283178,2.906738
+australia_tourism_quarterly,full,68,AutoARIMA,North West | Visiting,10.952812,10.407824
+australia_tourism_quarterly,full,68,AutoARIMA,Northern | Business,26.435741,27.171553
+australia_tourism_quarterly,full,68,AutoARIMA,Northern | Holiday,13.443524,30.931146
+australia_tourism_quarterly,full,68,AutoARIMA,Northern | Other,10.133973,10.176683
+australia_tourism_quarterly,full,68,AutoARIMA,Northern | Visiting,21.495942,24.217475
+australia_tourism_quarterly,full,68,AutoARIMA,Outback NSW | Business,10.053172,14.412733
+australia_tourism_quarterly,full,68,AutoARIMA,Outback NSW | Holiday,8.588297,24.662998
+australia_tourism_quarterly,full,68,AutoARIMA,Outback NSW | Other,3.485681,3.86737
+australia_tourism_quarterly,full,68,AutoARIMA,Outback NSW | Visiting,9.828306,8.182635
+australia_tourism_quarterly,full,68,AutoARIMA,Outback | Business,21.191366,33.103289
+australia_tourism_quarterly,full,68,AutoARIMA,Outback | Holiday,20.078736,31.267305
+australia_tourism_quarterly,full,68,AutoARIMA,Outback | Other,4.037622,5.197256
+australia_tourism_quarterly,full,68,AutoARIMA,Outback | Visiting,9.470504,15.368946
+australia_tourism_quarterly,full,68,AutoARIMA,Peninsula | Business,6.216443,8.959355
+australia_tourism_quarterly,full,68,AutoARIMA,Peninsula | Holiday,32.194887,108.487879
+australia_tourism_quarterly,full,68,AutoARIMA,Peninsula | Other,4.204647,4.870756
+australia_tourism_quarterly,full,68,AutoARIMA,Peninsula | Visiting,18.478834,40.522223
+australia_tourism_quarterly,full,68,AutoARIMA,Phillip Island | Business,4.944017,7.044912
+australia_tourism_quarterly,full,68,AutoARIMA,Phillip Island | Holiday,24.216703,78.760646
+australia_tourism_quarterly,full,68,AutoARIMA,Phillip Island | Other,2.519647,3.953023
+australia_tourism_quarterly,full,68,AutoARIMA,Phillip Island | Visiting,17.809382,16.077857
+australia_tourism_quarterly,full,68,AutoARIMA,Riverina | Business,17.703612,21.785561
+australia_tourism_quarterly,full,68,AutoARIMA,Riverina | Holiday,18.30374,18.34497
+australia_tourism_quarterly,full,68,AutoARIMA,Riverina | Other,7.285887,8.414345
+australia_tourism_quarterly,full,68,AutoARIMA,Riverina | Visiting,12.892043,24.82794
+australia_tourism_quarterly,full,68,AutoARIMA,Riverland | Business,6.480911,5.652989
+australia_tourism_quarterly,full,68,AutoARIMA,Riverland | Holiday,10.920167,13.236366
+australia_tourism_quarterly,full,68,AutoARIMA,Riverland | Other,2.885784,1.916449
+australia_tourism_quarterly,full,68,AutoARIMA,Riverland | Visiting,8.156745,9.52415
+australia_tourism_quarterly,full,68,AutoARIMA,Snowy Mountains | Business,9.252231,10.407427
+australia_tourism_quarterly,full,68,AutoARIMA,Snowy Mountains | Holiday,24.886636,106.644918
+australia_tourism_quarterly,full,68,AutoARIMA,Snowy Mountains | Other,5.210551,5.442533
+australia_tourism_quarterly,full,68,AutoARIMA,Snowy Mountains | Visiting,9.221718,11.932425
+australia_tourism_quarterly,full,68,AutoARIMA,South Coast | Business,15.455243,26.063025
+australia_tourism_quarterly,full,68,AutoARIMA,South Coast | Holiday,53.546622,214.235053
+australia_tourism_quarterly,full,68,AutoARIMA,South Coast | Other,14.3306,9.41583
+australia_tourism_quarterly,full,68,AutoARIMA,South Coast | Visiting,32.616864,52.957375
+australia_tourism_quarterly,full,68,AutoARIMA,Spa Country | Business,2.637454,3.35225
+australia_tourism_quarterly,full,68,AutoARIMA,Spa Country | Holiday,16.654079,14.665885
+australia_tourism_quarterly,full,68,AutoARIMA,Spa Country | Other,2.200109,2.949727
+australia_tourism_quarterly,full,68,AutoARIMA,Spa Country | Visiting,8.060967,8.321788
+australia_tourism_quarterly,full,68,AutoARIMA,Sunshine Coast | Business,14.162614,17.748866
+australia_tourism_quarterly,full,68,AutoARIMA,Sunshine Coast | Holiday,37.088032,77.521176
+australia_tourism_quarterly,full,68,AutoARIMA,Sunshine Coast | Other,7.270621,11.558592
+australia_tourism_quarterly,full,68,AutoARIMA,Sunshine Coast | Visiting,34.038081,33.927156
+australia_tourism_quarterly,full,68,AutoARIMA,Sydney | Business,89.523692,106.025001
+australia_tourism_quarterly,full,68,AutoARIMA,Sydney | Holiday,56.095103,84.933658
+australia_tourism_quarterly,full,68,AutoARIMA,Sydney | Other,26.966053,22.71733
+australia_tourism_quarterly,full,68,AutoARIMA,Sydney | Visiting,78.992194,78.224184
+australia_tourism_quarterly,full,68,AutoARIMA,The Murray | Business,16.449913,17.855704
+australia_tourism_quarterly,full,68,AutoARIMA,The Murray | Holiday,27.053685,27.46231
+australia_tourism_quarterly,full,68,AutoARIMA,The Murray | Other,4.716614,6.374817
+australia_tourism_quarterly,full,68,AutoARIMA,The Murray | Visiting,11.390313,23.100716
+australia_tourism_quarterly,full,68,AutoARIMA,Tropical North Queensland | Business,28.182336,33.795784
+australia_tourism_quarterly,full,68,AutoARIMA,Tropical North Queensland | Holiday,32.317997,69.254401
+australia_tourism_quarterly,full,68,AutoARIMA,Tropical North Queensland | Other,7.443291,10.238167
+australia_tourism_quarterly,full,68,AutoARIMA,Tropical North Queensland | Visiting,24.307359,28.81686
+australia_tourism_quarterly,full,68,AutoARIMA,Upper Yarra | Business,3.957559,4.09382
+australia_tourism_quarterly,full,68,AutoARIMA,Upper Yarra | Holiday,14.962897,18.217677
+australia_tourism_quarterly,full,68,AutoARIMA,Upper Yarra | Other,2.019448,3.30121
+australia_tourism_quarterly,full,68,AutoARIMA,Upper Yarra | Visiting,5.361139,8.144212
+australia_tourism_quarterly,full,68,AutoARIMA,Western Grampians | Business,6.998544,9.748117
+australia_tourism_quarterly,full,68,AutoARIMA,Western Grampians | Holiday,12.986167,11.899332
+australia_tourism_quarterly,full,68,AutoARIMA,Western Grampians | Other,3.800037,2.886733
+australia_tourism_quarterly,full,68,AutoARIMA,Western Grampians | Visiting,9.499695,12.181979
+australia_tourism_quarterly,full,68,AutoARIMA,Whitsundays | Business,10.685521,11.545429
+australia_tourism_quarterly,full,68,AutoARIMA,Whitsundays | Holiday,18.05938,25.627696
+australia_tourism_quarterly,full,68,AutoARIMA,Whitsundays | Other,1.875839,3.54676
+australia_tourism_quarterly,full,68,AutoARIMA,Whitsundays | Visiting,4.511554,10.072934
+australia_tourism_quarterly,full,68,AutoARIMA,Wilderness West | Business,4.38062,3.649205
+australia_tourism_quarterly,full,68,AutoARIMA,Wilderness West | Holiday,7.06641,20.426528
+australia_tourism_quarterly,full,68,AutoARIMA,Wilderness West | Other,0.684769,0.869424
+australia_tourism_quarterly,full,68,AutoARIMA,Wilderness West | Visiting,4.292734,2.70047
+australia_tourism_quarterly,full,68,AutoARIMA,Wimmera | Business,4.038362,6.216777
+australia_tourism_quarterly,full,68,AutoARIMA,Wimmera | Holiday,6.232327,6.856851
+australia_tourism_quarterly,full,68,AutoARIMA,Wimmera | Other,2.687685,1.439502
+australia_tourism_quarterly,full,68,AutoARIMA,Wimmera | Visiting,5.947305,7.92651
+australia_tourism_quarterly,full,68,AutoARIMA,Yorke Peninsula | Business,5.180527,5.408629
+australia_tourism_quarterly,full,68,AutoARIMA,Yorke Peninsula | Holiday,18.072967,32.311607
+australia_tourism_quarterly,full,68,AutoARIMA,Yorke Peninsula | Other,3.093721,1.744932
+australia_tourism_quarterly,full,68,AutoARIMA,Yorke Peninsula | Visiting,10.665601,10.754905

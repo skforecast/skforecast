@@ -1,0 +1,6 @@
+case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
+air_quality_pm25_hourly,full,8928,Seasonal naive,Baseline,3.4597965390487935,0.009117885000023307,,1.0,1,air_quality_valencia,weather,"one series, known in advance"
+air_quality_pm25_hourly,full,8928,LightGBM [refit],ML,3.2077491493531483,4.543315364000023,,0.9271496497406922,1,air_quality_valencia,weather,"one series, known in advance"
+air_quality_pm25_hourly,full,8928,LightGBM+ [refit],ML,3.192637233260808,15.621328203999951,,0.922781787086984,1,air_quality_valencia,weather,"one series, known in advance"
+air_quality_pm25_hourly,full,8928,LightGBM snippet v2 [refit],ML,3.125796850661814,2.6368633370000225,,0.9034626213948389,1,air_quality_valencia,weather,"one series, known in advance"
+air_quality_pm25_hourly,full,8928,Chronos-2,Foundation,2.628072604179705,8.828499662000013,,0.7596032236341402,1,air_quality_valencia,weather,"one series, known in advance"

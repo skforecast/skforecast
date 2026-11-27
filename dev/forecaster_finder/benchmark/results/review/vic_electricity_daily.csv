@@ -91,3 +91,5 @@ vic_electricity_daily,182,182,LightGBM snippet v2 [refit],ML,0.5669835806138706,
 vic_electricity_daily,365,365,LightGBM snippet v2 [refit],ML,0.3475786710991313,0.49623869500010187,as written by finder_tree.py,0.43551271903601935,1
 vic_electricity_daily,730,730,LightGBM snippet v2 [refit],ML,0.315813983787269,0.5863563290004095,as written by finder_tree.py,0.3957118725204039,1
 vic_electricity_daily,full,927,LightGBM snippet v2 [refit],ML,0.31643838996175055,0.525530271000207,as written by finder_tree.py,0.39649424742842515,1
+vic_electricity_daily,full,927,AutoARIMA,Statistical,0.7322442706789061,10.731013851999933,,0.917495001386218,1
+vic_electricity_daily,full,927,AutoARIMA (exog),Statistical,1.2437188893656022,2.820900952000102,,1.5583677603439263,1
