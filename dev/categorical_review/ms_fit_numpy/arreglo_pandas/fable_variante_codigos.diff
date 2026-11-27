@@ -1,0 +1,12 @@
+diff --git a/minimal/skforecast/utils/utils.py b/minimal3/skforecast/utils/utils.py
+index 7f027cb..526c82a 100644
+--- a/minimal/skforecast/utils/utils.py
++++ b/minimal3/skforecast/utils/utils.py
+@@ -901,6 +901,7 @@ def _category_columns_to_values(
+     columns = [
+         col for col, dtype in X_train.dtypes.items()
+         if isinstance(dtype, pd.CategoricalDtype) and col != '_level_skforecast'
++        and not dtype.categories.equals(pd.RangeIndex(len(dtype.categories)))
+     ]
+     if not columns:
+         return X_train

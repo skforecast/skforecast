@@ -1,0 +1,21 @@
+skforecast from: <scratchpad>\base028\skforecast\__init__.py
+{"case": "int exog, LGBM fit_kwargs by name, cf=None", "status": "ok", "mae": 0.407, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "int64"}}
+[LightGBM] [Fatal] Could not find categorical_feature cat in data file
+{"case": "int exog, LGBM constructor name:cat, cf=None", "status": "error", "err": "LightGBMError: Could not find categorical_feature cat in data file"}
+{"case": "int exog, HGB constructor by name, cf=None", "status": "ok", "mae": 0.428, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "int64"}}
+{"case": "int exog, LGBM fit_kwargs by name, cf=None, ordinal_category", "status": "ok", "mae": 0.392, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "int64"}}
+{"case": "int exog, XGB feature_types, cf=None, ordinal_category", "status": "ok", "mae": 0.503, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "int64"}}
+{"case": "per-series categories, LGBM, cf=auto", "status": "error", "err": "TypeError: Exog/s: ['cat'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their internal categories (`series.cat.categories`) differ between series. Pl"}
+{"case": "per-series categories, HGB, cf=auto", "status": "error", "err": "TypeError: Exog/s: ['cat'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their internal categories (`series.cat.categories`) differ between series. Pl"}
+{"case": "per-series categories, LGBM, cf=None", "status": "error", "err": "TypeError: Exog/s: ['cat'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their internal categories (`series.cat.categories`) differ between series. Pl"}
+{"case": "per-series categories, HGB, cf=None", "status": "error", "err": "TypeError: Exog/s: ['cat'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their internal categories (`series.cat.categories`) differ between series. Pl"}
+{"case": "pyarrow float exog, LGBM, cf=auto", "status": "error", "err": "ValueError: pandas dtypes must be int, float or bool.\nFields with bad pandas dtypes: cat: double[pyarrow]"}
+[LightGBM] [Fatal] Do not support special JSON characters in feature name.
+{"case": "exog name with [ ], LGBM", "status": "error", "err": "LightGBMError: Do not support special JSON characters in feature name."}
+{"case": "exog name with [ ], XGB", "status": "error", "err": "ValueError: feature_names must be string, and may not contain [, ] or <"}
+[LightGBM] [Fatal] Do not support special JSON characters in feature name.
+{"case": "series name with [ ], onehot, LGBM", "status": "error", "err": "LightGBMError: Do not support special JSON characters in feature name."}
+{"case": "set_in_sample_residuals == fit residuals, LGBM, cf=None", "status": "ok", "equal": true, "mean_abs_resid": 0.639}
+{"case": "set_in_sample_residuals == fit residuals, XGB, cf=None", "status": "ok", "equal": true, "mean_abs_resid": 0.148}
+{"case": "OneStepAhead vs backtesting steps=1, LGBM, cf=None", "status": "ok", "osa": 0.774, "backtesting": 27.78}
+{"case": "OneStepAhead vs backtesting steps=1, XGB, cf=None", "status": "ok", "osa": 0.892, "backtesting": 41.062}

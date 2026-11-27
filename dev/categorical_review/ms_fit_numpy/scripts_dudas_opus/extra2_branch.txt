@@ -1,0 +1,6 @@
+{"kind": "category", "enc": "ordinal", "cat_features": [5], "status": "ok", "mae": 3.52}
+{"kind": "category", "enc": null, "cat_features": [4], "status": "ok", "mae": 2.283}
+{"kind": "category", "enc": "ordinal_category", "cat_features": [3, 5], "status": "ok", "mae": 4.204}
+{"kind": "int", "enc": "ordinal", "cat_features": [5], "status": "ok", "mae": 3.52}
+{"kind": "int", "enc": null, "cat_features": [4], "status": "ok", "mae": 2.283}
+{"kind": "int", "enc": "ordinal_category", "cat_features": [3, 5], "status": "ok", "mae": 4.204}

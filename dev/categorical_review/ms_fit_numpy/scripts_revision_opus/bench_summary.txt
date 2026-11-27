@@ -1,0 +1,60 @@
+config                           op    base min/med/max (s)       branch min/med/max (s)     ratio(med)
+lgbm/float/ordinal               fit   0.976/1.000/1.026       0.982/0.998/1.013       0.998
+lgbm/float/ordinal               pred  0.017/0.017/0.019       0.017/0.017/0.017       1.000
+lgbm/float/ordinal               bt    1.108/1.140/1.200       1.104/1.146/1.193       1.005
+lgbm/float/ordinal               osa   2.475/2.522/2.595       2.462/2.524/2.866       1.001
+lgbm/mixed/ordinal               fit   1.074/1.107/1.187       1.070/1.078/1.102       0.974
+lgbm/mixed/ordinal               pred  0.018/0.019/0.019       0.018/0.018/0.020       0.987
+lgbm/mixed/ordinal               bt    1.194/1.215/1.247       1.193/1.228/1.247       1.011
+lgbm/mixed/ordinal               osa   2.681/2.725/2.860       2.636/2.676/2.728       0.982
+lgbm/float/ordinal_category      fit   1.030/1.044/1.058       1.023/1.042/1.059       0.997
+lgbm/float/ordinal_category      pred  0.019/0.020/0.020       0.020/0.020/0.021       1.017
+lgbm/float/ordinal_category      bt    1.139/1.161/1.193       1.128/1.158/1.254       0.997
+lgbm/float/ordinal_category      osa   2.512/2.542/2.558       2.478/2.511/2.711       0.988
+ridge/float/ordinal              fit   0.123/0.127/0.130       0.121/0.127/0.127       0.997
+ridge/float/ordinal              pred  0.006/0.006/0.007       0.006/0.006/0.007       0.986
+ridge/float/ordinal              bt    0.475/0.478/0.529       0.474/0.476/0.515       0.997
+ridge/float/ordinal              osa   0.831/0.856/0.890       0.824/0.831/0.881       0.971
+ridge/mixed/ordinal              fit   0.169/0.175/0.176       0.161/0.164/0.166       0.937
+ridge/mixed/ordinal              pred  0.008/0.008/0.008       0.008/0.008/0.008       0.971
+ridge/mixed/ordinal              bt    0.522/0.529/0.578       0.525/0.531/0.579       1.004
+ridge/mixed/ordinal              osa   0.902/0.912/0.956       0.888/0.896/0.937       0.982
+hgb/mixed/ordinal                fit   1.068/1.107/1.166       1.074/1.113/1.261       1.006
+hgb/mixed/ordinal                pred  0.040/0.040/0.041       0.039/0.040/0.043       0.994
+hgb/mixed/ordinal                bt    1.296/1.326/1.356       1.302/1.334/1.515       1.006
+hgb/mixed/ordinal                osa   2.657/2.742/2.803       2.651/2.715/3.070       0.990
+xgb/float/ordinal                fit   0.986/1.002/1.059       0.967/0.981/0.998       0.979
+xgb/float/ordinal                pred  0.015/0.016/0.017       0.015/0.016/0.016       1.002
+xgb/float/ordinal                bt    1.204/1.246/1.352       1.156/1.205/1.245       0.967
+xgb/float/ordinal                osa   2.731/2.783/2.851       2.688/2.740/2.776       0.985
+xgb/mixed/ordinal                fit   1.092/1.102/1.171       1.090/1.124/1.179       1.020
+xgb/mixed/ordinal                pred  0.018/0.019/0.020       0.018/0.019/0.022       0.996
+xgb/mixed/ordinal                bt    1.278/1.327/1.368       1.300/1.336/1.390       1.007
+xgb/mixed/ordinal                osa   2.893/2.994/3.177       2.933/3.046/3.124       1.017
+
+lgbm/float/ordinal               mem_fit_MB  base=[33.43965244293213, 33.437992095947266] branch=[33.441039085388184, 33.435585021972656]
+lgbm/float/ordinal               mem_osa_MB  base=[38.94565677642822, 38.945651054382324] branch=[38.94623374938965, 38.947346687316895]
+lgbm/float/ordinal               peak_ws_MB  base=[266.78515625, 268.52734375] branch=[268.046875, 268.63671875]
+lgbm/mixed/ordinal               mem_fit_MB  base=[54.67106342315674, 54.67068672180176] branch=[56.85119438171387, 56.85156440734863]
+lgbm/mixed/ordinal               mem_osa_MB  base=[50.59542751312256, 50.59556579589844] branch=[52.116018295288086, 52.117727279663086]
+lgbm/mixed/ordinal               peak_ws_MB  base=[303.77734375, 303.49609375] branch=[303.35546875, 303.640625]
+lgbm/float/ordinal_category      mem_fit_MB  base=[49.62006187438965, 49.61977958679199] branch=[51.792372703552246, 51.80030918121338]
+lgbm/float/ordinal_category      mem_osa_MB  base=[45.87245464324951, 45.87263298034668] branch=[48.51724433898926, 48.523497581481934]
+lgbm/float/ordinal_category      peak_ws_MB  base=[291.20703125, 290.1484375] branch=[290.796875, 290.96875]
+ridge/float/ordinal              mem_fit_MB  base=[50.07090377807617, 50.073171615600586] branch=[50.06167793273926, 50.065216064453125]
+ridge/float/ordinal              mem_osa_MB  base=[46.50194835662842, 46.500226974487305] branch=[46.48058605194092, 46.48008918762207]
+ridge/float/ordinal              peak_ws_MB  base=[248.6875, 248.83203125] branch=[249.50390625, 248.078125]
+ridge/mixed/ordinal              mem_fit_MB  base=[80.30714797973633, 80.30867862701416] branch=[80.30240631103516, 80.2972297668457]
+ridge/mixed/ordinal              mem_osa_MB  base=[71.46300220489502, 71.45975112915039] branch=[52.099839210510254, 52.10159397125244]
+ridge/mixed/ordinal              peak_ws_MB  base=[283.5625, 283.3203125] branch=[282.94140625, 284.47265625]
+hgb/mixed/ordinal                mem_fit_MB  base=[91.91782855987549, 91.92161750793457] branch=[117.7277421951294, 117.7273416519165]
+hgb/mixed/ordinal                mem_osa_MB  base=[81.76230430603027, 81.76299095153809] branch=[82.47441864013672, 82.47944927215576]
+hgb/mixed/ordinal                peak_ws_MB  base=[293.2265625, 292.265625] branch=[317.92578125, 318.0234375]
+xgb/float/ordinal                mem_fit_MB  base=[33.43875503540039, 33.436174392700195] branch=[33.43917465209961, 33.438751220703125]
+xgb/float/ordinal                mem_osa_MB  base=[38.94424247741699, 38.94505786895752] branch=[38.945608139038086, 38.94526672363281]
+xgb/float/ordinal                peak_ws_MB  base=[453.2109375, 453.10546875] branch=[453.30859375, 452.25]
+xgb/mixed/ordinal                mem_fit_MB  base=[40.53176307678223, 40.52748394012451] branch=[57.27239990234375, 57.280198097229004]
+xgb/mixed/ordinal                mem_osa_MB  base=[41.40917205810547, 41.40663719177246] branch=[52.12449550628662, 52.12563419342041]
+xgb/mixed/ordinal                peak_ws_MB  base=[462.4765625, 462.3046875] branch=[462.8359375, 462.85546875]
+
+versions: {'py': '3.13.18', 'np': '2.5.5', 'pd': '3.1.1', 'skl': '1.9.1'}

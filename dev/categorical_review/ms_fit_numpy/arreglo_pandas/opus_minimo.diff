@@ -1,0 +1,130 @@
+diff --git a/base028/skforecast/recursive/_forecaster_recursive_multiseries.py b/doubts_b/minimal/skforecast/recursive/_forecaster_recursive_multiseries.py
+index ee7948b..e82c6c6 100644
+--- a/base028/skforecast/recursive/_forecaster_recursive_multiseries.py
++++ b/doubts_b/minimal/skforecast/recursive/_forecaster_recursive_multiseries.py
+@@ -57,6 +57,7 @@ from ..utils import (
+     check_interval,
+     configure_estimator_categorical_features,
+     cast_catboost_categorical_columns_dataframe,
++    _category_exog_to_values,
+     _get_catboost_cat_feature_indices,
+     _is_fitted_catboost,
+     _copy_rows_to_check,
+@@ -2047,6 +2048,9 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
+         X_train_encoding = pd.Series(data=X_train_encoding, index=X_train.index)
+         X_test_encoding = pd.Series(data=X_test_encoding, index=X_test.index)
+ 
++        X_train = _category_exog_to_values(X_train, exclude=['_level_skforecast'])
++        X_test = _category_exog_to_values(X_test, exclude=['_level_skforecast'])
++
+         X_train_features_names_out_ = X_train.columns.to_list()
+         if self.categorical_features is not None:
+             all_categorical_names = (
+@@ -2459,6 +2463,11 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
+             if self.encoding is not None
+             else X_train.drop(columns="_level_skforecast")
+         )
++        # NOTE: A `category` exog column not encoded by the forecaster is
++        # passed with its values, as in `predict`, not with its codes.
++        X_train_estimator = _category_exog_to_values(
++            X_train_estimator, exclude=['_level_skforecast'], warn=True
++        )
+         X_train_features_names_out_ = X_train_estimator.columns.to_list()
+ 
+         if self.categorical_features is not None:
+@@ -4746,6 +4755,10 @@ class ForecasterRecursiveMultiSeries(ForecasterBase):
+         self.in_sample_residuals_by_bin_ = {}
+         y_train = y_train.to_numpy()
+ 
++        X_train_estimator = _category_exog_to_values(
++            X_train_estimator, exclude=['_level_skforecast']
++        )
++
+         # NOTE: Same cast as in `fit`, with the categorical features of the
+         # fitted estimator.
+         cat_indices = _get_catboost_cat_feature_indices(self.estimator)
+diff --git a/base028/skforecast/utils/__init__.py b/doubts_b/minimal/skforecast/utils/__init__.py
+index 38a36b2..fc76436 100644
+--- a/base028/skforecast/utils/__init__.py
++++ b/doubts_b/minimal/skforecast/utils/__init__.py
+@@ -2,6 +2,7 @@ from .utils import *
+ from .utils import (
+     _all_samples_removed_message,
+     _build_predict_function,
++    _category_exog_to_values,
+     _check_differentiation_last_values,
+     _check_in_place_fit,
+     _copy_rows_to_check,
+diff --git a/base028/skforecast/utils/utils.py b/doubts_b/minimal/skforecast/utils/utils.py
+index 5d3585a..f5eb68c 100644
+--- a/base028/skforecast/utils/utils.py
++++ b/doubts_b/minimal/skforecast/utils/utils.py
+@@ -807,6 +807,68 @@ def cast_catboost_categorical_columns(
+     return X
+ 
+ 
++def _category_exog_to_values(
++    X: pd.DataFrame,
++    exclude: list[str] | None = None,
++    warn: bool = False
++) -> pd.DataFrame:
++    """
++    Replace the columns of dtype `category` with integer categories of `X`
++    (except those in `exclude`) by their values as float64, the values the
++    estimator receives in `predict`. A shallow copy is returned if any
++    column is replaced.
++
++    Parameters
++    ----------
++    X : pandas DataFrame
++        Training matrix.
++    exclude : list, default None
++        Columns that are kept as they are.
++    warn : bool, default False
++        If `True`, a `DataTypeWarning` names the replaced columns.
++
++    Returns
++    -------
++    X : pandas DataFrame
++        Training matrix with the replaced columns.
++
++    """
++
++    exclude = set(exclude) if exclude is not None else set()
++    cols = [
++        col for col, dtype in X.dtypes.items()
++        if isinstance(dtype, pd.CategoricalDtype)
++        and col not in exclude
++        and pd.api.types.is_integer_dtype(dtype.categories.dtype)
++    ]
++    if not cols:
++        return X
++
++    if warn:
++        warnings.warn(
++            f"The exogenous variables {cols} have dtype `category` but "
++            f"are not included in `categorical_features`, so the forecaster does "
++            f"not encode them: the estimator receives their values, not their "
++            f"category codes, as numeric columns. To treat them as categorical "
++            f"features, include them in `categorical_features` or use "
++            f"`categorical_features='auto'`.",
++            DataTypeWarning
++        )
++
++    # NOTE: The integer dtype of the categories is kept when there are no
++    # missing values: CatBoost does not accept float values in the
++    # categorical features configured in its constructor.
++    X = X.copy(deep=False)
++    for col in cols:
++        values = X[col]
++        if values.isna().any():
++            X[col] = np.asarray(values, dtype=float)
++        else:
++            X[col] = values.astype(values.cat.categories.dtype)
++
++    return X
++
++
+ def cast_catboost_categorical_columns_dataframe(
+     X: pd.DataFrame,
+     fit_kwargs: dict[str, Any],

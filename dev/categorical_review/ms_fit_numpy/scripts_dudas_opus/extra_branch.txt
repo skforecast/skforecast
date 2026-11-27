@@ -1,0 +1,18 @@
+skforecast from: <repo>\skforecast\__init__.py
+{"case": "int exog, LGBM fit_kwargs by name, cf=None", "status": "ok", "mae": 0.407, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "int64"}}
+{"case": "int exog, LGBM constructor name:cat, cf=None", "status": "ok", "mae": 0.399, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "int64"}}
+{"case": "int exog, HGB constructor by name, cf=None", "status": "ok", "mae": 0.428, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "int64"}}
+{"case": "int exog, LGBM fit_kwargs by name, cf=None, ordinal_category", "status": "ok", "mae": 0.392, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "int64"}}
+{"case": "int exog, XGB feature_types, cf=None, ordinal_category", "status": "ok", "mae": 0.478, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "int64"}}
+{"case": "per-series categories, LGBM, cf=auto", "status": "error", "err": "TypeError: Exog/s: ['cat'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their internal categories (`series.cat.categories`) differ between series. Pl"}
+{"case": "per-series categories, HGB, cf=auto", "status": "error", "err": "TypeError: Exog/s: ['cat'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their internal categories (`series.cat.categories`) differ between series. Pl"}
+{"case": "per-series categories, LGBM, cf=None", "status": "error", "err": "TypeError: Exog/s: ['cat'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their internal categories (`series.cat.categories`) differ between series. Pl"}
+{"case": "per-series categories, HGB, cf=None", "status": "error", "err": "TypeError: Exog/s: ['cat'] have different dtypes in different series. If any of these variables are categorical, note that this error can also occur when their internal categories (`series.cat.categories`) differ between series. Pl"}
+{"case": "pyarrow float exog, LGBM, cf=auto", "status": "ok", "mae": 0.393, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat": "double[pyarrow]"}}
+{"case": "exog name with [ ], LGBM", "status": "ok", "mae": 0.389, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat[1]": "float64"}}
+{"case": "exog name with [ ], XGB", "status": "ok", "mae": 0.497, "warnings": [], "exog_dtypes_out_": {"num": "float64", "cat<1>": "float64"}}
+{"case": "series name with [ ], onehot, LGBM", "status": "error", "err": "KeyError: 'a'"}
+{"case": "set_in_sample_residuals == fit residuals, LGBM, cf=None", "status": "ok", "equal": true, "mean_abs_resid": 0.637}
+{"case": "set_in_sample_residuals == fit residuals, XGB, cf=None", "status": "ok", "equal": true, "mean_abs_resid": 0.168}
+{"case": "OneStepAhead vs backtesting steps=1, LGBM, cf=None", "status": "ok", "osa": 0.77, "backtesting": 0.77}
+{"case": "OneStepAhead vs backtesting steps=1, XGB, cf=None", "status": "ok", "osa": 0.851, "backtesting": 0.851}
