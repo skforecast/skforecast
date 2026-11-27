@@ -342,27 +342,36 @@ cada respuesta, y el bloque que cambia se ilumina un momento:
 
 - Sin respuestas: tres bloques vacíos y "Answer the first question to see which models to
   try", con el contador "0 of 4 answered".
-- Tras la primera: el titular y los bloques, uno por modelo, con su papel (First,
-  Challenger, Reference, Baseline), el nombre, la clase de skforecast, una línea de para
-  qué sirve y el enlace a su guía de usuario.
-- "How many time series?" resuelve la clase de LightGBM (`ForecasterRecursive` o
-  `ForecasterRecursiveMultiSeries`); la frecuencia dice qué repite el baseline y, en mensual
-  y trimestral de una serie, añade el bloque de ARIMA; "Yes" a la cuarta pone la etiqueta
-  "uses your known variables" en los modelos que las usan.
+- Tras la primera: el titular y los bloques. **Cada bloque lo encabeza su forecaster**
+  (skforecast proporciona forecasters, no modelos), en la letra más grande del bloque;
+  debajo, el modelo que envuelve ("with Chronos-2"), una línea de para qué sirve y el
+  enlace a la guía de usuario del forecaster. Encima, su papel (First, Challenger,
+  Reference, Baseline).
+- Mientras no se sabe cuántas series hay, el bloque de LightGBM enseña sus dos forecasters
+  posibles (`ForecasterRecursive`, one series, o `ForecasterRecursiveMultiSeries`, several
+  series), cada uno con su guía; "How many time series?" deja el que corresponde. La
+  frecuencia dice qué repite el baseline y, en mensual y trimestral de una serie, añade el
+  bloque de ARIMA; "Yes" a la cuarta pone la etiqueta "uses your known variables".
 - Con todas: la frase de 6.2 y el enlace a "How we chose these rules".
 
 Los estados parciales (105) los genera `finder_tree.blocks()`: la página no repite las
 reglas.
 
-**2. Script.** Mientras faltan respuestas, la ventana de código se ve con una sola línea:
-"# Your script appears here when you answer the 2 questions left." Al completarlas:
+**2. Script.** La ventana de código se rellena poco a poco. Mientras faltan respuestas
+muestra, como comentarios, la línea "# Your script appears here when you answer the 2
+questions left." y un esquema de lo ya decidido ("# 1. Chronos-2 (ForecasterFoundation)"...).
+Al completarlas, las líneas del script entran una tras otra (menos de un segundo, y sin
+animación si el usuario la tiene desactivada). Si después se cambia una respuesta, solo se
+iluminan las líneas que cambian. No se enseña código a medias que se pueda copiar. Con el
+script completo:
 
 1. "What the script does", en tres líneas.
 2. La ventana de código, con los imports plegados ("imports (16 lines)") y el botón Copy.
 3. "Runs as it is: tested on sample data every time the docs are built. Needs at least N
    values".
 4. Dos botones: "Copy script" y "Run it in Google Colab".
-5. Plegado: "Using an AI assistant?" (copia el script con instrucciones) y "Good to know".
+5. Plegado, en este orden: "Let skforecast-ai compare more models for you", "Using an AI
+   assistant?" y "Good to know".
 
 **Google Colab**: un único notebook con dos celdas, la de instalación y otra vacía con
 "Paste your script here". El botón copia el script **con un bloque de datos de ejemplo
@@ -372,12 +381,27 @@ mismos con los que CI ejecuta cada script (en un espacio de nombres vacío, como
 notebook nuevo). El notebook lo escribe `build.py` (`results/review/first_comparison.ipynb`);
 el enlace solo funciona cuando esté en una rama pública.
 
-**Prompt**: acción secundaria. Incluye el script probado y le dice al asistente que pida
-antes una muestra de los datos, que cambie solo la carga de datos y los valores de ejemplo, y
-que no toque los modelos hasta que el script se ejecute.
+**skforecast-ai** (plegado, solo en los casos de número): unas líneas que continúan el
+script, con los mismos datos y el mismo `cv`:
+`ForecastingAssistant().compare(data=y, cv=cv)` y `print(result.results)`. El texto dice
+que es un paquete aparte, que elige la configuración de cada modelo a partir de los datos y
+prueba más, y que su clasificación puede diferir. No hace falta que sus reglas coincidan
+con las del selector. Comprobado con `python -I build.py --ai` en un entorno aparte
+(skforecast-ai 0.5.0, skforecast 0.27.0, pandas 2.3.3): los 24 casos se ejecutan; con datos
+horarios lleva `confirm_cost=True`. skforecast-ai no predice categorías: ahí no aparece.
 
-**skforecast-ai** no aparece en el resultado: es un producto más amplio y esto es un primer
-paso. Queda como un enlace más en los siguientes pasos de la página.
+**Asistentes de IA** (plegado), dos caminos según el asistente:
+
+- Si admite MCP (Claude Code, Cursor, VS Code, Codex, Claude Desktop): conectar el servidor
+  MCP de skforecast-ai (enlace a su guía) y enviarle un mensaje en lenguaje natural que el
+  selector redacta con las respuestas, por ejemplo "Compare forecasting models for the next
+  14 days of the column sales of data/my_data.csv, against a seasonal naive baseline, and
+  show me the script of the best one." Es el camino preferente: el agente llama a
+  herramientas deterministas y devuelve el script que se ejecutó.
+- Si no lo admite (un chat sin herramientas): "Copy script as a prompt", que incluye el
+  script probado y le dice al asistente que pida antes una muestra de los datos, que cambie
+  solo la carga de datos y los valores de ejemplo, y que no toque los forecasters hasta que
+  el script se ejecute.
 
 Además: enlace compartible con las respuestas en el `#` (solo con las respuestas completas);
 debajo del bloque, "How we chose these rules"; sin JavaScript se ve la página estática
@@ -459,8 +483,11 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
    una serie y sin exógenas.
 9. El resultado no enseña cifras: una frase por caso, comprobada contra el estudio, y las
    cifras en "How we chose these rules".
-   El prompt es una acción secundaria e incluye el script. skforecast-ai no va en el
-   resultado.
+   Debajo del script, plegados: skforecast-ai (unas líneas que continúan el script) y los
+   asistentes de IA (servidor MCP de skforecast-ai si el asistente lo admite; si no, el
+   script como prompt).
+16. **D7**: nada elegido al llegar; el recuadro de respuesta se rellena con cada clic, con
+    el forecaster como titular de cada bloque, y el script aparece al completar.
 10. Estudio de referencia: el de protocolo justo. Cifras por dataset, nunca "frente a la
     mejor variante de ML".
 11. Requisitos del fragmento de 6.3.
@@ -477,7 +504,6 @@ Propuestas ya montadas en la maqueta, pendientes de confirmar:
 
 | ID | Decisión | Opciones | Recomendación |
 |:--|:--|:--|:--|
-| D7 | Qué se ve antes de contestar | (a) nada elegido: recuadro de respuesta que se rellena y ventana de código con una línea de espera; (b) ventana de código vacía del todo; (c) una selección por defecto con el script ya visible | (a). Quita la carga inicial y hace visible lo que aporta cada respuesta. Coste: cuatro clics antes de ver el script |
 | D8 | Google Colab | (a) un notebook con "Paste your script here" y el script copiado con datos de ejemplo; (b) un notebook generado por combinación (36); (c) sin Colab | (a). Un clic y un pegado, sin notebooks que mantener, y lo pegado es lo que prueba CI |
 
 ### 7.3 Fases

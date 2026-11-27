@@ -11,6 +11,7 @@ these rules" are computed from them, not written by hand.
 
 Usage:
     python -I build.py
+    python -I build.py --ai    # also the lines of skforecast-ai (needs that package)
 """
 import json
 import sys
@@ -31,15 +32,16 @@ RES = Path(__file__).parent / "results" / "review"
 DATA_WARNINGS = {"UserWarning: y_pred contains classes not in y_true"}
 
 
-def run(code, a, n=None):
+def run(code, a, n=None, after=""):
     """
     Run a snippet after its sample data block (finder_tree.sample_block), in
-    an empty namespace, as in a new notebook. Returns (error, warnings).
+    an empty namespace, as in a new notebook, followed by `after` (the lines
+    of skforecast-ai, which continue the script). Returns (error, warnings).
     """
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         try:
-            exec(compile(tree.sample_block(a, n) + "\n" + code, "snippet", "exec"), {})
+            exec(compile(tree.sample_block(a, n) + "\n" + code + "\n" + after, "snippet", "exec"), {})
             error = None
         except Exception:
             error = traceback.format_exc(limit=2).strip().splitlines()[-1][:200]
@@ -124,7 +126,8 @@ def main():
         sid = snippets.setdefault(code, {"id": f"s{len(snippets)}", "answers": a})["id"]
         combos.append({"key": key(a), "answers": a, "leaf": leaf["leaf"],
                        "why": tree.reasons(leaf), "prompt": tree.prompt(a, leaf, code),
-                       "sample": tree.sample_block(a), "snippet": sid})
+                       "sample": tree.sample_block(a), "snippet": sid,
+                       "skforecast_ai": tree.ai_snippet(a), "agent": tree.agent_message(a)})
     partial = {key(a): tree.blocks(a) for a in tree.all_partial_answers()}
 
     print(f"{len(combos)} answer combinations, {len(snippets)} distinct snippets", flush=True)
@@ -139,6 +142,33 @@ def main():
               json.dumps(info["answers"]), flush=True)
 
     failed = [k for k, v in results.items() if v["status"] != "ok"]
+
+    # The lines of skforecast-ai need that package, which is not a dependency
+    # of skforecast: they are run with `--ai`, in an environment that has it.
+    if "--ai" in sys.argv:
+        import importlib.metadata as md
+        ai_failed = []
+        for code, info in snippets.items():
+            after = tree.ai_snippet(info["answers"])
+            if after is None:
+                continue
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                try:
+                    exec(compile(tree.sample_block(info["answers"]) + "\n" + code + "\n" + after,
+                                 "snippet", "exec"), {})
+                    status = "ok"
+                except Exception:
+                    status = traceback.format_exc(limit=2).strip().splitlines()[-1][:200]
+                    ai_failed.append(info["id"])
+            print("skforecast-ai", info["id"], status, json.dumps(info["answers"]), flush=True)
+        versions = {p: md.version(p) for p in ("skforecast-ai", "skforecast", "pandas")}
+        (RES / "skforecast_ai_check.json").write_text(json.dumps(
+            {"versions": versions, "snippets": sum(tree.ai_snippet(i["answers"]) is not None
+                                                   for i in snippets.values()),
+             "failed": ai_failed}, indent=1))
+        print(f"skforecast-ai lines failed: {ai_failed} ({versions})")
+        failed += ai_failed
     unsupported = [k for k, ok in facts["checks"].items() if not ok]
     print(f"sentences not supported by the study: {unsupported}")
     (RES / "first_comparison.ipynb").write_text(json.dumps(notebook(), indent=1))

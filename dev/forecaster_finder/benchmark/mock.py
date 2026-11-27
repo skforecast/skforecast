@@ -25,7 +25,8 @@ page = {
     "min_history": data["min_history"],
     # The prompt is rebuilt in the page: its text, then the script
     "combos": {c["key"]: {"why": c["why"], "snippet": c["snippet"], "sample": c["sample"],
-                          "prompt": c["prompt"].split("```python")[0]}
+                          "prompt": c["prompt"].split("```python")[0],
+                          "skforecast_ai": c["skforecast_ai"], "agent": c["agent"]}
                for c in data["combos"]},
     "snippets": {k: v["code"] for k, v in data["snippets"].items()},
 }
@@ -113,12 +114,14 @@ a{color:var(--accent)}
   display:flex;flex-direction:column;gap:.15rem}
 .block.empty{border-style:dashed;background:transparent;color:var(--stage-muted);min-height:5.2rem;justify-content:center;align-items:center;font-size:.85rem}
 .block .role{font-size:.68rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--accent-fill)}
-.block .name{font-family:var(--display);font-weight:600;font-size:1.05rem;color:#fff}
-.block .cls{font-family:var(--mono);font-size:.86rem;color:var(--tk-cls);overflow-wrap:anywhere}
-.block .cls.pending{color:var(--stage-muted);font-family:var(--body);font-size:.8rem;font-style:italic}
+.block .fc{font-family:var(--mono);font-weight:700;font-size:1.05rem;line-height:1.25;color:#fff;overflow-wrap:break-word}
+.block .fc small{display:block;font-family:var(--body);font-weight:400;font-size:.74rem;color:var(--stage-muted)}
+.block .or{font-size:.74rem;color:var(--stage-muted)}
+.block .model{font-family:var(--display);font-weight:600;font-size:.9rem;color:var(--tk-cls)}
 .block .what{font-size:.8rem;color:var(--stage-muted)}
 .block .tag{align-self:flex-start;font-size:.7rem;border:1px solid var(--stage-line);border-radius:999px;padding:0 .45rem;color:var(--stage-ink)}
-.block a{font-size:.8rem;color:var(--accent-fill);margin-top:.15rem}
+.block .guides{display:flex;flex-direction:column;gap:.1rem;margin-top:.2rem}
+.block a{font-size:.8rem;color:var(--accent-fill)}
 .block.flash{animation:flash 1.1s ease-out}
 @keyframes flash{0%{border-color:var(--accent-fill);box-shadow:0 0 0 3px rgba(247,153,57,.45)}100%{border-color:var(--stage-line);box-shadow:0 0 0 0 rgba(247,153,57,0)}}
 .answer .why{font-size:.92rem;color:var(--stage-ink);display:flex;flex-direction:column;gap:.3rem}
@@ -140,6 +143,16 @@ a{color:var(--accent)}
   color:var(--code-dim);font:13px var(--mono);padding:6px 16px}
 .window .fold:hover{color:#fff}
 .window .waiting{color:var(--code-dim);min-height:6.5rem}
+.window .ln{display:inline-block;min-width:100%}
+.window .ln.reveal{opacity:0;animation:reveal .25s ease-out forwards}
+.window .ln.changed{animation:changed 1.6s ease-out}
+@keyframes reveal{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
+@keyframes changed{0%{background:rgba(247,153,57,.35)}100%{background:transparent}}
+.mini{background:var(--code-bg);border:1px solid var(--code-line);border-radius:8px;padding:10px 12px;margin:0;font-family:var(--mono);font-size:13px;line-height:1.5;color:var(--code-ink);overflow:auto;white-space:pre}
+.mini code{background:none;padding:0;color:inherit;font-size:inherit}
+.say{background:var(--soft);border-radius:8px;padding:.5rem .7rem;font-size:.9rem;color:var(--ink)}
+.opt2{display:flex;flex-direction:column;gap:.35rem}
+.opt2 b{color:var(--ink)}
 .tk-k{color:var(--tk-key)}.tk-c{color:var(--tk-cls)}.tk-s{color:var(--tk-str)}.tk-n{color:var(--tk-num)}.tk-m{color:var(--tk-com)}
 .actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
 .btn{font-size:.9rem;font-weight:600;border-radius:8px;padding:.45rem .85rem;border:1px solid var(--line);background:var(--surface);text-decoration:none;color:var(--ink)}
@@ -195,8 +208,8 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     <div class="tbl"><table>
       <thead><tr><th>Fila</th><th>En el recuadro de respuesta</th><th>En el script</th></tr></thead>
       <tbody>
-        <tr><td>What do you want to forecast?</td><td>Aparecen el titular y los bloques: Chronos-2, LightGBM y baseline, o clasificador y regla</td><td>Clase, métrica y baseline</td></tr>
-        <tr><td>How many time series?</td><td>La clase de LightGBM: <code>ForecasterRecursive</code> o <code>ForecasterRecursiveMultiSeries</code>, con su guía</td><td>Clase multiserie, series escaladas, un baseline por serie</td></tr>
+        <tr><td>What do you want to forecast?</td><td>Aparecen el titular y los bloques, cada uno encabezado por su forecaster y con el enlace a su guía</td><td>Clase, métrica y baseline</td></tr>
+        <tr><td>How many time series?</td><td>El forecaster de LightGBM: de los dos posibles (<code>ForecasterRecursive</code> o <code>ForecasterRecursiveMultiSeries</code>) queda el que corresponde</td><td>Clase multiserie, series escaladas, un baseline por serie</td></tr>
         <tr><td>Your data has one value per...</td><td>Qué repite el baseline; en mensual y trimestral de una serie, aparece el bloque de ARIMA</td><td>Estación, horizonte, lags, calendario</td></tr>
         <tr><td>Will you know anything else in advance?</td><td>La etiqueta "uses your known variables" en los modelos que las usan</td><td>Añade <code>exog</code></td></tr>
       </tbody>
@@ -218,6 +231,7 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
   const state = {};
   let previous = {};          // Text of each block in the last render, to flash what changed
   let showImports = false;
+  let lastLines = null;       // Lines of the last complete script, to flash the ones that change
   const PRESETS = [
     ["Ventas diarias de una tienda", {target:"number", series:"one", freq:"daily", extra:"no"}],
     ["Demanda mensual, una serie", {target:"number", series:"one", freq:"monthly", extra:"no"}],
@@ -281,28 +295,35 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     }).join("") + (Object.keys(state).length ? '<button type="button" class="reset" id="reset">Start over</button>' : "");
   }
 
+  function blockHtml(b, changed){
+    const pending = b.forecasters.length > 1;
+    const fc = b.forecasters.map((f, n) =>
+      (n ? '<span class="or">or</span>' : "") + '<span class="fc">' + esc(f.cls).replace(/([a-z])([A-Z])/g, "$1<wbr>$2") + (f.when ? "<small>" + esc(f.when) + "</small>" : "") + "</span>").join("");
+    const guides = b.forecasters.map(f => '<a href="' + DOCS + f.guide + '" target="_blank" rel="noopener">' +
+      (pending ? esc(f.cls) + " guide →" : "User guide →") + "</a>").join("");
+    return '<div class="block' + (changed ? " flash" : "") + '"><span class="role">' + esc(b.role) + "</span>" + fc +
+      '<span class="model">' + esc(b.model) + '</span><span class="what">' + esc(b.text) + "</span>" +
+      b.tags.map(t => '<span class="tag">' + esc(t) + "</span>").join("") +
+      (guides ? '<span class="guides">' + guides + "</span>" : "") + "</div>";
+  }
+
   function renderAnswer(){
     const P = D.partial[key()];
     const el = document.getElementById("answer");
     const total = rowsShown().length, done = total - P.missing.length;
     const head = '<div class="eyebrow"><span>Your starting point</span><span>' + done + " of " + total + " answered</span></div>";
     if (!P.headline){
-      el.innerHTML = head + '<p class="headline pending">Answer the first question to see which models to try.</p>' +
-        '<div class="blocks"><div class="block empty">Model</div><div class="block empty">Model</div><div class="block empty">Baseline</div></div>';
+      el.innerHTML = head + '<p class="headline pending">Answer the first question to see which forecasters to try.</p>' +
+        '<div class="blocks"><div class="block empty">Forecaster</div><div class="block empty">Forecaster</div><div class="block empty">Baseline</div></div>';
       previous = {};
       return;
     }
     const now = {};
     const blocks = P.blocks.map(b => {
-      const text = [b.name, b.cls || "", b.text, b.tags.join(",")].join("|");
+      const text = JSON.stringify(b);
       now[b.role] = text;
       const changed = previous[b.role] !== undefined ? previous[b.role] !== text : Object.keys(previous).length > 0;
-      const cls = b.cls ? '<span class="cls">' + esc(b.cls) + "</span>" :
-                  (b.role === "Baseline" ? "" : '<span class="cls pending">class: answer "How many time series?"</span>');
-      return '<div class="block' + (changed ? " flash" : "") + '"><span class="role">' + esc(b.role) + '</span><span class="name">' + esc(b.name) +
-        "</span>" + cls + '<span class="what">' + esc(b.text) + "</span>" +
-        b.tags.map(t => '<span class="tag">' + esc(t) + "</span>").join("") +
-        (b.guide ? '<a href="' + DOCS + b.guide + '" target="_blank" rel="noopener">User guide →</a>' : "") + "</div>";
+      return blockHtml(b, changed);
     }).join("");
     previous = now;
     const c = D.combos[key()];
@@ -311,15 +332,33 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     el.innerHTML = head + '<p class="headline">' + esc(P.headline) + "</p>" + '<div class="blocks">' + blocks + "</div>" + why;
   }
 
+  function codeHtml(code){
+    // One element per line: the first time the script appears its lines come in
+    // one after another; after a change of answer, only the new lines flash.
+    const lines = code.split("\n");
+    const html = highlight(code).split("\n");
+    const first = lastLines === null;
+    const out = html.map((h, n) => {
+      const cls = first ? "ln reveal" : (lastLines.has(lines[n]) || !lines[n].trim() ? "ln" : "ln changed");
+      const delay = first ? ' style="animation-delay:' + Math.min(n * 14, 700) + 'ms"' : "";
+      return '<span class="' + cls + '"' + delay + ">" + (h || " ") + "</span>";
+    }).join("\n");
+    return out;
+  }
+
   function renderScript(){
     const P = D.partial[key()];
     const c = D.combos[key()];
     const el = document.getElementById("script");
     if (!c){
+      // Outline of the script: what the answers so far already decide
       const left = P.missing.length;
+      const outline = P.blocks.map((b, n) => "# " + (n + 1) + ". " + b.model.replace(/^with (a )?/, "") +
+        (b.forecasters.length ? " (" + b.forecasters.map(f => f.cls).join(" or ") + ")" : "")).join("\n");
+      const wait = "# Your script appears here when you answer the " + (left === 1 ? "last question" : left + " questions left") + ".";
       el.innerHTML = '<div class="window"><div class="window-bar"><i></i><i></i><i></i><span>first_comparison.py</span></div>' +
-        '<pre class="waiting"><code><span class="tk-m"># Your script appears here when you answer the ' +
-        (left === 1 ? "last question" : left + " questions left") + ".</span></code></pre></div>";
+        '<pre class="waiting"><code><span class="tk-m">' + esc(wait + (outline ? "\n#\n# So far it will compare:\n" + outline : "")) + "</span></code></pre></div>";
+      lastLines = null;
       return;
     }
     const code = D.snippets[c.snippet];
@@ -328,25 +367,41 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     const imports = lines.slice(0, cut).join("\n").trimEnd(), body = lines.slice(cut).join("\n");
     const nImports = imports.split("\n").length;
     const kind = state.target === "category" ? "category" : "number";
+    const shown = showImports ? imports + "\n\n" + body : body;
+    const ai = c.skforecast_ai ?
+      '<details class="more"><summary>Let skforecast-ai compare more models for you</summary><div class="body">' +
+      "<p>skforecast-ai is a separate package that chooses the settings of each model from your data and tries more of them. Add these lines after the script: they use the same data and the same test periods. Its ranking can differ from the one above.</p>" +
+      '<pre class="mini"><code>' + highlight(c.skforecast_ai.trimEnd()) + "</code></pre>" +
+      '<div class="actions"><button type="button" class="btn" id="copy-ai">Copy lines</button>' +
+      '<a class="btn" href="https://ai.skforecast.org/" target="_blank" rel="noopener">skforecast-ai docs</a></div></div></details>' : "";
+    const mcp = c.agent ?
+      '<div class="opt2"><b>If it supports MCP</b> (Claude Code, Cursor, VS Code, Codex, Claude Desktop): connect the ' +
+      '<a href="https://ai.skforecast.org/stable/user-guides/mcp-server.html" target="_blank" rel="noopener">skforecast-ai MCP server</a>' +
+      ' and ask it in plain language. It runs the comparison with tools and returns the script that ran; your data is not sent to the model.' +
+      '<div class="say" id="agent-text">' + esc(c.agent) + '</div><div><button type="button" class="btn" id="copy-agent">Copy message</button></div></div>' : "";
     el.innerHTML =
       "<h3>What the script does</h3>" +
       '<ol class="steps">' + D.script_steps[kind].map(s => "<li>" + esc(s) + "</li>").join("") + "</ol>" +
       '<div class="window"><div class="window-bar"><i></i><i></i><i></i><span>first_comparison.py</span>' +
       '<button type="button" id="copy-code">Copy</button></div>' +
       '<button type="button" class="fold" id="fold" aria-expanded="' + showImports + '">' + (showImports ? "▾" : "▸") + " imports (" + nImports + " lines)</button>" +
-      "<pre><code>" + highlight(showImports ? imports + "\n\n" + body : body) + "</code></pre></div>" +
+      "<pre><code>" + codeHtml(shown) + "</code></pre></div>" +
       '<p class="caption">Runs as it is: tested on sample data every time the docs are built. Needs at least ' +
       D.min_history[state.freq] + " values" + (SPAN[state.freq] ? " (" + SPAN[state.freq] + ")" : "") + ".</p>" +
       '<div class="actions"><button type="button" class="btn primary" id="copy-code-2">Copy script</button>' +
       '<button type="button" class="btn" id="colab">Run it in Google Colab</button>' +
-      '<span class="status" id="status" role="status"></span></div>' +
-      '<details class="more"><summary>Using an AI assistant?</summary><div class="body"><p>Copy the script with instructions to adapt it to your data: the assistant is told to ask for a sample of your data first and to keep the models as they are until the script runs.</p>' +
-      '<div><button type="button" class="btn" id="copy-prompt">Copy script as a prompt</button></div></div></details>' +
+      '<span class="status" id="status" role="status"></span></div>' + ai +
+      '<details class="more"><summary>Using an AI assistant?</summary><div class="body">' + mcp +
+      '<div class="opt2"><b>' + (c.agent ? "If it does not" : "Any assistant") + '</b>: copy the script with instructions to adapt it to your data. The assistant is told to ask for a sample of your data first and to keep the forecasters as they are until the script runs.' +
+      '<div><button type="button" class="btn" id="copy-prompt">Copy script as a prompt</button></div></div></div></details>' +
       '<details class="more"><summary>Good to know</summary><div class="body"><ul>' +
       D.notes.map(n => "<li>" + esc(n).replace(/`([^`]+)`/g, "<code>$1</code>") + "</li>").join("") + "</ul></div></details>";
+    lastLines = new Set(shown.split("\n"));
     el.dataset.code = code;
     el.dataset.colab = c.sample + "\n" + code;
     el.dataset.prompt = c.prompt + "```python\n" + code + "```\n";
+    el.dataset.ai = c.skforecast_ai || "";
+    el.dataset.agent = c.agent || "";
   }
 
   function copy(text, message){
@@ -382,8 +437,14 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     const el = document.getElementById("script");
     if (e.target.id === "copy-code" || e.target.id === "copy-code-2") copy(el.dataset.code, "Script copied");
     if (e.target.id === "copy-prompt") copy(el.dataset.prompt, "Prompt copied");
+    if (e.target.id === "copy-ai") copy(el.dataset.ai, "Lines copied");
+    if (e.target.id === "copy-agent") copy(el.dataset.agent, "Message copied");
     if (e.target.id === "colab") copy(el.dataset.colab, "Script copied with sample data. In the published page this button also opens the notebook: paste it in the second cell.");
-    if (e.target.id === "fold"){ showImports = !showImports; renderScript(); const f = document.getElementById("fold"); if (f) f.focus(); }
+    if (e.target.id === "fold"){
+      showImports = !showImports;
+      lastLines = new Set(D.snippets[D.combos[key()].snippet].split("\n"));
+      renderScript(); const f = document.getElementById("fold"); if (f) f.focus();
+    }
   });
   document.getElementById("answer").addEventListener("click", e => {
     if (e.target.id === "how-link"){ e.preventDefault(); document.getElementById("how").scrollIntoView({behavior: "smooth"}); }

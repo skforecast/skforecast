@@ -160,10 +160,13 @@ SCRIPT_STEPS = {
 def blocks(a: dict) -> dict:
     """
     Answer box for the answers given so far (`a` may be incomplete): the
-    headline, the blocks (model, skforecast class, what it is, user guide) and
-    the rows still to answer. Each answer fills or adds something, so the box
-    is built as the user answers. A block whose class is not known yet has
-    `cls=None`.
+    headline, the blocks and the rows still to answer. Each answer fills or
+    adds something, so the box is built as the user answers.
+
+    skforecast provides forecasters, so each block is headed by its
+    forecaster class (with the link to its user guide), then the model it
+    wraps. While the number of series is not known, the block of LightGBM
+    shows its two possible forecasters.
     """
     target = a.get("target")
     missing = [r["id"] for r in ROWS if r["id"] not in a
@@ -175,32 +178,86 @@ def blocks(a: dict) -> dict:
     exog = a.get("extra") == "yes"
     out = []
 
-    def block(role, name, cls, text, tags=()):
-        out.append({"role": role, "name": name, "cls": cls, "guide": GUIDES.get(cls),
-                    "text": text, "tags": list(tags)})
+    def block(role, forecasters, model, text, tags=()):
+        out.append({
+            "role": role, "model": model, "text": text, "tags": list(tags),
+            "forecasters": [{"cls": cls, "guide": GUIDES[cls], "when": when}
+                            for cls, when in forecasters],
+        })
 
     if target == "category":
         headline = "Start with a machine learning classifier and compare it with a simple rule"
-        block("Model", "LightGBM classifier", "ForecasterRecursiveClassifier",
+        block("Model", [("ForecasterRecursiveClassifier", "")], "with a LightGBM classifier",
               "Machine learning classifier", ["uses your known variables"] if exog else [])
-        block("Baseline", "Seasonal rule", None,
-              f"The category of the {season}" if season else "The category one season before")
+        out.append({"role": "Baseline", "model": "Seasonal rule", "forecasters": [], "tags": [],
+                    "text": (f"The category of the {season}" if season
+                             else "The category one season before")
+                            + ". No forecaster needed: y.shift(season)"})
     else:
         headline = "Start with Chronos-2, then try to beat it with LightGBM"
         series = a.get("series")
-        ml_cls = {"one": "ForecasterRecursive", "several": "ForecasterRecursiveMultiSeries"}.get(series)
+        ml = {"one": [("ForecasterRecursive", "")],
+              "several": [("ForecasterRecursiveMultiSeries", "")]}.get(
+                  series, [("ForecasterRecursive", "one series"),
+                           ("ForecasterRecursiveMultiSeries", "several series")])
         tags = ["uses your known variables"] if exog else []
-        block("First", "Chronos-2", "ForecasterFoundation", "Foundation model, no training", tags)
-        block("Challenger", "LightGBM", ml_cls,
-              "Machine learning model you can improve and explain" if series != "several" else
-              "One machine learning model for all your series", tags)
+        block("First", [("ForecasterFoundation", "")], "with Chronos-2",
+              "Foundation model, no training", tags)
+        block("Challenger", ml, "with LightGBM",
+              "One machine learning model for all your series" if series == "several" else
+              "Machine learning model you can improve and explain", tags)
         if series == "one" and a.get("freq") in ("monthly", "quarterly"):
             headline += ", and keep ARIMA as a reference"
-            block("Reference", "ARIMA", "ForecasterStats", "Classic statistical model")
-        block("Baseline", "Seasonal baseline", "ForecasterEquivalentDate",
+            block("Reference", [("ForecasterStats", "")], "with ARIMA", "Classic statistical model")
+        block("Baseline", [("ForecasterEquivalentDate", "")], "Seasonal baseline",
               (f"Repeats the {season}" if season else "Repeats the value one season before")
               + (", one per series" if series == "several" else ""))
     return {"headline": headline, "blocks": out, "missing": missing, "complete": not missing}
+
+
+def ai_snippet(a: dict) -> str | None:
+    """
+    The same comparison with skforecast-ai, which picks the settings of each
+    model from the data. It continues the finder script: same data and `cv`.
+    Checked by build.py when skforecast-ai is installed. `None` for a
+    category, which skforecast-ai does not forecast.
+    """
+    if a["target"] == "category":
+        return None
+    several = a["series"] == "several"
+    exog = a["extra"] == "yes"
+    lines = ["# pip install \"skforecast-ai[foundation]\"", "from skforecast_ai import ForecastingAssistant", ""]
+    if several:
+        lines.append("data = pd.DataFrame(series)" if not exog else
+                     "data = pd.concat([pd.DataFrame(series), exog], axis=1)")
+        target = "list(series)"
+    elif exog:
+        lines.append("data = pd.concat([y, exog], axis=1)  # the other columns are used as exog")
+        target = "y.name"
+    args = ("data=y, cv=cv" if not (several or exog) else f"data=data, cv=cv, target={target}")
+    if a["freq"] == "hourly" and not several:
+        # One of its candidates fits a model per step: more than 50 fits with 24 steps
+        args += ", confirm_cost=True"
+    lines += [
+        f"result = ForecastingAssistant().compare({args})  # same data and cv as above",
+        "print(result.results)  # ranking of the models it tried",
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def agent_message(a: dict) -> str | None:
+    """Sentence to send to an AI agent connected to the skforecast-ai MCP server."""
+    if a["target"] == "category":
+        return None
+    f = FREQ[a["freq"]]
+    horizon = f"the next {f['steps']} {f['unit']}" if not f.get("edit") else "the next periods"
+    what = ("each series of data/my_data.csv" if a["series"] == "several"
+            else "the column sales of data/my_data.csv")
+    extra = (" The columns promotion and price are known in advance: use them as exogenous "
+             "variables." if a["extra"] == "yes" else "")
+    baseline = "" if a["series"] == "several" else ", against a seasonal naive baseline"
+    return (f"Compare forecasting models for {horizon} of {what}{baseline}, and show me "
+            f"the script of the best one.{extra}")
 
 
 def all_partial_answers():
