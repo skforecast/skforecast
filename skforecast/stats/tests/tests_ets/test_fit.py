@@ -1,9 +1,11 @@
 # Unit test fit method - Ets
 # ==============================================================================
 import re
+import warnings
 import numpy as np
 import pandas as pd
 import pytest
+from skforecast.exceptions import IgnoredArgumentWarning
 from ..._ets import Ets
 
 
@@ -458,3 +460,55 @@ def test_fit_ets_auto_selection_best_params_stores_box_cox_lambda():
     model = Ets(m=12).fit(y[:96])
     assert model.best_params_['lambda_param'] is None
     assert model.best_params_['lambda_auto'] is False
+
+
+def test_fit_ets_IgnoredArgumentWarning_when_auto_selection_and_m_greater_than_24():
+    """
+    Test that fit warns that the seasonality is not modeled when the model is
+    selected automatically with m > 24 (only non-seasonal models are
+    considered), and that the warning is not raised with seasonal=False.
+    """
+    t = np.arange(260)
+    rng = np.random.default_rng(123)
+    y = 100 + 10 * np.sin(2 * np.pi * t / 52) + rng.normal(0, 1, 260)
+
+    warn_msg = re.escape(
+        "The seasonal period `m` = 52 is greater than 24: ETS models are "
+        "only fitted with a seasonal component when `m` <= 24"
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg):
+        model = Ets(m=52).fit(y)
+    assert model.model_config_["season"] == "N"
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        model = Ets(m=52, seasonal=False).fit(y)
+    assert model.model_config_["season"] == "N"
+
+
+def test_fit_ets_refit_with_best_params_gives_positive_predictions():
+    """
+    Test that a model refitted on more observations with the `best_params_`
+    of an automatic selection (model and smoothing parameters fixed, initial
+    states estimated, as `freeze_params=True` does in backtesting) gives
+    predictions in the range of the series. With smoothing parameters at
+    their lower bound, the refit of this series returned predictions of the
+    order of -1e10.
+    """
+    rng = np.random.default_rng(32)
+    t = np.arange(80)
+    y = (
+        (100 - 0.3 * t)
+        * np.tile([1.2, 0.9, 0.85, 1.05], 20)
+        * (1 + rng.normal(0, 0.15, 80))
+    )
+
+    model = Ets(m=4).fit(y[:68])
+    assert model.best_params_["model"] == "MAM"
+
+    refit = Ets(**model.best_params_).fit(y[:72])
+    predictions = refit.predict(steps=4)
+
+    assert refit.get_fitted_values().min() > 0.5 * y.min()
+    assert np.all(predictions > 0.5 * y.min())
+    assert np.all(predictions < 1.5 * y.max())

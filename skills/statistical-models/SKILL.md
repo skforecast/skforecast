@@ -34,6 +34,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | `Arima` takes a 3-tuple `seasonal_order=(P, D, Q)` plus `m`; `Sarimax` takes a 4-tuple `(P, D, Q, m)` | Wrong model order or `TypeError` | Use `Arima(order=(p,d,q), seasonal_order=(P,D,Q), m=12)` |
 | `Ets` uses `model='AAA'` + `m`, not `error=` / `trend=` / `seasonal=` | Deprecated-argument error | Use `Ets(model='AAA', m=12)` (A/M/N/Z per position) |
 | Seasonal models require `m` | Seasonality silently ignored | Pass `m=<seasonal period>` to `Arima` / `Ets` |
+| `Ets` only fits seasonal models with `m <= 24` | With `m=52` (weekly data), the automatic selection fits a non-seasonal model and raises an `IgnoredArgumentWarning`; a seasonal `model` raises a `ValueError` | Use `Arima` or `Arar` for long seasonal periods, or `Ets(m=52, seasonal=False)` for a non-seasonal model without the warning |
 
 ## Available Models
 
@@ -187,7 +188,7 @@ predictions = forecaster.predict(steps=12)
 ## Common Mistakes
 
 1. **Using deprecated `Ets(error=, trend=, seasonal=)` syntax**: Use `Ets(model='AAA', m=12)` with a model string instead.
-2. **Forgetting `m` parameter**: ARIMA and ETS seasonal models require `m` (seasonal period).
+2. **Forgetting `m` parameter**: ARIMA and ETS seasonal models require `m` (seasonal period). `Ets` only fits seasonal models with `m <= 24`: with a longer period (weekly data, `m=52`) the automatic selection is non-seasonal.
 3. **Not using `backtesting_stats`**: Use `backtesting_stats()` for statistical models, NOT `backtesting_forecaster()`.
 4. **Using grid_search_forecaster for stats**: Use `grid_search_stats()` or `random_search_stats()` instead.
 5. **Passing `seasonal_order=(1,1,1,12)` to `Arima`**: `Arima` uses a 3-tuple `seasonal_order=(P,D,Q)` plus a separate `m=12` parameter. The 4-tuple `(P,D,Q,s)` format is only for `Sarimax`.

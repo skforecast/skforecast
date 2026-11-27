@@ -22,6 +22,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Performance improvements in `predict` and backtesting of <code>[ForecasterRecursiveMultiSeries]</code>, with the same results. ([#1530](https://github.com/skforecast/skforecast/pull/1530))
 
++ <span class="badge text-bg-fix">Fix</span> <code>[backtesting_stats]</code> with an automatic <code>[Ets]</code> and `freeze_params=True` (the default) could return predictions of the order of -1e10 from the second fold on in some seasonal series. An <code>[Ets]</code> model whose level or forecasts are not positive is no longer accepted when its error or seasonality is multiplicative.
+
 !!! warning "Before upgrading"
 
     Some results change, and some environments and code need to be updated (see **Added**, **Changed** and **Fixed**):
@@ -53,6 +55,8 @@ The main changes in this release are:
     + CatBoost estimators with categorical features: the predictions and metrics of backtesting and hyperparameter search with refit change, because each refit now gives the model of a new forecaster (see **Fixed**). ([#1546](https://github.com/skforecast/skforecast/pull/1546))
 
     + <code>[ForecasterRecursiveMultiSeries]</code> with `categorical_features=None` and an exogenous variable of dtype `category`: LightGBM, XGBoost and `HistGradientBoosting` no longer detect it as categorical by its dtype, they receive its values as a numeric column, so the model changes, also when the predictions were right. Use `categorical_features='auto'` to keep it categorical. Forecasters saved with a previous version that gave wrong predictions (see **Fixed**) must be fitted again. ([#1548](https://github.com/skforecast/skforecast/pull/1548))
+
+    + <code>[Ets]</code>: the estimates and predictions of a model with a multiplicative error or seasonality change when its previous fit had a level or forecasts that were not positive, as in some refits of <code>[backtesting_stats]</code> with `freeze_params=True`. The other fits are unchanged.
 
 
 **Added**
@@ -104,6 +108,8 @@ The main changes in this release are:
 
 + The error raised by <code>[PopulationDriftDetector]</code> when `chunk_size` is not a valid pandas frequency shows the value and the error of pandas, which names the alias to use when the one given was removed (with pandas 3, `'ME'` instead of `'M'`). ([#1510](https://github.com/skforecast/skforecast/pull/1510))
 
++ <code>[Ets]</code> with automatic selection raises an `IgnoredArgumentWarning` when the seasonal period `m` is greater than 24 (for example, `m=52` with weekly data): only non-seasonal models are considered, which was done without any warning. Use `seasonal=False` to select a non-seasonal model without the warning.
+
 
 **Fixed**
 
@@ -152,6 +158,8 @@ The main changes in this release are:
 + <code>[ForecasterRnn]</code> continued training from the weights and the optimizer state of the previous fit in every call to `fit`. The refits of <code>[backtesting_forecaster_multiseries]</code> depended on the previous folds, and a forecaster fitted with the whole series before backtesting gave optimistic metrics, because its model had already seen the test set. Each fit now starts from the initial weights (see `warm_start`). ([#1515](https://github.com/skforecast/skforecast/pull/1515))
 
 + `set_params` of <code>[ForecasterRnn]</code> always raised `TypeError: Cannot clone object`, so the hyperparameter searches (for example <code>[grid_search_forecaster_multiseries]</code>) with a `param_grid` skipped every candidate and returned no results. It now compiles the model with the given parameters, keeps those not passed (for example, the loss) and resets the weights to the initial ones. ([#1515](https://github.com/skforecast/skforecast/pull/1515))
+
++ Fixed an issue in <code>[Ets]</code> where a model with a multiplicative error or seasonality could be fitted with a level or forecasts that were not positive, and predict values of any sign and magnitude. It happened mostly when a model was refitted with the smoothing parameters of a previous fit, as <code>[backtesting_stats]</code> does with `freeze_params=True` (the default) and an automatic `Ets`: some folds returned predictions of the order of -1e10.
 
 
 

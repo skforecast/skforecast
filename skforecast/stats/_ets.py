@@ -34,6 +34,10 @@ class Ets(BaseEstimator, RegressorMixin):
     ----------
     m : int, default 1
         Seasonal period (e.g., 12 for monthly data with yearly seasonality).
+        Seasonal models are only fitted when `m` <= 24. With a longer period
+        (e.g., 52 for weekly data), the automatic selection only considers
+        non-seasonal models and warns about it, and a seasonal `model` raises
+        an error.
     model : str, None, default "ZZZ"
         Three-letter model specification (e.g., "ANN", "AAA", "MAM"):
         - First letter: Error type (A=Additive, M=Multiplicative)
