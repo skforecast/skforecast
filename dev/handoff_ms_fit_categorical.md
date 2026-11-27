@@ -5,7 +5,8 @@
 - Fecha: 2026-11-27.
 - **Arreglo con pandas: implementado el 2026-11-27** en la rama
   `fix/ms-category-exog-values`, creada desde `origin/0.28.x` (`ca0f2f4af`).
-  **PR #1548 abierta** ese día contra `0.28.x`: commits `210086978` (código
+  **PR #1548 fusionada** ese día en `0.28.x` (merge `c5340253d`; rama
+  borrada): commits `210086978` (código
   y tests) y `9d83b5664` (nota de versión, guía y contexto IA), más el del
   enlace en la nota de versión y los `dev:` del roadmap y de este handoff,
   que va en la PR por decisión de Joaquín (llega a `0.28.x` al fusionar).
@@ -217,12 +218,13 @@ cuatro informes, los diff del arreglo con pandas de cada revisor y sus scripts.
 
 **Para el autor:**
 
-1. Hecho el 2026-11-27: commits, rama subida y PR #1548 abierta contra
-   `0.28.x`. Queda revisarla y fusionarla.
+1. Hecho el 2026-11-27: commits, rama subida y PR #1548 fusionada en
+   `0.28.x` (`c5340253d`).
 2. Hecho el 2026-11-27: enlace a #1548 en las 3 entradas de la nota de
    versión y en la línea de "Before upgrading". Este handoff va en la PR.
-3. Al fusionar: mover BUG-ms-fit-dataframe-categorical y las dos filas DOC a
-   la sección de hechos del roadmap, y retirar QW-ms-category-warning.
+3. Hecho el 2026-11-27, tras la fusión: BUG-ms-fit-dataframe-categorical y
+   las dos filas DOC están en la sección de hechos del roadmap, y
+   QW-ms-category-warning, retirada.
 4. Confirmar la regla de las dos puertas antes de la PR de numpy.
 5. Decidir la prioridad de MAINT-ms-fit-numpy-estimator (en el roadmap, P2
    como propuesta) y si entra en la 0.28.0.
