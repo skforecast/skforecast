@@ -19,8 +19,6 @@ tools/docs/forecaster_finder/
 ├── finder.py                # SOURCE: questions, rules, texts and code templates
 ├── build.py                 # Runs every script and writes the generated files
 ├── check_snippets.py        # Runs each kind of script with its minimum history
-├── check_clean_install.sh   # First real run: new environment, install line, no Hugging Face
-├── check_mcp.py             # Drives the skforecast-ai MCP server as an agent would
 └── first_comparison.ipynb   # GENERATED: notebook opened by "Run it in Google Colab"
 docs/
 ├── quick-start/choose-a-forecaster.md   # The page; three GENERATED blocks between markers
@@ -112,8 +110,6 @@ data block short, and do not grow the script to cover every kind of file.
 | `build.py` | Every script runs on sample data without errors or warnings | CI, job "Every script runs as it is" |
 | `check_snippets.py` | Each kind of script runs with the minimum history the page states | Same job |
 | `build.py --ai` | The lines of skforecast-ai shown under the script | By hand, in an environment with `skforecast-ai[foundation]` |
-| `check_mcp.py` | The skforecast-ai MCP server answers the path the page describes | By hand, same environment plus the `mcp` extra |
-| `check_clean_install.sh` | Install line of the script in a new environment, first and second run, and the script without access to Hugging Face | By hand (it installs about 6 GB) |
 
 The workflow is `.github/workflows/forecaster-finder.yml`. It installs the
 packages as the scripts tell the reader to, without pinned versions. It runs on

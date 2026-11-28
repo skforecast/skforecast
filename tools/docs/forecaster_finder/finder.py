@@ -126,8 +126,9 @@ REASON = {
                "LightGBM won in some datasets.",
     "stats": "ARIMA is the classic reference for monthly and quarterly data: in our tests it "
              "often did better than LightGBM out of the box.",
-    "category": "A classifier is the model for categories. In our test it did not clearly "
-                "beat the simple rule, so keep the rule as your baseline.",
+    "category": "A classifier is the model for categories. In our one test it was not "
+                "clearly better than the simple rule, so check that it beats the rule on "
+                "your data.",
 }
 
 NOTES = {
@@ -544,10 +545,12 @@ def _cv(f: dict, length: str, steps: int) -> list:
 
 
 INSTALL = "# pip install {skforecast} {packages}"
-# PyTorch for CPU only: pip installs the CUDA packages by default on Linux
-INSTALL_CPU = (
-    "# Linux without a GPU? Install PyTorch for CPU first (about 4 GB less):\n"
-    "#     pip install torch --index-url https://download.pytorch.org/whl/cpu"
+# With PyTorch: pip installs the CUDA packages by default on Linux, so the line
+# of PyTorch for CPU goes first, in the order the two lines are run
+INSTALL_TORCH = (
+    "# Install. The first line is only for Linux without a GPU (about 4 GB less):\n"
+    "#     pip install torch --index-url https://download.pytorch.org/whl/cpu\n"
+    "#     pip install {skforecast} {packages}"
 )
 SETTINGS = "# Example settings so that the script runs: they are not tuned."
 METRIC = (
@@ -683,9 +686,11 @@ def render(a: dict, leaf: dict, n: int | None = None) -> str:
             )
 
     # ARIMA needs statsmodels, an optional dependency of skforecast (extra `stats`)
-    install = INSTALL.format(skforecast='"skforecast[stats]"' if leaf["stats"] else "skforecast",
-                             packages="lightgbm chronos-forecasting")
-    return (install + "\n" + INSTALL_CPU + "\nimport numpy as np\nimport pandas as pd\n"
+    install = INSTALL_TORCH.format(
+        skforecast='"skforecast[stats]"' if leaf["stats"] else "skforecast",
+        packages="lightgbm chronos-forecasting",
+    )
+    return (install + "\nimport numpy as np\nimport pandas as pd\n"
             + _imports(imp) + "\n\n" + "\n\n".join(blocks) + "\n")
 
 

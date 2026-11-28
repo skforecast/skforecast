@@ -397,8 +397,14 @@
       track("finder_change", { row: row, option: value, complete: !!D.combos[key()] });
       var again = elRows.querySelector('.skf-opt[data-row="' + row + '"][data-value="' + value + '"]');
       if (again) again.focus({ preventScroll: true });
-      /* Narrow screens: the answer is below the questions, so show it when complete */
-      if (narrow.matches && D.combos[key()]) elAnswer.scrollIntoView({ block: "start", behavior: "smooth" });
+      /* Show the answer when complete. Narrow screens: it is below the questions.
+         Wide screens: only if its top is under the header, after scrolling down
+         to the last question */
+      var header = document.querySelector(".md-header");
+      var hidden = header && elAnswer.getBoundingClientRect().top < header.getBoundingClientRect().bottom;
+      if (D.combos[key()] && (narrow.matches || hidden)) {
+        elAnswer.scrollIntoView({ block: "start", behavior: "smooth" });
+      }
     });
     elRows.addEventListener("keydown", function (e) {
       var b = e.target.closest(".skf-opt"); if (!b) return;

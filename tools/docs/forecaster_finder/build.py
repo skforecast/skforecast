@@ -110,8 +110,10 @@ def evidence():
     search = {"pairs": int(tuned["datasets"].sum()),
               "lightgbm_ahead": int(tuned["tuned < Chronos-2"].sum()),
               "improved": int(tuned["tuning improved LightGBM"].sum())}
+    category = {"classifier": clf.loc["LightGBM classifier [refit]"],
+                "rule": clf.loc["Same hour yesterday"]}
     return {"datasets": int(runs.dataset.nunique()), "table": table, "stats": stats,
-            "search": search, "checks": checks}
+            "search": search, "category": category, "checks": checks}
 
 
 # ==============================================================================
@@ -126,6 +128,7 @@ def evidence_markdown(facts):
         for r in facts["table"]
     )
     s, t = facts["stats"], facts["search"]
+    clf, rule = facts["category"]["classifier"], facts["category"]["rule"]
     return (
         f"Each model was run with the same backtesting on {facts['datasets']} public datasets, "
         "with every model using all the data before each test period. The error is the MASE "
@@ -142,7 +145,11 @@ def evidence_markdown(facts):
         f"{t['pairs']} cases and had a lower error than Chronos-2 in {t['lightgbm_ahead']}.\n"
         f"- In the {s['datasets']} monthly and quarterly datasets with one series, ARIMA had a "
         f"lower error than LightGBM in {s['arima_ahead_of_lightgbm']} and than Chronos-2 in "
-        f"{s['arima_ahead_of_chronos']}."
+        f"{s['arima_ahead_of_chronos']}.\n"
+        "- For a category there is one test, on an hourly dataset with three categories: "
+        f"the classifier was right {clf.accuracy:.0%} of the time and the simple rule "
+        f"{rule.accuracy:.0%}. Counting each category equally, {clf.balanced_accuracy:.0%} "
+        f"and {rule.balanced_accuracy:.0%}."
     )
 
 

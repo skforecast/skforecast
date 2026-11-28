@@ -852,12 +852,34 @@ salida, y lo que es del tema (aviso de cookies, botón "Back to top"). Nada de l
 merece fila en el roadmap: lo que el informe daba por silencioso (Chronos-2 con variables
 futuras desalineadas) sí lanza un `MissingValuesWarning`.
 
+### 7.8 Tercera revisión como usuario (2026-11-28)
+
+Informe: `user_review/INFORME_3.md` (Opus 5.5, esfuerzo alto, sobre `27917bb`). Veredicto: "sí
+se la enseñaría ya a usuarios reales". Criterio de esta ronda: prueba rápida que orienta, no
+guía de usuario.
+
+| # | Hallazgo | Qué se hizo |
+|:--|:--|:--|
+| 1 | Categorías: "in our test" sin datos en "How we chose these rules" y frase ambigua | Una frase generada con las cifras de `extra_classification.csv` (acierto 90 % frente a 84 %; 74 % y 75 % con las clases ponderadas por igual) y motivo reescrito: "check that it beats the rule on your data" |
+| 2 | Escritorio: la recomendación queda fuera de la vista al terminar | El informe lo atribuía a un desplazamiento de la página; era su navegador automático, que centra el botón antes de pulsarlo. Lo real: con 800 px de alto la cuarta pregunta está bajo el pliegue y el titular queda tapado por la cabecera. Un panel fijo no sirve (comparte columna con el script). Ahora, si al completar las respuestas la parte de arriba de la respuesta está bajo la cabecera, la página sube hasta ella |
+| 3 | La búsqueda no encuentra "choose a forecaster" | Añadida "Not sure which forecaster to choose?" a la entrada: "choose forecaster" la da la primera; "choose a forecaster" sigue sin darla (la "a" pesa más). Se deja así |
+| 4 | "Install PyTorch for CPU first" iba después del comando (457 s y 5,8 GB frente a 34 s y 1,4 GB, medido por el revisor) | Las dos líneas, en el orden en que se ejecutan, bajo un único comentario |
+| 5 | Dos enlaces rotos en *Comparing forecasting models* (`.md` desde un notebook; también en skforecast.org) | Tres enlaces pasados a `.html` |
+| 6 | "ForecasterRecursiveMulti / Series" partido en móvil | Sin tocar |
+
+No se tocó: que la regla gane con los datos de ejemplo en 7 de las 12 combinaciones de
+categoría, ni líneas para predecir con el baseline (descartadas en la segunda revisión).
+
+También el 2026-11-28: el workflow se queda solo en las PR que tocan el finder (sin ejecución
+semanal ni disparo por `skforecast/foundation/`) y se borran `check_mcp.py` y
+`check_clean_install.sh`, comprobaciones manuales de un solo uso.
+
 ### 7.4 Comprobaciones antes de publicar (estado del 2026-11-28)
 
 | # | Qué | Estado | Resultado |
 |--:|:--|:--|:--|
 | 1 | LightGBM con algo de ajuste | **Medido** (4.7) | Supera a Chronos-2 en 7 de 33 y queda a un 5 % o mejor en 10 de 33; el ajuste lo empeora en 11. Lleva a D9 |
-| 2 | Primera ejecución real | **Medido** (`check_clean_install.sh`) | Funciona; dos hallazgos, abajo |
+| 2 | Primera ejecución real | **Medido** (con `check_clean_install.sh`, borrado después: comprobación manual de un solo uso) | Funciona; dos hallazgos, abajo |
 | 3 | Colab y MCP | **Comprobado, con un límite** | Abajo |
 | 4 | Pantallas estrechas | **Hecho en la maqueta** | Por debajo de 980 px, las respuestas dadas se pliegan en etiquetas y solo queda abierta la pregunta siguiente, con la respuesta a la vista. Probado a 400 px |
 | 5 | El resto de la documentación dice otra cosa | Pendiente (fase 0) | Texto propuesto en 6.9; depende de D9 |
@@ -896,7 +918,7 @@ futuras desalineadas) sí lanza un `MissingValuesWarning`.
   pide iniciar sesión en Google. Es una prueba manual de dos minutos: abrir el enlace de la
   maqueta, ejecutar la primera celda, pegar y ejecutar. Al publicar, el enlace tiene que
   apuntar a la rama de la versión, no a `docs/forecaster-finder`.
-- Servidor MCP de skforecast-ai 0.5.0 (`check_mcp.py`): recorrido completo con un cliente
+- Servidor MCP de skforecast-ai 0.5.0 (con `check_mcp.py`, borrado después: comprobación manual de un solo uso): recorrido completo con un cliente
   MCP como el de un agente, sobre un CSV diario: `profile`, `plan`, `create_cv`, `compare`
   y `get_code`. Devuelve la comparación (gana `chronos-2-small`) y el script del mejor.
   **No comprobado**: un asistente real (Claude Code, Cursor) eligiendo esas herramientas a
