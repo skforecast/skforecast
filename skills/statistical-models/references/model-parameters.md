@@ -80,7 +80,7 @@ Arima(
 | Mode | How to activate | Description |
 |------|----------------|-------------|
 | **Manual** | `order=(p,d,q)` | User specifies exact order |
-| **Auto** | `order=None` (and `seasonal_order=None` with `m > 1` for the seasonal orders) | Automatic order selection via stepwise algorithm. With the default `m=1` no seasonal term is searched |
+| **Auto** | `order=None` or `seasonal_order=None` (both, with `m > 1`, for a fully automatic seasonal model) | Automatic order selection via stepwise algorithm. With the default `m=1` no seasonal term is searched. A tuple passed next to a `None` only fixes its differencing order (`d` or `D`): its AR and MA orders are searched anyway |
 
 After fitting (auto mode), the selected model is available in
 `forecaster.estimators_[0].best_params_`: `order`, `seasonal_order`, `m`,
