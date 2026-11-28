@@ -33,7 +33,7 @@ ROWS = [
             ("one", "One", "The total sales of a company"),
             ("several", "Several", "The sales of each store or each product"),
         ],
-        "show_if": {"target": "number"},
+        "hide_if": {"target": "category"},
     },
     {
         "id": "freq",
@@ -203,7 +203,7 @@ def blocks(a: dict) -> dict:
     """
     target = a.get("target")
     missing = [r["id"] for r in ROWS if r["id"] not in a
-               and all(a.get(k) == v for k, v in r.get("show_if", {}).items())]
+               and not any(a.get(k) == v for k, v in r.get("hide_if", {}).items())]
     if target is None:
         return {"headline": None, "blocks": [], "baseline": None, "missing": missing,
                 "complete": False, "outline": []}
@@ -225,8 +225,9 @@ def blocks(a: dict) -> dict:
               "with a LightGBM classifier", "Machine learning classifier trained on your data.",
               ["uses your known variables"] if exog else [])
         baseline = {"cls": None, "guide": None,
-                    "text": "Always compared with a simple rule: the category of the "
-                            + (season or "same period one season before") + "."}
+                    "text": "Always compared with a simple rule: the category "
+                            + ("one season before" if f is None or f.get("edit")
+                               else "of the " + season) + "."}
     else:
         headline = HEADLINE
         series = a.get("series")
@@ -327,6 +328,8 @@ def all_partial_answers():
             base = {k: v for k, v in (("freq", freq), ("extra", extra)) if v is not None}
             combos.append(dict(base))
             combos.append({"target": "category", **base})
+            # The number of series can be answered before the first question
+            combos += [{"series": series, **base} for series in ("one", "several")]
             for series in (None, "one", "several"):
                 combos.append({"target": "number", **({"series": series} if series else {}), **base})
     return combos
@@ -432,7 +435,7 @@ def data_block(a: dict, n: int | None = None) -> str:
         lines += [
             "dated = isinstance(y.index, pd.DatetimeIndex) and y.index.freq is not None",
             "if not dated or y.isna().all():",
-            '    raise ValueError("`y` needs dates with a frequency, and values: see above.")',
+            '    raise ValueError("`y` needs dates with a frequency, and values: check its data.")',
         ]
     return "\n".join(lines)
 
@@ -527,10 +530,12 @@ def _steps_season(f: dict, steps: int, repeats: str, note: str = "") -> list:
     ]
 
 
-def _cv(f: dict, length: str) -> list:
+def _cv(f: dict, length: str, steps: int) -> list:
     """Lines of the test periods, the same for every model."""
+    unit = f["unit"] if not f.get("edit") else "values"
     return [
-        f"# Test: the last {f['folds']} periods. Every model uses all the data before each one.",
+        f"# Test: the last {f['folds']} forecasts of {steps} {unit} each ({f['folds'] * steps} {unit}).",
+        "# Every model uses all the data before each forecast.",
         "cv = TimeSeriesFold(",
         f"    steps=steps, initial_train_size={length} - {f['folds']} * steps,",
         "    refit=True, fixed_train_size=False,",
@@ -593,7 +598,7 @@ def render(a: dict, leaf: dict, n: int | None = None) -> str:
     head = [SETTINGS] + ([OTHER_FREQUENCY] if f.get("edit") else [])
     length = "len(next(iter(series.values())))" if several else "len(y)"
     head += _steps_season(f, f["steps"], "the baseline repeats the")
-    head += _cv(f, length)
+    head += _cv(f, length, f["steps"])
     head.append(METRIC_SEVERAL if several else METRIC.format(mean=""))
     blocks = [data_block(a, n), "\n".join(head)]
 
@@ -639,7 +644,9 @@ def render(a: dict, leaf: dict, n: int | None = None) -> str:
             what = ", ".join(parts[:-1]) + " and " + parts[-1]
             blocks.append(
                 f"# {k}. Machine learning: LightGBM with {what}\n"
-                f"forecaster = {cls}(\n"
+                + ("# (edit the lags, the rolling window and the calendar features for your data)\n"
+                   if f.get("edit") else "")
+                + f"forecaster = {cls}(\n"
                 f"    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n"
                 f"    lags={f['lags']},{_edit(f)}\n{win}"
                 f"    calendar_features=CalendarFeatures(features={f['calendar']}),\n{scaler}"
@@ -694,7 +701,7 @@ def render_classification(a, f, n=None):
         "from lightgbm import LGBMClassifier",
         "from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster",
         "from skforecast.recursive import ForecasterRecursiveClassifier",
-        "from sklearn.metrics import balanced_accuracy_score",
+        "from sklearn.metrics import accuracy_score",
         "",
         data_block(a, n),
         "",
@@ -703,10 +710,12 @@ def render_classification(a, f, n=None):
     lines += [OTHER_FREQUENCY] if f.get("edit") else []
     lines += _steps_season(f, steps, "the rule repeats the category of the",
                            " (no more than one season)")
-    lines += _cv(f, "len(y)")
+    if f.get("edit"):
+        lines[-1] = lines[-1].replace("category of the value one season", "category one season")
+    lines += _cv(f, "len(y)", steps)
     lines += [
-        "# How often each one is right (balanced accuracy, from 0 to 1): higher is better.",
-        "# Keep the classifier only if it beats the rule.",
+        "# How often each one is right (accuracy, from 0 to 1): higher is better. Keep the",
+        "# classifier only if it beats the rule.",
         "",
         "# 1. Machine learning classifier",
         "forecaster = ForecasterRecursiveClassifier(",
@@ -714,13 +723,14 @@ def render_classification(a, f, n=None):
         f"    lags={f['lags']},{_edit(f)}",
         ")",
         "score, pred = backtesting_forecaster(",
-        f'    forecaster, y=y{exog_arg}, cv=cv, metric="balanced_accuracy_score"',
+        f'    forecaster, y=y{exog_arg}, cv=cv, metric="accuracy_score"',
         ")",
-        'print(f"Classifier: {score[\'balanced_accuracy_score\'].item():.3f}")',
+        'print(f"Classifier: {score[\'accuracy_score\'].item():.3f}")',
         "",
-        f"# 2. Baseline: the category of the {f['season_text']}",
+        ("# 2. Baseline: the category one season before" if f.get("edit")
+         else f"# 2. Baseline: the category of the {f['season_text']}"),
         "rule = y.shift(season).loc[pred.index]",
-        'print(f"Rule:       {balanced_accuracy_score(y.loc[pred.index], rule):.3f}")',
+        'print(f"Rule:       {accuracy_score(y.loc[pred.index], rule):.3f}")',
     ]
     return "\n".join(lines) + "\n"
 

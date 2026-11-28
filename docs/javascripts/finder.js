@@ -101,20 +101,22 @@
     elRows.addEventListener("submit", function (e) { e.preventDefault(); });
 
     function visible(row) {
-      return !row.show_if || Object.keys(row.show_if).every(function (k) {
-        return state[k] === row.show_if[k];
+      return !row.hide_if || !Object.keys(row.hide_if).some(function (k) {
+        return state[k] === row.hide_if[k];
       });
     }
     function rowsShown() { return D.rows.filter(visible); }
     function key() {
       return KEYS.map(function (k) {
-        return (k === "series" && state.target !== "number") ? "_" : (state[k] || "_");
+        return (k === "series" && state.target === "category") ? "_" : (state[k] || "_");
       }).join("-");
     }
     function clear() { Object.keys(state).forEach(function (k) { delete state[k]; }); }
 
+    /* Answers of the URL. Whatever follows them (a tracking parameter, a full
+       stop copied with the link) is ignored. */
     function fromHash() {
-      var m = (location.hash || "").match(/^#answers=([a-z_]+(?:-[a-z_]+){3})$/);
+      var m = (location.hash || "").match(/^#answers=([a-z_]+(?:-[a-z_]+){3})(?![a-z_-])/);
       if (!m) return false;
       var parts = m[1].split("-"), next = {};
       for (var i = 0; i < KEYS.length; i++) {
@@ -123,7 +125,7 @@
         if (!row.options.some(function (o) { return o[0] === parts[i]; })) return false;
         next[KEYS[i]] = parts[i];
       }
-      if (next.target !== "number") delete next.series;
+      if (next.target === "category") delete next.series;
       clear();
       Object.keys(next).forEach(function (k) { state[k] = next[k]; });
       return true;
@@ -196,8 +198,7 @@
 
     function renderAnswer() {
       var P = D.partial[key()];
-      var total = state.target ? rowsShown().length : D.rows.length;
-      var done = rowsShown().length - P.missing.length;
+      var total = rowsShown().length, done = total - P.missing.length;
       var head = '<div class="skf-eyebrow"><span>Your starting point</span><span>' + done +
         " of " + total + " answered</span></div>";
       if (!P.headline) {
@@ -278,8 +279,8 @@
       var kind = state.target === "category" ? "category" : "number";
       var next = D.next[kind];
       var forecast = more("forecast", "Forecast with the model you keep",
-        "<p>The script compares the models. To forecast, add these lines after it: they train each model on all your data and predict the next periods. Keep the lines of the model with the " +
-        (kind === "category" ? "better score" : "lowest error") + ".</p>" +
+        "<p>The script compares the models. To forecast, add these lines after it: they train each model on all your data and predict the next periods. Keep the lines of the " +
+        (kind === "category" ? "classifier if it beats the rule" : "model with the lowest error") + ".</p>" +
         '<pre class="skf-mini"><code>' + highlight(c.forecast.replace(/\s+$/, "")) + "</code></pre>" +
         '<div class="skf-actions"><button type="button" class="skf-btn" data-copy="forecast">Copy lines</button></div>');
       var ai = c.skforecast_ai ? more("ai", "Let skforecast-ai compare more models for you",
@@ -292,7 +293,7 @@
         '<a href="https://ai.skforecast.org/stable/user-guides/mcp-server.html" target="_blank" rel="noopener" data-cta="mcp">skforecast-ai MCP server</a>' +
         " and ask it in plain language. It runs the comparison with tools and returns the script that ran.</p>" +
         '<div class="skf-say">' + esc(c.agent) + "</div>" +
-        '<p class="skf-caption">The file and the column names are examples: change them to yours.</p>' +
+        '<p class="skf-caption">The file, the column names and the horizon are examples: change them to yours.</p>' +
         '<div><button type="button" class="skf-btn" data-copy="agent">Copy message</button></div></div>' : "";
       elScript.innerHTML =
         "<h3>" + esc(D.script_title) + "</h3>" +
@@ -395,7 +396,9 @@
       update(true);
       track("finder_change", { row: row, option: value, complete: !!D.combos[key()] });
       var again = elRows.querySelector('.skf-opt[data-row="' + row + '"][data-value="' + value + '"]');
-      if (again) again.focus();
+      if (again) again.focus({ preventScroll: true });
+      /* Narrow screens: the answer is below the questions, so show it when complete */
+      if (narrow.matches && D.combos[key()]) elAnswer.scrollIntoView({ block: "start", behavior: "smooth" });
     });
     elRows.addEventListener("keydown", function (e) {
       var b = e.target.closest(".skf-opt"); if (!b) return;
@@ -422,7 +425,7 @@
         var useful = t.getAttribute("data-feedback") === "yes";
         track("finder_feedback", { value: useful ? "yes" : "no" });
         t.parentElement.innerHTML = useful ? "Thanks for telling us." :
-          'Thanks for telling us. If something failed or was not clear, <a href="https://github.com/skforecast/skforecast/issues/new" target="_blank" rel="noopener" data-cta="issue">tell us what</a>.';
+          'Thanks for telling us. If something failed or was not clear, <a href="https://github.com/skforecast/skforecast/issues/new?title=Feedback%20on%20%22Which%20forecaster%20should%20I%20use%3F%22" target="_blank" rel="noopener" data-cta="issue">tell us what</a>.';
       } else if (t.classList.contains("skf-fold")) {
         showImports = !showImports;
         renderScript();
@@ -448,8 +451,13 @@
     if (narrow.addEventListener) narrow.addEventListener("change", onNarrow);
 
     /* Answers of the URL or, without them, the ones given before on this page */
-    if (!fromHash()) fromKey(recall());
-    update(false);
+    /* A link with answers that cannot be read shows the empty finder, never the
+       answers of another visit. Answers recalled from the tab go back to the
+       URL, unless it points to a section of the page. */
+    var hash = location.hash || "";
+    var recalled = !fromHash() && hash.indexOf("#answers=") !== 0;
+    if (recalled) fromKey(recall());
+    update(recalled && (hash === "" || hash === "#") && Object.keys(state).length > 0);
 
     return function destroy() {
       window.removeEventListener("hashchange", onHash);

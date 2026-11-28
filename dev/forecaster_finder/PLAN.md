@@ -816,6 +816,41 @@ comprobar), M4 (barras de progreso y aviso de Hugging Face en la salida), M5 (co
 de los indicados el script no avisa), M6 (al contestar la cuarta pregunta en escritorio el
 titular queda fuera de la vista) y los detalles D1 a D3 y D8 a D11.
 
+### 7.7 Segunda revisión como usuario (2026-11-28)
+
+Informe en `user_review/INFORME_2.md`: los 36 scripts copiados con el botón se ejecutan; lo
+que falla son los datos reales sucios y detalles de estado y de texto. **Criterio fijado por
+el usuario: la página es una prueba rápida para atraer y encaminar; conectar el script a los
+datos propios es cosa del usuario.** No se añade más ayuda de carga de datos ni más líneas
+de predicción.
+
+Hecho:
+
+- **Búsqueda del sitio**: con los textos de esta rama, cualquier búsqueda con "to", "how" o
+  "should" no devolvía nada. Causa: un fallo de lunr.js (compara nodos de su grafo de
+  términos con un texto sin separadores), que depende del vocabulario del sitio. Lo corrige
+  el hook `tools/docs/hooks/search_fix.py` en el sitio construido. La página lleva
+  `search: boost: 2`.
+- **Recuento**: las cuatro preguntas se ven desde el principio (la del número de series
+  desaparece con una categoría) y el contador y "N questions left" cuentan lo mismo.
+- **URL**: lleva siempre las respuestas, también tras el aviso de cookies y al volver a la
+  página en la misma pestaña; tolera añadidos (`&utm_source=x`, un punto final), y un enlace
+  ilegible muestra el selector vacío, nunca las respuestas de otra visita.
+- **Categoría**: accuracy en lugar de balanced accuracy (se entiende sola y elimina el aviso
+  de scikit-learn). `build.py` ya no admite ningún aviso.
+- **Coherencia**: "How we chose these rules" explica que la guía *Comparing forecasting
+  models* mira tres datasets y que uno solo puede ir contra el recuento.
+- **Textos**: "the last 3 forecasts of 14 days each (42 days)", cabeceras de la tabla,
+  mensaje de la comprobación, "Something else", mensaje para el asistente.
+- **Móvil**: al contestar la última pregunta, la respuesta se pone a la vista; en escritorio
+  la página ya no salta.
+
+Sin tocar, a propósito: huecos y series cortas con varias series, CSV con `;` y coma
+decimal, predecir con el baseline o la regla, variables distintas por serie, ruido de la
+salida, y lo que es del tema (aviso de cookies, botón "Back to top"). Nada de la librería
+merece fila en el roadmap: lo que el informe daba por silencioso (Chronos-2 con variables
+futuras desalineadas) sí lanza un `MissingValuesWarning`.
+
 ### 7.4 Comprobaciones antes de publicar (estado del 2026-11-28)
 
 | # | Qué | Estado | Resultado |

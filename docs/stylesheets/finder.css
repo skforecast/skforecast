@@ -103,6 +103,10 @@ Frame: questions on the left, answer and script on the right
   scroll-margin-top: 6rem;  /* Below the sticky header when "Start over" scrolls to it */
 }
 
+.sk-finder .skf-answer {
+  scroll-margin-top: 5rem;
+}
+
 .md-typeset .sk-finder[data-state="loading"],
 .md-typeset .sk-finder[data-state="error"] {
   display: block;
