@@ -19,6 +19,8 @@ This single file contains the core API reference, forecaster APIs, workflow exam
 
 > Using the context from https://skforecast.org/latest/llms-full.txt, create a ForecasterRecursiveMultiSeries with LightGBM, fit it on a DataFrame with 3 series, and run backtesting with conformal prediction intervals.
 
+Starting a new problem? [Which forecaster should I use?](choose-a-forecaster.md) gives you a tested script for your kind of data, and a prompt to hand it to your assistant.
+
 
 ## IDE integration
 

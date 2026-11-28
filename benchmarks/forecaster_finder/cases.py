@@ -15,8 +15,8 @@ accuracy and balanced accuracy.
 Time: seconds of the whole backtest (fit + predict) on CPU.
 
 Usage:
-    python benchmark.py            # all cases
-    python benchmark.py vic h2o    # cases whose name contains any of the words
+    python cases.py            # all cases
+    python cases.py vic h2o    # cases whose name contains any of the words
 """
 
 from __future__ import annotations
@@ -56,7 +56,7 @@ from skforecast.recursive import (
 from skforecast.stats import Arima, Ets
 
 warnings.filterwarnings("ignore")
-OUT = Path(__file__).parent / os.environ.get("BENCH_OUT", "results")
+OUT = Path(__file__).parent / os.environ.get("BENCH_OUT", "results_v1")
 OUT.mkdir(exist_ok=True)
 CHRONOS_ID = "autogluon/chronos-2-small"
 

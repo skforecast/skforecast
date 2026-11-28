@@ -32,6 +32,12 @@ quick-start/quick-start-skforecast.ipynb:
     Quick start to time series forecasting in Python with skforecast: train a
     forecaster, predict, backtest and tune its hyperparameters in a few lines.
 
+quick-start/choose-a-forecaster.md:
+  title: Which forecaster should I use?
+  description: >-
+    Which skforecast forecaster to use: answer four questions about your data and
+    get the forecasters to compare, a baseline and a script that runs as it is.
+
 quick-start/forecaster-parameters.md:
   title: Forecaster parameters explained
   description: >-

@@ -1,0 +1,17 @@
+{#-
+  Forecaster finder (docs/quick-start/choose-a-forecaster.md).
+
+  The standard page plus the heading font of the home page and the styles of
+  the finder, loaded only here. The widget is rendered by
+  docs/javascripts/finder.js inside the #sk-finder element of the page, from
+  docs/javascripts/finder-data.json. See tools/docs/forecaster_finder/README.md.
+-#}
+{% extends "main.html" %}
+
+{% block extrahead %}
+  {{ super() }}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&display=swap">
+  <link rel="stylesheet" href="{{ 'stylesheets/finder.css' | url }}">
+{% endblock %}

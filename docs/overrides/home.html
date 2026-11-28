@@ -70,6 +70,7 @@
         <a class="btn" href="https://github.com/skforecast/skforecast"><span class="ico">{% include ".icons/fontawesome/brands/github.svg" %}</span>GitHub</a>
         <div class="pip"><span><span class="dollar">$ </span>pip install skforecast</span><button type="button" class="copy" data-copy="pip install skforecast" aria-label="Copy install command" title="Copy"><span class="cp">{% include ".icons/material/content-copy.svg" %}</span><span class="ok">{% include ".icons/material/check.svg" %}</span></button></div>
       </div>
+      <p class="hero-hint">Not sure which forecaster to use? <a href="{{ 'quick-start/choose-a-forecaster.html' | url }}">Find out in four questions →</a></p>
     </div>
   </section>
 
@@ -186,7 +187,19 @@
           <a class="more" href="{{ 'user_guides/forecasting-with-deep-learning-rnn-lstm.html' | url }}">Deep learning →</a></div>
         </article>
       </div>
-      <p style="margin-top: 22px; color: var(--ink-2); font-size: 15px;">Not sure which one to use? Compare all forecasters in the <a href="{{ 'introduction-forecasting/introduction-forecasting.html' | url }}#forecasters">Introduction to forecasting</a>.</p>
+      {#- Entry to the forecaster finder with its first question: each answer opens
+          the page with that question already answered (#answers=...). -#}
+      <div class="finder-teaser">
+        <div class="text">
+          <h3>Not sure which one to use?</h3>
+          <p>Answer four questions about your data and get the forecasters to compare first, with a script that runs as it is.</p>
+        </div>
+        <div class="ask" role="group" aria-labelledby="finder-teaser-q">
+          <span id="finder-teaser-q">What do you want to forecast?</span>
+          <a class="btn" href="{{ 'quick-start/choose-a-forecaster.html' | url }}#answers=number-_-_-_">A number<small>Sales, energy demand, visits</small></a>
+          <a class="btn" href="{{ 'quick-start/choose-a-forecaster.html' | url }}#answers=category-_-_-_">A category<small>Low, medium or high demand</small></a>
+        </div>
+      </div>
     </div>
   </section>
 

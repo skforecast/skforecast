@@ -2,75 +2,37 @@
 
 ## 1. Estado
 
-- Versión 2, del 2026-11-27, con la segunda y la tercera pasadas del mismo día (arreglo de
-  `Ets`, prototipo nuevo, estudio ampliado a 26 datasets y decisiones D1 a D5 cerradas). Sustituye a la versión 1
-  (commit `407746d`) después de la revisión independiente de `REVISION.md`. Base:
-  skforecast 0.28.0.
-- Cuarta pasada, del 2026-11-28: medido LightGBM con un presupuesto de ajuste (4.7),
-  probada la primera ejecución en un entorno limpio, el notebook de Colab y el servidor MCP
-  (7.4), diseño para pantallas estrechas, y dos propuestas nuevas que esperan respuesta:
-  cómo presentar LightGBM y Chronos-2 (6.9, decisión D9) y dónde va la página (6.5,
-  decisión D10).
-- Del selector no hay nada implementado en `docs/` ni `skills/`. En esta rama sí están
-  arreglados los dos fallos de `Ets` que encontró la revisión (commit `5f020a0`, con tests,
-  notas de versión y la skill `statistical-models`), y el prototipo de la fuente única
-  (`benchmark/finder_tree.py`) ya sigue el diseño de la sección 6.
-- Las cifras de este documento salen de `benchmark/review.py` (protocolo justo, sección 4).
-  Las de la versión 1 (ML congelado) no se citan en ninguna página: ver `REVISION.md` H1.
-- Filas del roadmap: `DOC-choosing-forecaster-evidence` (fase 0), `FEAT-forecaster-finder`
-  (fases 1 a 3), `FEAT-finder-probabilistic` (fase 4); `BUG-ets-freeze-params` y
-  `QW-ets-m-over-24-silent` (arregladas en esta rama, sin fusionar) y
-  `QW-shared-cv-refit-warnings` (nueva).
-- Maqueta navegable del selector con los datos del prototipo (36 combinaciones):
-  `mock.html`, generada por `benchmark/mock.py` y publicada en
-  https://claude.ai/artifact/VMvLQwo7Wf9xoK3VYAbgV6 (privada; se comparte desde su menú
-  Share).
-- Informe visual de la versión 1 (no actualizado, sus cifras son las del ML congelado):
-  https://claude.ai/artifact/LdLnbpz9LXdJ4rqPaocysX.
+- **Implementado el 2026-11-28 (fases 0, 1 y 2), en la rama `docs/forecaster-finder`, sin
+  PR todavía.** D9 y D10 aceptadas: dos candidatos con papeles distintos ("Compare two
+  forecasters: LightGBM and Chronos-2") y página en la pestaña *Quick start*. Queda la fase
+  3 (medición) y lo de 7.5.
+- Este documento conserva el análisis y las decisiones. La descripción de lo construido está
+  en `tools/docs/forecaster_finder/README.md` (selector) y en
+  `benchmarks/forecaster_finder/README.md` (estudio); donde difieran de este plan, valen
+  ellos.
+- En la misma rama están arreglados los dos fallos de `Ets` que encontró la revisión (commit
+  `5f020a0`, con tests y notas de versión).
+- Filas del roadmap: `DOC-choosing-forecaster-evidence` (fase 0, hecha),
+  `FEAT-forecaster-finder` (fases 1 y 2 hechas, fase 3 pendiente),
+  `FEAT-finder-probabilistic` (fase 4), `BUG-ets-freeze-params` y `QW-ets-m-over-24-silent`
+  (arregladas en esta rama) y `QW-shared-cv-refit-warnings`.
 
-Contenido de la carpeta:
+Dónde está cada cosa:
 
 | Ruta | Qué es |
 |:--|:--|
-| `PLAN.md` | Este documento |
-| `REVISION.md` | Revisión independiente: hallazgos por gravedad, con evidencia y propuesta |
-| `benchmark/benchmark.py` | Estudio original (ML congelado). Define los casos; se conserva porque reproduce las cifras de la versión 1 |
-| `benchmark/review.py` | **Estudio de referencia**: mismos casos y bloques, ML reentrenado, `LightGBM+`, el LightGBM del fragmento, selección en validación, Chronos-2 small, base y synth; `--extra` y `--horizon` para los controles, `--stats` para volver a medir solo los estadísticos y `--snippet` para medir el LightGBM tal como lo escribe el fragmento |
-| `benchmark/recount.py` | Recuentos de la revisión (15 casos originales): efecto del protocolo, por ejecución y por dataset |
-| `benchmark/cases_d4.py` | Los 20 casos añadidos para llegar a 6 o más datasets por tipo de datos (`review.py --d4`) |
-| `benchmark/rules.py` | **Respaldo de cada regla** con el estudio ampliado (26 datasets) y comparación de AutoETS con AutoARIMA; escribe `rules_*.csv`, que `build.py` usa para comprobar las frases de la página |
-| `benchmark/finder_tree.py`, `build.py` | Prototipo de la fuente única con el diseño de la sección 6: 4 filas, reglas por tipo de datos, 36 fragmentos. `build.py` los ejecuta con los avisos como errores, calcula las cifras del respaldo y escribe `results/review/finder.json` (los datos de la página) |
-| `benchmark/check_snippets.py` | Comprueba que cada tipo de fragmento se ejecuta con su historia mínima |
-| `benchmark/check_clean_install.sh` | Primera ejecución real: entorno nuevo, la línea de instalación del propio script, primera y segunda ejecución, y el mismo script sin acceso a Hugging Face |
-| `benchmark/check_mcp.py` | Recorre el servidor MCP de skforecast-ai como lo haría un agente (profile, plan, create_cv, compare, get_code) y falla si no devuelve un script. Necesita skforecast-ai con `foundation` y `mcp` |
-| `benchmark/mock.py`, `mock.html` | Maqueta de la página: las 4 filas y el resultado de cada combinación, con los datos de `finder.json` |
-| `benchmark/repro_ets_freeze_params.py` | Reproducción de `BUG-ets-freeze-params` |
-| `benchmark/summarize.py`, `evidence.py`, `report_data.py` | Resúmenes de la versión 1 (leen `results/*.csv`) |
-| `benchmark/results/` | CSV del estudio original |
-| `benchmark/results/review/` | CSV del estudio de referencia, controles (`extra_*`), recuentos (`recount_*`), fragmentos (`finder.json`, `snippet_*`), `environment.json` y, de la medición de los estadísticos tras el arreglo, `environment_stats.json` y `stats_previous.csv`; el error por serie y por bloque, en `detail/` |
+| `docs/quick-start/choose-a-forecaster.md` | La página "Which forecaster should I use?" |
+| `docs/javascripts/finder.js`, `docs/stylesheets/finder.css`, `docs/overrides/finder.html` | El selector, sus estilos y la plantilla de la página |
+| `docs/javascripts/finder-data.json` | Generado: los 105 estados posibles y los 36 scripts |
+| `tools/docs/forecaster_finder/` | Fuente única (`finder.py`), generador (`build.py`), comprobaciones y README |
+| `benchmarks/forecaster_finder/` | El estudio (`study.py`, `cases.py`, `cases_d4.py`, `rules.py`), sus resultados y README |
+| `.github/workflows/forecaster-finder.yml` | CI: ficheros generados al día y todos los scripts ejecutados (también cada semana) |
+| `dev/forecaster_finder/PLAN.md`, `REVISION.md` | Este plan y la revisión independiente |
+| `dev/forecaster_finder/benchmark/` | Restos de la versión 1 (ML congelado): resúmenes, sus CSV y la reproducción del fallo de `Ets`. No se citan en ninguna página |
 
-Reproducir (desde `benchmark/`, con `uv pip install chronos-forecasting`):
-
-```bash
-python -I review.py              # unos 35 minutos en 4 núcleos sin GPU
-python -I review.py --extra      # otros sitios de bdg2, otras series de M4, clasificación (15 min)
-python -I review.py --horizon    # horizonte cuatro veces más corto (7 min)
-python -I review.py --stats      # solo AutoETS y AutoARIMA, sustituidos en los CSV (3 min)
-python -I review.py --snippet    # el LightGBM del fragmento, tal como se escribe (3 min)
-python -I review.py --d4         # los 20 casos de cases_d4.py (25 min, con la carga de M5)
-python -I review.py --arima      # AutoARIMA, también con exog, en diario, mensual y trimestral (2 min)
-python -I review.py --tune       # LightGBM con 20 pruebas de búsqueda en validación (unos 50 min)
-python -I recount.py             # cifras de la revisión (secciones 4.2 y 4.3)
-python -I rules.py               # respaldo de las reglas con los 26 datasets (secciones 4.6 y 6.2)
-python -I build.py               # 36 combinaciones, 36 fragmentos, medio minuto
-python -I check_snippets.py      # historia mínima de cada tipo de fragmento
-python -I mock.py                # maqueta navegable (../mock.html)
-bash check_clean_install.sh      # instalación limpia (unos 6 GB) y primera ejecución
-python -I check_mcp.py           # servidor MCP de skforecast-ai (en un entorno que lo tenga)
-```
-
-Entorno: Python 3.12.3, skforecast 0.28.0, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1,
-scipy 1.18.1, numba 0.68.1, LightGBM 4.7.0, PyTorch 2.15.0 (CPU), chronos-forecasting 2.3.2.
+Entorno de las cifras: Python 3.12.3, skforecast 0.28.0, numpy 2.5.5, pandas 3.1.1,
+scikit-learn 1.9.1, scipy 1.18.1, numba 0.68.1, LightGBM 4.7.0, PyTorch 2.15.0 (CPU),
+chronos-forecasting 2.3.2.
 
 ## 2. Objetivo y alcance
 
@@ -436,7 +398,7 @@ script completo:
 delante** (`finder_tree.sample_block`) y abre el notebook, así que lo pegado se ejecuta sin
 tocar nada; el bloque dice "Replace this block with your own data". Esos datos son los
 mismos con los que CI ejecuta cada script (en un espacio de nombres vacío, como en un
-notebook nuevo). El notebook lo escribe `build.py` (`results/review/first_comparison.ipynb`);
+notebook nuevo). El notebook lo escribe `build.py` (`tools/docs/forecaster_finder/first_comparison.ipynb`);
 el enlace solo funciona cuando esté en una rama pública.
 
 **skforecast-ai** (plegado, solo en los casos de número): unas líneas que continúan el
@@ -698,15 +660,14 @@ La maqueta conserva el titular acordado (D2 y D6) hasta que se decida D9.
 
 ### 7.2 Decisiones que necesitan respuesta
 
-D1 a D8 están cerradas (D8: Colab con un único notebook de "Paste your script here" y el
-script copiado con datos de ejemplo). Quedan dos, las dos con recomendación:
+Ninguna. D1 a D8 cerradas el 2026-11-28; **D9 y D10 aceptadas el mismo día**:
 
-| # | Decisión | Opciones | Recomendación |
-|:--|:--|:--|:--|
-| **D9** | Cómo se presentan LightGBM y Chronos-2 (6.9): titular del selector, orden del script y texto de la skill | (a) Dejar "Start with Chronos-2, then try to beat it with LightGBM". (b) "Compare two forecasters: LightGBM and Chronos-2", cada uno con su papel, y el script en el orden baseline, LightGBM, Chronos-2 | **(b)**. Con un ajuste ligero LightGBM supera a Chronos-2 en 7 de 33: "try to beat it" es un reto que se pierde dos de cada tres veces |
-| **D10** | Dónde va la página (6.5) | (a) *Quick start*, segunda entrada. (b) *User Guides → Choosing a model*, primera | **(a)**, con el gancho en la portada (`home.html:189`) y la nota en el notebook *Quick start*. Antes de decidir, mirar en GA4 las páginas de entrada |
+- **D9**: titular "Compare two forecasters: LightGBM and Chronos-2", cada uno con su papel
+  ("You train it", "No training"), y el script en el orden baseline, LightGBM, ARIMA y
+  Chronos-2 al final, con cada resultado impreso al obtenerlo (6.9).
+- **D10**: página propia en la pestaña *Quick start*, segunda entrada (6.5).
 
-Ninguna de las dos bloquea la fase 0, salvo el texto de la skill, que depende de D9.
+Una propuesta nueva espera respuesta, en 7.5: la barra de anuncios.
 
 ### 7.3 Fases
 
@@ -769,6 +730,65 @@ Orden y dependencias: fase 0 → fase 1 → fase 2 → fase 3 → fase 4. El arr
 en la PR de esta rama (D5). La fase 0 tiene valor aunque no se haga nada más: hoy la skill dice a los asistentes
 que empiecen por `ForecasterRecursive` con LightGBM y reserva los fundacionales para "sin
 datos".
+
+### 7.5 Estado de la implementación (2026-11-28)
+
+Hecho:
+
+| Fase | Qué | Dónde |
+|:--|:--|:--|
+| 0 | Estudio en `benchmarks/forecaster_finder/` con README y versiones fijadas | `benchmarks/forecaster_finder/` |
+| 0 | Correcciones 1 a 15 de la sección 5 y posicionamiento de 6.9 | `skills/choosing-a-forecaster`, `statistical-models`, `baseline-forecasting`, `tools/ai/llms-base.txt` y la frase de *Comparing forecasting models* |
+| 1 | Fuente única, generador con `--check`, página que funciona sin JavaScript, bloque de reglas de la skill generado | `tools/docs/forecaster_finder/`, la página y la skill |
+| 1 | CI: ficheros generados al día, los 36 scripts ejecutados con avisos como errores y con su historia mínima; también cada semana | `.github/workflows/forecaster-finder.yml` |
+| 2 | Selector: 4 filas, recuadro de respuesta, script progresivo, copiar, Colab, skforecast-ai, asistentes, teclado, pantallas estrechas, tema oscuro, eventos con consentimiento | `docs/javascripts/finder.js`, `finder.css` |
+| 2 | Las respuestas viajan en la URL (`#answers=number-one-daily-no`): se comparten y sobreviven a ir a una guía y volver | `finder.js` |
+
+Ganchos puestos (de más a menos tráfico esperado):
+
+1. Portada, bajo los botones del hero: "Not sure which forecaster to use? Find out in four
+   questions".
+2. Portada, bajo las familias de modelos: bloque con la primera pregunta. Cada respuesta
+   abre el selector con esa pregunta ya contestada.
+3. *Intro to Forecasting*: nota al principio de la página y frase bajo la tabla de
+   forecasters.
+4. Notebook *Quick start*: frase en la primera celda. Además, su enlace "Next" del pie
+   lleva al selector.
+5. README del repositorio (también es la página de PyPI): frase bajo la tabla de
+   forecasters y fila en la tabla de documentación.
+6. *User Guides*: tarjeta *Choosing a model* y frase al principio de *Comparing forecasting
+   models*. FAQ: tarjeta *Forecasting Tips*.
+7. *AI-assisted forecasting* y la skill `choosing-a-forecaster` (los asistentes citan la URL).
+8. Notas de versión: destacado "Docs".
+
+Propuestos, sin hacer (necesitan tu visto bueno):
+
+- **Barra de anuncios** (`docs/overrides/partials/announce.html`): sale en todas las
+  páginas, también en las guías a las que se llega desde un buscador, que es justo el
+  tráfico al que no alcanzan los ganchos de la portada. Es el sitio de más alcance. No la
+  he tocado porque hoy anuncia Studio y skforecast-ai y es tu texto. Propuesta: durante
+  las primeras semanas, "New: not sure which forecaster to use? Answer four questions and
+  get a script that runs", delante o en lugar del texto actual.
+- **Páginas de ejemplos** (inglés, español y chino): una línea bajo el título. Hay que
+  traducirla.
+- **Fuera del repositorio**: los artículos de cienciadedatos.net que comparan modelos, la
+  descripción del repositorio en GitHub y una publicación en LinkedIn al lanzar.
+- Tarjeta en "Start here" de la portada: no la he puesto porque son 4 tarjetas en una
+  rejilla de 4 y el bloque de las familias ya está en la misma página.
+
+Pendiente antes de fusionar:
+
+- Abrir la PR (no la abro sin preguntar) y añadir su enlace a las notas de versión.
+- Probar a mano el botón "Run it in Google Colab": el enlace apunta a `main`, así que solo
+  funciona cuando esta carpeta esté ahí.
+- Que alguien más revise el arreglo de `Ets` como cambio de la librería.
+- El sitio no se construye en esta sesión con la configuración tal cual (el plugin
+  `privacy` descarga avatares de GitHub y la red lo bloquea): la página se ha probado con
+  ese plugin desactivado. Construirlo en local antes de fusionar.
+
+No hecho, a propósito: widget de feedback de Material en todo el sitio (el selector lleva
+su propio "Was this useful?") y parámetros UTM en los enlaces salientes (ningún otro enlace
+de la documentación los usa).
 
 ### 7.4 Comprobaciones antes de publicar (estado del 2026-11-28)
 

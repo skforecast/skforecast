@@ -4,7 +4,7 @@ datasets (the 15 cases of the review plus the cases of cases_d4.py).
 
 One vote per dataset in each type of data (the mean of its runs), with the
 LightGBM that the finder snippet writes. It also compares AutoETS and
-AutoARIMA as the statistical reference. Reads results/review/*.csv and
+AutoARIMA as the statistical reference. Reads results/*.csv and
 writes rules_runs.csv, rules_cells.csv and rules_stats.csv, which build.py
 uses to check the sentences shown on the page.
 
@@ -16,7 +16,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-RES = Path(__file__).parent / "results" / "review"
+RES = Path(__file__).parent / "results"
 DATASET = {
     "vic_electricity_daily": "vic_electricity", "vic_electricity_daily_past_only": "vic_electricity",
     "bike_sharing_daily": "bike_sharing", "bike_sharing_hourly": "bike_sharing",

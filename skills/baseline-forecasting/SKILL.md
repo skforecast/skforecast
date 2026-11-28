@@ -20,12 +20,13 @@ Use this skill to build a **simple, explainable baseline** with
 beats it. A baseline predicts each future step from an equivalent past date
 (e.g. same weekday last week), optionally aggregating several past occurrences.
 
-Always establish a baseline **before** trusting an ML model: if the ML forecaster
-cannot beat the naive baseline, the added complexity is not justified.
+Always establish a baseline **before** trusting a model, machine learning or
+foundation: if it cannot beat the naive baseline, the added complexity is not
+justified.
 
 ### Related skills
 
-- **Prerequisite**: `choosing-a-forecaster` (decide whether a baseline or an ML model fits the problem)
+- **Prerequisite**: `choosing-a-forecaster` (the first comparison: LightGBM, Chronos-2 and this baseline)
 - **Alongside**: `forecasting-single-series` (train the ML model you are benchmarking against)
 - **Next**: `metric-selection` (use MASE to compare the model against the naive baseline)
 - **Next**: `hyperparameter-optimization` (route: baselines are tuned with `grid_search_equivalent_date`, not the generic search)
@@ -130,6 +131,40 @@ metric_baseline, _ = backtesting_forecaster(
 
 See `metric-selection` for why MASE is the natural yardstick against a naive
 baseline.
+
+## Several series and categorical targets
+
+`ForecasterEquivalentDate` takes one numeric series. With **several series**,
+backtest one baseline per series with the same `cv` and average the metric:
+
+```python
+import pandas as pd
+
+# series: dict with one pandas Series per series
+metric_baseline = pd.concat([
+    backtesting_forecaster(
+        forecaster    = ForecasterEquivalentDate(offset=7),
+        y             = y_i,
+        cv            = cv,
+        metric        = "mean_absolute_scaled_error",
+        show_progress = False,
+    )[0]
+    for y_i in series.values()
+])["mean_absolute_scaled_error"].mean()
+```
+
+With a **categorical target** (`ForecasterRecursiveClassifier`), the baseline is a
+seasonal rule: the category observed one season before. Compare it on the dates
+the classifier was backtested on, with `steps` no longer than the season so that
+the rule only uses values known when the forecast is made:
+
+```python
+from sklearn.metrics import balanced_accuracy_score
+
+# predictions: second output of backtesting_forecaster for the classifier
+rule = y.shift(7).loc[predictions.index]
+metric_rule = balanced_accuracy_score(y.loc[predictions.index], rule)
+```
 
 ## Selecting a configuration
 

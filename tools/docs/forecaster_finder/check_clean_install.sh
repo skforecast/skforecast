@@ -7,27 +7,32 @@
 # downloads the weights of Chronos-2) and the second one. It installs about
 # 6 GB (PyTorch with the CUDA packages, the default of pip on Linux).
 #
-# Usage (from this folder, after `python -I build.py`):
-#     bash check_clean_install.sh [answers]
-# Set VENV to reuse an environment instead of creating one.
-# `answers` is the key of a combination of results/review/finder.json
+# Usage (from the root of the repository):
+#     bash tools/docs/forecaster_finder/check_clean_install.sh [answers]
+# `answers` is the key of a combination of docs/javascripts/finder-data.json
 # (default: number-one-monthly-no, the script with the three models).
+# Set VENV to reuse an environment instead of creating one.
 set -euo pipefail
 
 key="${1:-number-one-monthly-no}"
+here="$(cd "$(dirname "$0")" && pwd)"
 work="$(mktemp -d)"
 venv="${VENV:-$work/venv}"
 script="$work/script.py"
 
-# The script that the page copies: the sample data block and the snippet
-python -I - "$key" "$script" <<'PY'
+# The script as "Run it in Google Colab" copies it: with its sample data
+python -I - "$key" "$script" "$here" <<'PY'
 import json
 import sys
+from pathlib import Path
 
-finder = json.load(open("results/review/finder.json"))
-combo = next(c for c in finder["combos"] if c["key"] == sys.argv[1])
-code = finder["snippets"][combo["snippet"]]["code"]
-open(sys.argv[2], "w").write(combo["sample"] + "\n" + code + "\n")
+sys.path.insert(0, sys.argv[3])
+import finder
+
+data = json.loads((Path(sys.argv[3]).parents[2] / "docs/javascripts/finder-data.json").read_text())
+combo = data["combos"][sys.argv[1]]
+code = data["snippets"][combo["snippet"]]
+Path(sys.argv[2]).write_text(finder.with_sample(combo["sample"], code))
 PY
 install="$(grep -m1 '^# pip install' "$script" | sed 's/^# //')"
 

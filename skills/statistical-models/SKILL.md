@@ -12,16 +12,16 @@ description: >
 ## When to Use
 
 Use statistical models when:
-- The series is short (< 200 observations)
+- You have one monthly or quarterly series: a classic statistical model (ARIMA, ETS) is a strong reference there and often beats an untuned ML model
 - Interpretability is important (ARIMA coefficients, ETS components)
 - You need built-in prediction intervals without residual bootstrapping
-- As a baseline to compare against ML models
+- As a reference to compare against ML and foundation models
 
 ### Related skills
 
 - **Prerequisite**: `autocorrelation-and-lag-selection` (read ACF/PACF to identify ARIMA orders `p`, `d`, `q` before fitting)
 - **Alongside**: `baseline-forecasting` (the other benchmark family: naive equivalent-date baselines)
-- **Next**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals via the `interval_method` argument)
+- **Next**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals: `predict_interval` with `interval` or `alpha`)
 - **Next**: `hyperparameter-optimization` (tune ARIMA `order` / `seasonal_order` via grid search)
 
 ## Stop Conditions

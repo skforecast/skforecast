@@ -24,6 +24,8 @@ The main changes in this release are:
 
 + <span class="badge text-bg-fix">Fix</span> <code>[backtesting_stats]</code> with an automatic <code>[Ets]</code> and `freeze_params=True` (the default) could return predictions of the order of -1e10 from the second fold on in some seasonal series. An <code>[Ets]</code> model whose level or forecasts are not positive is no longer accepted when its error or seasonality is multiplicative.
 
++ <span class="badge text-bg-docs">Docs</span> New page [Which forecaster should I use?](../quick-start/choose-a-forecaster.md): four questions about your data give the forecasters to compare first, the baseline to compare them with and a script that runs as it is.
+
 !!! warning "Before upgrading"
 
     Some results change, and some environments and code need to be updated (see **Added**, **Changed** and **Fixed**):
@@ -81,6 +83,8 @@ The main changes in this release are:
 + With pandas 3, the error raised when a timezone-aware index has no frequency explains how to keep it: `tz_convert` now drops calendar frequencies such as `'D'` or `'MS'`, and `freq='24h'` (daily) or `freq='168h'` (weekly) keep the same dates. ([#1497](https://github.com/skforecast/skforecast/pull/1497))
 
 + New page [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) in the FAQ with the differences that pandas 3 brings to skforecast (text dtype, dates in microseconds, time zones, read-only arrays, saving forecasters) and how to write code that works with both versions. ([#1510](https://github.com/skforecast/skforecast/pull/1510))
+
++ New page [Which forecaster should I use?](../quick-start/choose-a-forecaster.md) in the Quick start. Four questions about the data (a number or a category, one series or several, its frequency and whether any variable is known in advance) give the forecasters to compare first, the baseline and a script that runs as it is. Its rules come from a study on 26 public datasets.
 
 + When <code>[load_forecaster]</code> fails with pandas 2, the error notes that a forecaster saved with pandas 3 can only be loaded with pandas 3, or with pandas 2.3 if it was saved with `backend='skops'`. With pandas 3, a forecaster saved with pandas 2 with `joblib`, `pickle` or `cloudpickle` and a named time zone (for example, `'Europe/Madrid'`) needs `pytz`, which pandas 3 does not install: the `ModuleNotFoundError` notes it. ([#1497](https://github.com/skforecast/skforecast/pull/1497), [#1536](https://github.com/skforecast/skforecast/pull/1536))
 

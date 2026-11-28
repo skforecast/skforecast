@@ -7,16 +7,16 @@ Each entry is (Case, dataset, exog_kind). `exog_kind` says what the variables
 known in advance are: 'calendar' (events, planned values: really known for
 future dates), 'weather' (observed values, used as if they were a perfect
 forecast) or '' (none). The settings per frequency are those of the original
-cases of benchmark.py.
+cases of cases.py.
 
-Run with `python -I review.py --d4`.
+Run with `python -I study.py --d4`.
 """
 from __future__ import annotations
 
 import numpy as np
 import pandas as pd
 
-from benchmark import Case
+from cases import Case
 from skforecast.datasets import fetch_dataset
 
 HOURLY = dict(steps=24, season=24, lags=[1, 2, 3, 24, 48, 168], window=24,

@@ -1,0 +1,711 @@
+/*!
+ * Copyright (c) 2021-present Joaquín Amat Rodrigo and Javier Escobar Ortiz.
+ * Part of the skforecast documentation, licensed under CC BY-NC-SA 4.0
+ * (https://creativecommons.org/licenses/by-nc-sa/4.0/). It is not covered by the
+ * BSD-3-Clause license of the skforecast software.
+ * The skforecast trademark and logo are registered with the EUIPO (application
+ * number 019109684) and may not be used without permission.
+ */
+/*
+Forecaster finder (docs/quick-start/choose-a-forecaster.md).
+
+Loaded only on that page, from the `extrahead` block of the template
+docs/overrides/finder.html, so the layout override below does not affect any
+other page. Every other selector is scoped to .sk-finder. Colors are tokens,
+the same as the home page: light values on .sk-finder, dark values when
+Material's palette toggle sets data-md-color-scheme="slate" on <body>. The
+answer box and the code window are dark in both schemes.
+
+See tools/docs/forecaster_finder/README.md.
+*/
+
+/*
+===============================
+Layout: a wider page (the sidebars are hidden in the front matter)
+===============================
+*/
+
+.md-main__inner.md-grid {
+  max-width: 68rem;
+}
+
+/*
+===============================
+Tokens
+===============================
+*/
+
+.sk-finder {
+  --bg-soft: #f4f6f9;
+  --surface: #ffffff;
+  --ink: #1b2433;
+  --ink-2: #4d586b;
+  --line: #dfe5ee;
+  --heading: #0b1f3a;
+  --orange: #f79939;
+  --orange-ink: #b35a06;
+  --btn-ink: #1f1405;
+  --good: #1f7a45;
+  --stage: #0b1a30;
+  --stage-panel: #12243f;
+  --stage-line: #27406a;
+  --stage-ink: #e6edf6;
+  --stage-muted: #9aabc3;
+  --code-bg: #0d1726;
+  --code-line: #1c2940;
+  --code-ink: #dbe3ee;
+  --code-dim: #8796ad;
+  --tk-key: #f7a656;
+  --tk-cls: #7cc4f0;
+  --tk-str: #a6d99a;
+  --tk-num: #d4b0ee;
+  --tk-com: #7d8ba1;
+  --display: "Poppins", "Segoe UI", system-ui, sans-serif;
+  --mono: "Ubuntu Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+[data-md-color-scheme="slate"] .sk-finder {
+  color-scheme: dark;
+  --bg-soft: #232733;
+  --surface: #272c38;
+  --ink: #e3e7ee;
+  --ink-2: #a7b1c1;
+  --line: #353b49;
+  --heading: #f2f5f9;
+  --orange-ink: #f7a656;
+  --good: #4cc27d;
+}
+
+/*
+===============================
+Frame: questions on the left, answer and script on the right
+===============================
+*/
+
+.sk-finder,
+.sk-finder * {
+  box-sizing: border-box;
+}
+
+.md-typeset .sk-finder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.2rem;
+  margin: 1.2rem 0 2rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.8rem;
+  line-height: 1.55;
+  text-align: left;
+}
+
+.md-typeset .sk-finder[data-state="loading"],
+.md-typeset .sk-finder[data-state="error"] {
+  display: block;
+  color: var(--ink-2);
+}
+
+@media (min-width: 60em) {
+  .md-typeset .sk-finder {
+    grid-template-columns: 15.5rem minmax(0, 1fr);
+    gap: 1.4rem;
+    padding: 1.2rem;
+  }
+}
+
+.md-typeset .sk-finder p,
+.md-typeset .sk-finder ol,
+.md-typeset .sk-finder ul,
+.md-typeset .sk-finder h3,
+.md-typeset .sk-finder fieldset,
+.md-typeset .sk-finder legend,
+.md-typeset .sk-finder pre {
+  margin: 0;
+  text-align: left;
+}
+
+.md-typeset .sk-finder button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.md-typeset .sk-finder button:focus-visible,
+.md-typeset .sk-finder a:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.sk-finder .skf-head {
+  grid-column: 1 / -1;
+  font-size: 0.72rem;
+  color: var(--ink-2);
+}
+
+/*
+===============================
+Questions
+===============================
+*/
+
+.sk-finder .skf-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.95rem;
+  min-width: 0;
+}
+
+.md-typeset .sk-finder .skf-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.md-typeset .sk-finder .skf-row legend {
+  padding: 0;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--heading);
+}
+
+.sk-finder .skf-n {
+  display: inline-block;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin-right: 0.35rem;
+  border-radius: 50%;
+  background: var(--bg-soft);
+  color: var(--ink-2);
+  font-size: 0.62rem;
+  line-height: 1.2rem;
+  text-align: center;
+}
+
+.sk-finder .skf-row.done .skf-n {
+  background: var(--orange);
+  color: var(--btn-ink);
+}
+
+.sk-finder .skf-hint {
+  font-size: 0.68rem;
+  color: var(--ink-2);
+}
+
+.sk-finder .skf-opts,
+.sk-finder .skf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.md-typeset .sk-finder .skf-opt {
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--bg-soft);
+  font-size: 0.75rem;
+  text-align: left;
+}
+
+.md-typeset .sk-finder .skf-opt:hover,
+.md-typeset .sk-finder .skf-chip:hover {
+  border-color: var(--orange-ink);
+}
+
+.md-typeset .sk-finder .skf-opt[aria-checked="true"] {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: var(--btn-ink);
+  font-weight: 600;
+}
+
+.sk-finder .skf-opt small {
+  display: block;
+  font-size: 0.64rem;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.md-typeset .sk-finder .skf-chip {
+  padding: 0.2rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-soft);
+  font-size: 0.7rem;
+}
+
+.md-typeset .sk-finder .skf-reset {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--orange-ink);
+  font-size: 0.7rem;
+  text-decoration: underline;
+}
+
+/*
+===============================
+Answer box
+===============================
+*/
+
+.sk-finder .skf-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: 0;
+}
+
+.sk-finder .skf-answer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 0.95rem 1rem;
+  border-radius: 12px;
+  background: var(--stage);
+  color: var(--stage-ink);
+}
+
+.sk-finder .skf-eyebrow {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--stage-muted);
+}
+
+.md-typeset .sk-finder .skf-headline {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1.3;
+  text-wrap: balance;
+  color: #fff;
+}
+
+.md-typeset .sk-finder .skf-headline.pending {
+  font-weight: 500;
+  color: var(--stage-muted);
+}
+
+.sk-finder .skf-blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.5rem;
+}
+
+.sk-finder .skf-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12rem;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--stage-line);
+  border-radius: 10px;
+  background: var(--stage-panel);
+}
+
+.sk-finder .skf-block.empty {
+  min-height: 4.4rem;
+  align-items: center;
+  justify-content: center;
+  border-style: dashed;
+  background: transparent;
+  color: var(--stage-muted);
+  font-size: 0.7rem;
+}
+
+.sk-finder .skf-role {
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--orange);
+}
+
+.sk-finder .skf-fc {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.88rem;
+  line-height: 1.25;
+  color: #fff;
+  overflow-wrap: break-word;
+}
+
+.sk-finder .skf-fc small,
+.sk-finder .skf-or {
+  display: block;
+  font-family: var(--md-text-font-family, inherit);
+  font-weight: 400;
+  font-size: 0.62rem;
+  color: var(--stage-muted);
+}
+
+.sk-finder .skf-model {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.75rem;
+  color: var(--tk-cls);
+}
+
+.sk-finder .skf-what {
+  font-size: 0.68rem;
+  color: var(--stage-muted);
+}
+
+.sk-finder .skf-tag {
+  align-self: flex-start;
+  padding: 0 0.4rem;
+  border: 1px solid var(--stage-line);
+  border-radius: 999px;
+  font-size: 0.6rem;
+  color: var(--stage-ink);
+}
+
+.sk-finder .skf-guides {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin-top: 0.15rem;
+}
+
+.md-typeset .sk-finder .skf-answer a {
+  color: var(--orange);
+  font-size: 0.68rem;
+}
+
+.sk-finder .skf-block.flash {
+  animation: skf-flash 1.1s ease-out;
+}
+
+@keyframes skf-flash {
+  0% { border-color: var(--orange); box-shadow: 0 0 0 3px rgba(247, 153, 57, 0.45); }
+  100% { border-color: var(--stage-line); box-shadow: 0 0 0 0 rgba(247, 153, 57, 0); }
+}
+
+.md-typeset .sk-finder .skf-base {
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--stage-line);
+  font-size: 0.72rem;
+  color: var(--stage-muted);
+}
+
+.md-typeset .sk-finder .skf-base code {
+  padding: 0;
+  background: none;
+  color: var(--stage-ink);
+  font-size: 0.95em;
+}
+
+.sk-finder .skf-base a {
+  white-space: nowrap;
+}
+
+.sk-finder .skf-why {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.76rem;
+  color: var(--stage-ink);
+}
+
+.md-typeset .sk-finder .skf-why a {
+  font-size: inherit;
+}
+
+/*
+===============================
+Script
+===============================
+*/
+
+.sk-finder .skf-script {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 0;
+}
+
+.md-typeset .sk-finder .skf-script h3 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--heading);
+}
+
+.md-typeset .sk-finder .skf-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-left: 1.1rem;
+  font-size: 0.75rem;
+}
+
+.md-typeset .sk-finder .skf-steps li {
+  margin: 0;
+}
+
+.sk-finder .skf-window {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--code-line);
+  border-radius: 10px;
+  background: var(--code-bg);
+}
+
+.sk-finder .skf-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--code-line);
+}
+
+.sk-finder .skf-bar i {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #2a3a55;
+}
+
+.sk-finder .skf-bar span {
+  margin-inline: auto;
+  font: 13px var(--mono);
+  color: var(--code-dim);
+}
+
+.md-typeset .sk-finder .skf-bar button {
+  padding: 2px 10px;
+  border: 1px solid #2a3a55;
+  border-radius: 6px;
+  background: #16243a;
+  color: #c3cedd;
+  font: 600 12px var(--display);
+}
+
+.md-typeset .sk-finder .skf-bar button:hover {
+  border-color: var(--orange);
+  color: #fff;
+}
+
+.md-typeset .sk-finder .skf-window pre,
+.md-typeset .sk-finder .skf-mini {
+  padding: 12px 14px;
+  overflow: auto;
+  border-radius: 0;
+  background: none;
+  color: var(--code-ink);
+  font-family: var(--mono);
+  font-size: 13.5px;
+  line-height: 1.55;
+  white-space: pre;
+  tab-size: 4;
+}
+
+.md-typeset .sk-finder .skf-window pre {
+  max-height: 26rem;
+}
+
+.md-typeset .sk-finder .skf-window pre.waiting {
+  min-height: 6.5rem;
+  color: var(--code-dim);
+}
+
+.md-typeset .sk-finder .skf-window code,
+.md-typeset .sk-finder .skf-mini code {
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: inherit;
+  font-size: inherit;
+  word-break: normal;
+}
+
+.md-typeset .sk-finder .skf-fold {
+  display: block;
+  width: 100%;
+  padding: 5px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--code-line);
+  background: #101c30;
+  color: var(--code-dim);
+  font: 13px var(--mono);
+  text-align: left;
+}
+
+.md-typeset .sk-finder .skf-fold:hover {
+  color: #fff;
+}
+
+.sk-finder .skf-ln {
+  display: inline-block;
+  min-width: 100%;
+}
+
+.sk-finder .skf-ln.reveal {
+  opacity: 0;
+  animation: skf-reveal 0.25s ease-out forwards;
+}
+
+.sk-finder .skf-ln.changed {
+  animation: skf-changed 1.6s ease-out;
+}
+
+@keyframes skf-reveal {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes skf-changed {
+  0% { background: rgba(247, 153, 57, 0.35); }
+  100% { background: transparent; }
+}
+
+.sk-finder .tk-k { color: var(--tk-key); }
+.sk-finder .tk-c { color: var(--tk-cls); }
+.sk-finder .tk-s { color: var(--tk-str); }
+.sk-finder .tk-n { color: var(--tk-num); }
+.sk-finder .tk-m { color: var(--tk-com); }
+
+.md-typeset .sk-finder .skf-mini {
+  border: 1px solid var(--code-line);
+  border-radius: 8px;
+  background: var(--code-bg);
+  font-size: 13px;
+}
+
+.sk-finder .skf-caption {
+  font-size: 0.68rem;
+  color: var(--ink-2);
+}
+
+.sk-finder .skf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.md-typeset .sk-finder .skf-btn {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.md-typeset .sk-finder .skf-btn:hover {
+  border-color: var(--orange-ink);
+}
+
+.md-typeset .sk-finder .skf-btn.primary {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: var(--btn-ink);
+}
+
+.sk-finder .skf-status {
+  min-height: 1.2em;
+  font-size: 0.68rem;
+  color: var(--good);
+}
+
+/* Folded sections under the script */
+.sk-finder .skf-more {
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--line);
+  font-size: 0.74rem;
+  color: var(--ink-2);
+}
+
+.md-typeset .sk-finder .skf-more > button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.sk-finder .skf-more > button::before {
+  content: "▸ ";
+  color: var(--orange-ink);
+}
+
+.sk-finder .skf-more > button[aria-expanded="true"]::before {
+  content: "▾ ";
+}
+
+.sk-finder .skf-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.45rem;
+}
+
+.sk-finder .skf-body[hidden] {
+  display: none;
+}
+
+.md-typeset .sk-finder .skf-body ul {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-left: 1rem;
+}
+
+.md-typeset .sk-finder .skf-body li {
+  margin: 0;
+}
+
+.md-typeset .sk-finder .skf-body code {
+  font-size: 0.9em;
+}
+
+.sk-finder .skf-opt2 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.sk-finder .skf-opt2 b {
+  color: var(--ink);
+}
+
+.sk-finder .skf-say {
+  padding: 0.45rem 0.65rem;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  color: var(--ink);
+}
+
+.sk-finder .skf-next {
+  font-size: 0.76rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk-finder * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Sections that repeat what the finder shows: hidden once it is running */
+.sk-finder-ready .sk-finder-static {
+  display: none;
+}

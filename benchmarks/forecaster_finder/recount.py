@@ -1,6 +1,6 @@
 """
 Recount of the review: the claims of the study under each protocol, by run
-and by dataset, from the CSV files written by review.py (results/review/).
+and by dataset, from the CSV files written by study.py (results/).
 
 Usage:
     python -I recount.py
@@ -10,7 +10,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-RES = Path(__file__).parent / "results" / "review"
+RES = Path(__file__).parent / "results"
 DATASET = {
     "vic_electricity_daily": "vic_electricity", "vic_electricity_daily_past_only": "vic_electricity",
     "bike_sharing_daily": "bike_sharing", "bike_sharing_hourly": "bike_sharing",

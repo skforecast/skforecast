@@ -1,0 +1,12 @@
+# Versions the results of results/ were obtained with (Python 3.12.3, CPU).
+# skforecast is the repository itself (0.28.0 in development): pip install -e .
+numpy==2.5.5
+pandas==3.1.1
+scikit-learn==1.9.1
+scipy==1.18.1
+numba==0.68.1
+lightgbm==4.7.0
+statsmodels==0.15.0
+optuna==5.1.0
+torch==2.15.0
+chronos-forecasting==2.3.2

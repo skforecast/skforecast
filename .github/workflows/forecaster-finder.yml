@@ -1,0 +1,108 @@
+name: Forecaster Finder
+
+# The page "Which forecaster should I use?" gives the reader a script that must
+# run as it is. This workflow checks that the generated files are up to date
+# with their source (tools/docs/forecaster_finder/finder.py) and runs every
+# script on sample data, with any warning as an error, and with the shortest
+# history the page promises. See tools/docs/forecaster_finder/README.md.
+#
+# The packages are installed as the scripts tell the reader to install them
+# (their versions are not pinned), so the weekly run also catches a release of
+# LightGBM, chronos-forecasting or pandas that breaks a script.
+#
+# The schedule is launched from the default branch, but it checks out the
+# highest release branch (`X.Y.x`), where the development happens. Pull
+# requests run it when they touch the finder, its study or the code of the
+# foundation models.
+
+permissions:
+  contents: read
+
+on:
+  schedule:
+    # Every Monday at 07:00 UTC
+    - cron: '0 7 * * 1'
+  workflow_dispatch:  # Allow manual trigger
+  pull_request:
+    branches:
+      - main
+      - '*.x'  # release branches, where feature and fix branches are merged
+    paths:
+      - 'tools/docs/forecaster_finder/**'
+      - 'docs/quick-start/choose-a-forecaster.md'
+      - 'docs/javascripts/finder-data.json'
+      - 'skills/choosing-a-forecaster/SKILL.md'
+      - 'benchmarks/forecaster_finder/results/**'
+      - 'skforecast/foundation/**'
+      - '.github/workflows/forecaster-finder.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  setup:
+    name: Resolve the branch to check
+    # Skipped on the pull requests of Dependabot, and with it the rest of the jobs.
+    if: github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      ref: ${{ steps.branch.outputs.ref }}
+    steps:
+      # Empty for the other events: the checkout then uses the branch of the
+      # pull request or the one selected in the manual trigger.
+      - name: Find the highest release branch
+        id: branch
+        if: github.event_name == 'schedule'
+        run: |
+          ref=$(git ls-remote --heads "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" '*.x' \
+            | sed 's|.*refs/heads/||' \
+            | grep -E '^[0-9]+\.[0-9]+\.x$' \
+            | sort -V \
+            | tail -n 1)
+          echo "Branch to check: ${ref:-default branch}"
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+  check:
+    needs: setup
+    name: Generated files are up to date
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.setup.outputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Check the page data, the page, the skill and the notebook
+        run: |
+          python -m pip install pandas
+          python tools/docs/forecaster_finder/build.py --check
+
+  scripts:
+    needs: setup
+    name: Every script runs as it is
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.setup.outputs.ref }}
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      # PyTorch for CPU first, so that pip does not download the CUDA packages;
+      # then the install line of the scripts, with skforecast from the checkout.
+      - name: Install the packages of the scripts
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[stats]" lightgbm chronos-forecasting
+          python -m pip list | grep -i -E "^(skforecast|pandas|numpy|torch|lightgbm|chronos-forecasting|statsmodels|scikit-learn) "
+      - name: Run every script on sample data (warnings are errors)
+        run: python tools/docs/forecaster_finder/build.py
+      - name: Run each kind of script with its minimum history
+        run: python tools/docs/forecaster_finder/check_snippets.py

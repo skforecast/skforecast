@@ -1,7 +1,7 @@
 """
 Control experiments of the review of the forecaster finder study.
 
-Same cases, folds and metric as benchmark.py. It adds the checks that decide
+Same cases, folds and metric as cases.py. It adds the checks that decide
 whether the comparison between families is fair:
 
 - ML refitted in every fold (expanding window), next to the frozen ML of the
@@ -19,15 +19,15 @@ whether the comparison between families is fair:
 - Per-series and per-fold errors, to aggregate in other ways.
 
 Usage:
-    python -I review.py              # all cases
-    python -I review.py vic h2o      # cases whose name contains any of the words
-    python -I review.py --extra      # bdg2 sites, m4 subsets, classification
-    python -I review.py --horizon    # same test period with a horizon 4 times shorter
-    python -I review.py --stats      # only the statistical models, replaced in the CSV files
-    python -I review.py --snippet    # the ML block of the finder snippets, as written
-    python -I review.py --d4         # the cases of cases_d4.py (more datasets per type of data)
-    python -I review.py --arima      # AutoARIMA (also with exog) in daily, monthly and quarterly series
-    python -I review.py --tune       # LightGBM with 20 trials of search on validation
+    python -I study.py              # all cases
+    python -I study.py vic h2o      # cases whose name contains any of the words
+    python -I study.py --extra      # bdg2 sites, m4 subsets, classification
+    python -I study.py --horizon    # same test period with a horizon 4 times shorter
+    python -I study.py --stats      # only the statistical models, replaced in the CSV files
+    python -I study.py --snippet    # the ML block of the finder snippets, as written
+    python -I study.py --d4         # the cases of cases_d4.py (more datasets per type of data)
+    python -I study.py --arima      # AutoARIMA (also with exog) in daily, monthly and quarterly series
+    python -I study.py --tune       # LightGBM with 20 trials of search on validation
 """
 
 from __future__ import annotations
@@ -39,8 +39,10 @@ import time
 import warnings
 from pathlib import Path
 
-os.environ.setdefault("BENCH_OUT", "results/review")
+os.environ.setdefault("BENCH_OUT", "results")
 sys.path.insert(0, str(Path(__file__).parent))  # `python -I` does not add it
+# Source of the finder page: the settings per frequency of the snippets
+FINDER = Path(__file__).resolve().parents[2] / "tools" / "docs" / "forecaster_finder"
 
 import numpy as np
 import pandas as pd
@@ -48,7 +50,7 @@ from lightgbm import LGBMClassifier, LGBMRegressor
 from sklearn.linear_model import Ridge
 from sklearn.preprocessing import StandardScaler
 
-import benchmark as B  # noqa: E402
+import cases as B  # noqa: E402
 from skforecast.datasets import fetch_dataset
 from skforecast.foundation import FoundationModel, ForecasterFoundation
 from skforecast.model_selection import (
@@ -346,7 +348,7 @@ def stats_models(case, series, cv, multi, full, timed):
 
 def run_snippet():
     """
-    Measure the ML block of the finder snippets as finder_tree.py writes it:
+    Measure the ML block of the finder snippets as finder.py writes it:
     `LGBMRegressor(min_child_samples=5)`, the lags, rolling mean and calendar
     features of the frequency, series scaled only in the multi-series
     forecaster, refitted in every fold. Adds the model 'LightGBM snippet v2
@@ -354,7 +356,8 @@ def run_snippet():
     """
     import ast
 
-    import finder_tree as tree
+    sys.path.insert(0, str(FINDER))
+    import finder as tree
     freq_of = {24: "hourly", 7: "daily", 52: "weekly", 12: "monthly", 4: "quarterly"}
     label = "LightGBM snippet v2 [refit]"
     for case in B.CASES:
@@ -397,7 +400,7 @@ def run_snippet():
                 for col in s.columns]), 0.0, "")
             t0 = time.perf_counter()
             pred = backtest_ml(forecaster, s if multi else s[target], x, cv, multi, target)
-            res[label] = (pred, time.perf_counter() - t0, "as written by finder_tree.py")
+            res[label] = (pred, time.perf_counter() - t0, "as written by finder.py")
             t, d = tables(res, series, test_start, levels, case.steps)
             for frame in (t, d):
                 frame.insert(0, "history_obs", n_train)
@@ -418,10 +421,11 @@ def run_snippet():
 
 
 def snippet_forecaster(case, multi):
-    """ML forecaster of the finder snippets, as finder_tree.py writes it."""
+    """ML forecaster of the finder snippets, as finder.py writes it."""
     import ast
 
-    import finder_tree as tree
+    sys.path.insert(0, str(FINDER))
+    import finder as tree
     f = tree.FREQ[{24: "hourly", 7: "daily", 52: "weekly", 12: "monthly", 4: "quarterly"}[case.season]]
     kwargs = dict(
         estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),
