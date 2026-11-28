@@ -244,9 +244,11 @@ plugins:
   # downloaded at build time, so visitors do not connect to third parties
   # before accepting cookies (GDPR). Excluded:
   # - Badges with live values (downloads, versions): a local copy would freeze them.
-  # - Plotly and the MathJax 2 it brings (outputs of faq/skforecast-benchmark):
+  # - Plotly and the MathJax it brings (outputs of faq/skforecast-benchmark):
   #   Plotly's script tag has an integrity hash that the rewritten local copy
-  #   would fail, and MathJax 2 loads its extensions from its CDN at runtime.
+  #   would fail, and MathJax loads its extensions from its CDN at runtime.
+  #   The notebook no longer adds MathJax to its figures: remove its pattern
+  #   once its outputs are generated again (roadmap MAINT-bench-pandas3).
   # - Mermaid.js of Material's own diagram integration, which is not used (see
   #   pymdownx.superfences): a 3.5 MB copy in every version that nothing loads.
   #   The diagrams use docs/vendor/mermaid.
