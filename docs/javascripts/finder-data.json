@@ -105,17 +105,10 @@
   ]
  },
  "intro": "We tested each kind of model on 26 public datasets, always with the same backtesting, to see where each one works best. Your answers pick a starting point; the comparison on your own data decides.",
- "script_steps": {
-  "number": [
-   "Keeps your last periods apart as a test.",
-   "Forecasts them with each model, using only the data before each period.",
-   "Prints the error of each model: keep what beats the baseline."
-  ],
-  "category": [
-   "Keeps your last periods apart as a test.",
-   "Forecasts them with the classifier, using only the data before each period.",
-   "Prints how often the classifier and the simple rule are right: keep the classifier only if it beats the rule."
-  ]
+ "script_title": "Run the comparison on your data",
+ "script_intro": {
+  "number": "This script does it. It keeps your last periods apart as a test, forecasts them with each model using only the data before, and prints the error of each one: keep what beats the baseline.",
+  "category": "This script does it. It keeps your last periods apart as a test, forecasts them with the classifier using only the data before, and prints how often the classifier and the simple rule are right: keep the classifier only if it beats the rule."
  },
  "colab": "https://colab.research.google.com/github/skforecast/skforecast/blob/main/tools/docs/forecaster_finder/first_comparison.ipynb",
  "next": {

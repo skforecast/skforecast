@@ -449,16 +449,8 @@ Script
   color: var(--heading);
 }
 
-.md-typeset .sk-finder .skf-steps {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding-left: 1.1rem;
-  font-size: 0.75rem;
-}
-
-.md-typeset .sk-finder .skf-steps li {
-  margin: 0;
+.md-typeset .sk-finder .skf-intro {
+  font-size: 0.76rem;
 }
 
 .sk-finder .skf-window {

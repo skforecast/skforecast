@@ -289,7 +289,8 @@ def page_data(facts):
     data = {
         "rows": finder.ROWS, "notes": finder.NOTES,
         "intro": finder.INTRO.format(datasets=facts["datasets"]),
-        "script_steps": finder.SCRIPT_STEPS, "colab": finder.COLAB,
+        "script_title": finder.SCRIPT_TITLE, "script_intro": finder.SCRIPT_INTRO,
+        "colab": finder.COLAB,
         "next": finder.NEXT,
         "partial": {key(a): finder.blocks(a) for a in finder.all_partial_answers()},
         "combos": combos,

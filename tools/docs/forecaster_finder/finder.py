@@ -175,19 +175,17 @@ NEXT = {
 COLAB = ("https://colab.research.google.com/github/skforecast/skforecast/blob/main/"
          "tools/docs/forecaster_finder/first_comparison.ipynb")
 
-# What the script does, shown above the code
-SCRIPT_STEPS = {
-    "number": [
-        "Keeps your last periods apart as a test.",
-        "Forecasts them with each model, using only the data before each period.",
-        "Prints the error of each model: keep what beats the baseline.",
-    ],
-    "category": [
-        "Keeps your last periods apart as a test.",
-        "Forecasts them with the classifier, using only the data before each period.",
-        "Prints how often the classifier and the simple rule are right: keep the "
-        "classifier only if it beats the rule.",
-    ],
+# Bridge between the answer and the script: the answer says which forecasters
+# to compare, and the script is that comparison
+SCRIPT_TITLE = "Run the comparison on your data"
+SCRIPT_INTRO = {
+    "number": "This script does it. It keeps your last periods apart as a test, forecasts "
+              "them with each model using only the data before, and prints the error of "
+              "each one: keep what beats the baseline.",
+    "category": "This script does it. It keeps your last periods apart as a test, forecasts "
+                "them with the classifier using only the data before, and prints how often "
+                "the classifier and the simple rule are right: keep the classifier only if "
+                "it beats the rule.",
 }
 
 
