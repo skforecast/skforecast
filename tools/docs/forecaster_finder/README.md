@@ -94,8 +94,8 @@ scaled metric. The study compares across datasets and uses the MASE.
 
 The page went through three reviews as a user would use it. Most of the
 questions, the data block and the texts come from what failed in them: read
-their summary (`dev/forecaster_finder/PLAN.md`, sections 7.6 to 7.8) before
-changing those.
+their summary (`dev/forecaster_finder/PLAN.md`, section 4) before changing
+those.
 
 The page is a quick test that attracts readers and points them to the right
 forecasters. Connecting the script to their own data is up to them: keep the
