@@ -1,9 +1,0 @@
-case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
-air_passengers_monthly,full,108,Seasonal naive,Baseline,1.7677476234283962,0.005054831000052218,,1.0,1,air_passengers,,"one series, nothing known in advance"
-air_passengers_monthly,full,108,LightGBM [refit],ML,1.7337136196130996,0.2463202399999318,,0.9807472495710159,1,air_passengers,,"one series, nothing known in advance"
-air_passengers_monthly,full,108,LightGBM+ [refit],ML,1.8580188077498023,0.31826984200006336,,1.0510656516377224,1,air_passengers,,"one series, nothing known in advance"
-air_passengers_monthly,full,108,LightGBM snippet v2 [refit],ML,1.9008801169612894,0.1129999830000088,,1.0753119346723794,1,air_passengers,,"one series, nothing known in advance"
-air_passengers_monthly,full,108,Chronos-2,Foundation,0.6366470053823987,0.33258948699995017,,0.3601458697750508,1,air_passengers,,"one series, nothing known in advance"
-air_passengers_monthly,full,108,AutoETS,Statistical,1.234473147135249,1.9941802119999466,,0.698331102683704,1,air_passengers,,"one series, nothing known in advance"
-air_passengers_monthly,full,108,AutoARIMA,Statistical,1.3696576866403967,0.6640396589999682,,0.7748038625468844,1,air_passengers,,"one series, nothing known in advance"
-air_passengers_monthly,full,108,LightGBM tuned [refit],ML,1.213499933588451,0.7028956650001419,"diff=1; lags=strong; {'n_estimators': 100, 'learning_rate': 0.0593, 'num_leaves': 38, 'min_child_samples': 10, 'colsample_bytree': 0.6612, 'reg_lambda': 0.6055}; n_val=36; validation MASE 1.528",0.686466731735705,1,air_passengers,,"one series, nothing known in advance"

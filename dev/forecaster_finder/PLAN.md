@@ -29,7 +29,7 @@ Dónde está cada cosa:
 | `benchmarks/forecaster_finder/` | El estudio (`study.py`, `cases.py`, `cases_d4.py`, `rules.py`), sus resultados y README |
 | `.github/workflows/forecaster-finder.yml` | CI: ficheros generados al día y todos los scripts ejecutados, en las PR que tocan el finder |
 | `dev/forecaster_finder/PLAN.md`, `REVISION.md` | Este plan y la revisión independiente |
-| `dev/forecaster_finder/benchmark/` | Restos de la versión 1 (ML congelado): resúmenes, sus CSV y la reproducción del fallo de `Ets`. No se citan en ninguna página |
+| `dev/forecaster_finder/repro_ets_freeze_params.py` | Reproducción del fallo de `Ets` (BUG-ets-freeze-params). El resto de `benchmark/` (versión 1), los informes y capturas de `user_review/` y los resultados por caso del estudio se borraron el 2026-11-28: en `benchmarks/forecaster_finder/results/` quedan solo los 4 CSV que lee la página y las versiones |
 
 Entorno de las cifras: Python 3.12.3, skforecast 0.28.0, numpy 2.5.5, pandas 3.1.1,
 scikit-learn 1.9.1, scipy 1.18.1, numba 0.68.1, LightGBM 4.7.0, PyTorch 2.15.0 (CPU),
@@ -791,7 +791,7 @@ de la documentación los usa).
 ### 7.6 Revisión como usuario y lo que se cambió (2026-11-28)
 
 Otra sesión usó la página como cinco personas distintas, con sus propios CSV, sin leer el
-código (`user_review/INFORME.md`, con capturas). Veredicto: no enseñarla aún, porque el
+código (`user_review/INFORME.md`, con capturas; borrado después, queda este resumen). Veredicto: no enseñarla aún, porque el
 botón principal copiaba un script sin datos. Decidido con el usuario: el script lleva sus
 datos, el error pasa de MASE a MAE y se añade la predicción al final, plegada.
 
@@ -819,7 +819,7 @@ titular queda fuera de la vista) y los detalles D1 a D3 y D8 a D11.
 
 ### 7.7 Segunda revisión como usuario (2026-11-28)
 
-Informe en `user_review/INFORME_2.md`: los 36 scripts copiados con el botón se ejecutan; lo
+Informe en `user_review/INFORME_2.md` (borrado después, queda este resumen): los 36 scripts copiados con el botón se ejecutan; lo
 que falla son los datos reales sucios y detalles de estado y de texto. **Criterio fijado por
 el usuario: la página es una prueba rápida para atraer y encaminar; conectar el script a los
 datos propios es cosa del usuario.** No se añade más ayuda de carga de datos ni más líneas
@@ -854,7 +854,7 @@ futuras desalineadas) sí lanza un `MissingValuesWarning`.
 
 ### 7.8 Tercera revisión como usuario (2026-11-28)
 
-Informe: `user_review/INFORME_3.md` (Opus 5.5, esfuerzo alto, sobre `27917bb`). Veredicto: "sí
+Informe: `user_review/INFORME_3.md` (Opus 5.5, esfuerzo alto, sobre `27917bb`; borrado después, queda este resumen). Veredicto: "sí
 se la enseñaría ya a usuarios reales". Criterio de esta ronda: prueba rápida que orienta, no
 guía de usuario.
 

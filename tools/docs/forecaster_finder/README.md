@@ -92,10 +92,10 @@ The error of the scripts is the mean absolute error, in the units of the
 reader's data: the script compares models on the same data, so it needs no
 scaled metric. The study compares across datasets and uses the MASE.
 
-`dev/forecaster_finder/user_review/` holds two reviews of the page as a user
-would use it (people with their own CSV files). Read them before changing the
-questions, the data block or the texts: most of what is there comes from what
-failed in those reviews.
+The page went through three reviews as a user would use it. Most of the
+questions, the data block and the texts come from what failed in them: read
+their summary (`dev/forecaster_finder/PLAN.md`, sections 7.6 to 7.8) before
+changing those.
 
 The page is a quick test that attracts readers and points them to the right
 forecasters. Connecting the script to their own data is up to them: keep the

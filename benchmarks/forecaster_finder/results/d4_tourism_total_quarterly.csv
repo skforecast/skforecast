@@ -1,9 +1,0 @@
-case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
-tourism_total_quarterly,full,68,Seasonal naive,Baseline,1.008629902404309,0.00659323399997902,,1.0,1,australia_tourism,,"one series, nothing known in advance"
-tourism_total_quarterly,full,68,LightGBM [refit],ML,1.3867437457756058,0.19795729900010883,,1.3748786769755412,1,australia_tourism,,"one series, nothing known in advance"
-tourism_total_quarterly,full,68,LightGBM+ [refit],ML,1.312482668294774,0.22746386400001484,,1.301252982056312,1,australia_tourism,,"one series, nothing known in advance"
-tourism_total_quarterly,full,68,LightGBM snippet v2 [refit],ML,1.2874286662040977,0.07862941099995169,,1.2764133436210898,1,australia_tourism,,"one series, nothing known in advance"
-tourism_total_quarterly,full,68,Chronos-2,Foundation,0.7410691669642714,0.39479012799995417,,0.7347285314442462,1,australia_tourism,,"one series, nothing known in advance"
-tourism_total_quarterly,full,68,AutoETS,Statistical,0.7654571606212379,0.2526445969999713,,0.7589078598568106,1,australia_tourism,,"one series, nothing known in advance"
-tourism_total_quarterly,full,68,AutoARIMA,Statistical,0.35515934512123043,0.7831595910000715,,0.3521205788908536,1,australia_tourism,,"one series, nothing known in advance"
-tourism_total_quarterly,full,68,LightGBM tuned [refit],ML,0.6729767519417041,0.7090586989997973,"diff=1; lags=case; {'n_estimators': 300, 'learning_rate': 0.0888, 'num_leaves': 31, 'min_child_samples': 7, 'colsample_bytree': 0.7592, 'reg_lambda': 0.8953}; n_val=12; validation MASE 0.887",0.6672187195100048,1,australia_tourism,,"one series, nothing known in advance"

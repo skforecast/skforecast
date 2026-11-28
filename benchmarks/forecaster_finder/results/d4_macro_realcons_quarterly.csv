@@ -1,9 +1,0 @@
-case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
-macro_realcons_quarterly,full,183,Seasonal naive,Baseline,5.041196661731058,0.005568806999917797,,1.0,1,macrodata,,"one series, nothing known in advance"
-macro_realcons_quarterly,full,183,LightGBM [refit],ML,5.601085417761477,0.4063194760000215,,1.111062668965222,1,macrodata,,"one series, nothing known in advance"
-macro_realcons_quarterly,full,183,LightGBM+ [refit],ML,5.755308291449282,0.6387089809999225,,1.14165518182205,1,macrodata,,"one series, nothing known in advance"
-macro_realcons_quarterly,full,183,LightGBM snippet v2 [refit],ML,5.6431171911807825,0.235506125000029,,1.119400326914252,1,macrodata,,"one series, nothing known in advance"
-macro_realcons_quarterly,full,183,Chronos-2,Foundation,2.2963910461746195,0.3667586000000256,,0.4555249874711453,1,macrodata,,"one series, nothing known in advance"
-macro_realcons_quarterly,full,183,AutoETS,Statistical,1.4810789264875994,0.46012109000002965,,0.29379510974662576,1,macrodata,,"one series, nothing known in advance"
-macro_realcons_quarterly,full,183,AutoARIMA,Statistical,1.464928149754672,0.09246052599996801,,0.29059135123120583,1,macrodata,,"one series, nothing known in advance"
-macro_realcons_quarterly,full,183,LightGBM tuned [refit],ML,1.6836012795314526,1.4440792429995781,"diff=1; lags=case; {'n_estimators': 300, 'learning_rate': 0.0888, 'num_leaves': 31, 'min_child_samples': 7, 'colsample_bytree': 0.7592, 'reg_lambda': 0.8953}; n_val=12; validation MASE 0.911",0.33396857780059974,1,macrodata,,"one series, nothing known in advance"

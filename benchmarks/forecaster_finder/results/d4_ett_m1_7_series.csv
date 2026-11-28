@@ -1,7 +1,0 @@
-case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
-ett_m1_7_series,full,9264,Seasonal naive,Baseline,1.7896874442007777,0.04426906699995925,,1.0,7,ett_m1,,several series
-ett_m1_7_series,full,9264,LightGBM [refit],ML,1.8330841690152064,5.942644597000026,,1.0242482143767893,7,ett_m1,,several series
-ett_m1_7_series,full,9264,LightGBM+ [refit],ML,1.711280587576681,25.18590476099996,,0.9561896369792598,7,ett_m1,,several series
-ett_m1_7_series,full,9264,LightGBM snippet v2 [refit],ML,1.8191781548637216,3.6213284039999962,,1.0164781346365837,7,ett_m1,,several series
-ett_m1_7_series,full,9264,Chronos-2,Foundation,1.3620391186189884,10.215993400999992,,0.7610485970790477,7,ett_m1,,several series
-ett_m1_7_series,full,9264,LightGBM tuned [refit],ML,1.7029494400478618,44.89424114199983,"diff=None; lags=strong; {'n_estimators': 600, 'learning_rate': 0.0461, 'num_leaves': 45, 'min_child_samples': 26, 'colsample_bytree': 0.85, 'reg_lambda': 0.4998}; n_val=72; validation MASE 1.577",0.9515345517822243,7,ett_m1,,several series

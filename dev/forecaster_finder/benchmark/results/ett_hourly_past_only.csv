@@ -1,6 +1,0 @@
-case,history,history_obs,model,family,MASE,seconds,question,n_series
-ett_hourly_past_only,full,8928,Seasonal naive,Baseline,3.961053972342874,0.01291115499998341,"1 series, other sensor series known only up to today",1
-ett_hourly_past_only,full,8928,LightGBM (no exog),ML,2.400747436802869,0.6418660790000104,"1 series, other sensor series known only up to today",1
-ett_hourly_past_only,full,8928,LightGBM drivers (DirectMultiVariate),ML,2.898391336342957,12.457747809000011,"1 series, other sensor series known only up to today",1
-ett_hourly_past_only,full,8928,Chronos-2 (no exog),Foundation,2.5590913516991782,3.1936586189999616,"1 series, other sensor series known only up to today",1
-ett_hourly_past_only,full,8928,Chronos-2 (past-only covariates),Foundation,2.5624085634432263,19.099261566999985,"1 series, other sensor series known only up to today",1

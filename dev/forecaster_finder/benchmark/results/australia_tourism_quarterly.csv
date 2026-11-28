@@ -1,6 +1,0 @@
-case,history,history_obs,model,family,MASE,seconds,question,n_series
-australia_tourism_quarterly,full,68,Seasonal naive,Baseline,1.023699913278709,1.573879247999912,Many short quarterly series,304
-australia_tourism_quarterly,full,68,LightGBM,ML,1.003446930122457,1.228091385000198,Many short quarterly series,304
-australia_tourism_quarterly,full,68,LightGBM (diff),ML,0.863035049157562,0.9434115430001384,Many short quarterly series,304
-australia_tourism_quarterly,full,68,Ridge,ML,0.9184323008264975,0.5527861049999956,Many short quarterly series,304
-australia_tourism_quarterly,full,68,Chronos-2,Foundation,0.8868795021633972,2.378873112000065,Many short quarterly series,304

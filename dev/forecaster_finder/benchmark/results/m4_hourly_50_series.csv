@@ -1,6 +1,0 @@
-case,history,history_obs,model,family,MASE,seconds,question,n_series
-m4_hourly_50_series,full,816,Seasonal naive,Baseline,0.3235076393611871,0.2863485949999358,"50 series, hourly, no extra info",50
-m4_hourly_50_series,full,816,LightGBM,ML,0.24656811435563347,0.4757007989999238,"50 series, hourly, no extra info",50
-m4_hourly_50_series,full,816,LightGBM (diff),ML,0.14869214487064916,0.45672679399990557,"50 series, hourly, no extra info",50
-m4_hourly_50_series,full,816,Ridge,ML,0.17392479725967674,0.13899798000011288,"50 series, hourly, no extra info",50
-m4_hourly_50_series,full,816,Chronos-2,Foundation,0.1964908889410465,5.296089127999949,"50 series, hourly, no extra info",50

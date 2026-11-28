@@ -3,8 +3,9 @@
 The page [Which forecaster should I use?](https://skforecast.org/latest/quick-start/choose-a-forecaster.html)
 and the skill `choosing-a-forecaster` tell the reader which forecasters to
 compare first. This folder holds the study those rules rest on: its scripts
-and its results. The page shows figures computed from `results/rules_*.csv`,
-and its build fails if a sentence is no longer supported by them
+and the summary of its results. The page shows figures computed from
+`results/rules_*.csv` and `results/extra_classification.csv`, and its build
+fails if a sentence is no longer supported by them
 (`tools/docs/forecaster_finder/build.py`).
 
 It is not part of the performance benchmarks of `benchmarks/run_benchmarks.py`.
@@ -70,13 +71,15 @@ with knowledge of the problem.
 | `study.py` | The study: runs the models on the cases and writes one CSV per case |
 | `rules.py` | Evidence per rule: reads the CSV files and writes `rules_runs.csv`, `rules_cells.csv`, `rules_stats.csv` and `rules_tuned.csv` |
 | `recount.py` | Effect of the protocol on the 15 original cases (frozen LightGBM against refitted, by run and by dataset) |
-| `results/` | One CSV per case (`d4_` for the added cases), controls (`extra_*`), per-series and per-fold errors (`detail/`) and the versions (`environment*.json`) |
+| `results/` | Committed: the files the page reads (`rules_cells.csv`, `rules_runs.csv`, `rules_tuned.csv`, `extra_classification.csv`) and the versions (`environment*.json`). Written by the study and ignored by git: one CSV per case (`d4_` for the added cases), controls (`extra_*`), per-series and per-fold errors (`detail/`) |
 
 
 ## Reproduce
 
 In an environment with the versions of `requirements.txt` and the repository
-installed (`pip install -e .`). Times on 4 cores without GPU.
+installed (`pip install -e .`). Times on 4 cores without GPU. The results per
+case are not committed, so `rules.py` needs the study to be run first (about
+2 hours and a quarter in all).
 
 ```bash
 cd benchmarks/forecaster_finder

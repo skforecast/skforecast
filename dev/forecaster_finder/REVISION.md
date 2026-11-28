@@ -1,5 +1,9 @@
 # Revisión independiente del selector de forecaster
 
+- **Nota del 2026-11-28:** los ficheros de `benchmark/` y `results/` que cita este documento
+  ya no están en el repositorio (quedan `repro_ets_freeze_params.py`, en esta carpeta, y los
+  4 CSV que lee la página, en `benchmarks/forecaster_finder/results/`). El estudio los vuelve
+  a escribir al ejecutarse.
 - Fecha: 2026-11-27. Revisa `PLAN.md` y `benchmark/` en el commit `407746d` (versión 1), más
   el informe visual. **Donde esta revisión y la versión 1 de `PLAN.md` difieran, vale la
   revisión.** `PLAN.md` ya está reescrito (versión 2) con lo que sale de aquí.

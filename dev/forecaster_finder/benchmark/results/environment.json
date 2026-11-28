@@ -1,9 +1,0 @@
-{
-  "skforecast": "0.28.0",
-  "numpy": "2.5.5",
-  "pandas": "3.1.1",
-  "sklearn": "1.9.1",
-  "lightgbm": "4.7.0",
-  "torch": "2.15.0+cpu",
-  "python": "3.12.3"
-}

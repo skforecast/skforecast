@@ -1,9 +1,0 @@
-case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
-uk_daily_flights,full,950,Seasonal naive,Baseline,1.12429896644246,0.007868059999964316,,1.0,1,uk_daily_flights,,"one series, nothing known in advance"
-uk_daily_flights,full,950,LightGBM [refit],ML,0.9770610038576809,0.7604368039999372,,0.8690402046257555,1,uk_daily_flights,,"one series, nothing known in advance"
-uk_daily_flights,full,950,LightGBM+ [refit],ML,1.1075182929853025,1.3344817180000064,,0.9850745451538966,1,uk_daily_flights,,"one series, nothing known in advance"
-uk_daily_flights,full,950,LightGBM snippet v2 [refit],ML,1.0273555420114986,0.4928370839999161,,0.9137743364314274,1,uk_daily_flights,,"one series, nothing known in advance"
-uk_daily_flights,full,950,Chronos-2,Foundation,0.97984976901164,0.5189390750000484,,0.871520652653546,1,uk_daily_flights,,"one series, nothing known in advance"
-uk_daily_flights,full,950,AutoETS,Statistical,1.0699411532043726,1.3278432470000325,,0.9516518160555745,1,uk_daily_flights,,"one series, nothing known in advance"
-uk_daily_flights,full,950,AutoARIMA,Statistical,1.0163356194055237,1.2205381850001231,,0.9039727418957281,1,uk_daily_flights,,"one series, nothing known in advance"
-uk_daily_flights,full,950,LightGBM tuned [refit],ML,1.0266601896434389,4.590680197999973,"diff=1; lags=case; {'n_estimators': 200, 'learning_rate': 0.0522, 'num_leaves': 48, 'min_child_samples': 20, 'colsample_bytree': 0.9923, 'reg_lambda': 0.5487}; n_val=84; validation MASE 1.106",0.9131558600396363,1,uk_daily_flights,,"one series, nothing known in advance"

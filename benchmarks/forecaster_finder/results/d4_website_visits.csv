@@ -1,9 +1,0 @@
-case,history,history_obs,model,family,MASE,seconds,note,rel,n_series,dataset,exog_kind,cell
-website_visits,full,309,Seasonal naive,Baseline,0.9651441236294682,0.019356129000016153,,1.0,1,website_visits,,"one series, nothing known in advance"
-website_visits,full,309,LightGBM [refit],ML,1.3000143406442757,0.42826450500001556,,1.346963949545186,1,website_visits,,"one series, nothing known in advance"
-website_visits,full,309,LightGBM+ [refit],ML,1.3227760022655444,0.8305017690000795,,1.370547641414616,1,website_visits,,"one series, nothing known in advance"
-website_visits,full,309,LightGBM snippet v2 [refit],ML,1.521885039262488,0.2584512010000708,,1.5768474386388744,1,website_visits,,"one series, nothing known in advance"
-website_visits,full,309,Chronos-2,Foundation,0.7692745416259321,2.5933865079999805,,0.7970566496670366,1,website_visits,,"one series, nothing known in advance"
-website_visits,full,309,AutoETS,Statistical,0.7963961032869018,1.1143456819999074,,0.8251576979943868,1,website_visits,,"one series, nothing known in advance"
-website_visits,full,309,AutoARIMA,Statistical,0.6936979492262829,2.344145835000063,,0.7187506324108366,1,website_visits,,"one series, nothing known in advance"
-website_visits,full,309,LightGBM tuned [refit],ML,0.8558174116879089,2.0583676070000365,"diff=1; lags=case; {'n_estimators': 500, 'learning_rate': 0.0207, 'num_leaves': 18, 'min_child_samples': 25, 'colsample_bytree': 0.6383, 'reg_lambda': 3.4778}; n_val=84; validation MASE 0.855",0.886724988253121,1,website_visits,,"one series, nothing known in advance"
