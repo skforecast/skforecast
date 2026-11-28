@@ -16,6 +16,7 @@ Nothing is uploaded by hand with `twine`: `.github/workflows/publish-pypi.yml` b
 - `version` in `pyproject.toml` and `__version__` in `skforecast/__init__.py` are $ARGUMENTS on `origin/X.Y.x` (the workflow fails otherwise).
 - The section of the version in `docs/releases/releases.md` went through `/release-note consolidate` and its heading has the release date, not `In development`.
 - The regression test of the datasets ran on this version (`SKFORECAST_TEST_DATASETS=1 pytest skforecast/datasets/tests/tests_datasets/test_fetch_dataset_all_datasets.py -q`); it does not run in CI.
+- After the benchmarks of this version (`.github/workflows/benchmarks.yml`, which only updates `benchmarks/benchmark.joblib`), `docs/faq/skforecast-benchmark.ipynb` was executed again and its outputs committed: `python tools/docs/execute_notebooks/execute_notebooks.py faq/skforecast-benchmark.ipynb` (a directory scan skips it, it is in `EXCLUDE_NOTEBOOKS`), with the same major version of pandas as the benchmarks (a joblib written with pandas 3 does not load with pandas 2).
 - The version is not on PyPI yet: `curl -s -o /dev/null -w '%{http_code}' https://pypi.org/pypi/skforecast/$ARGUMENTS/json` answers `404`.
 
 ## 2. Pull request X.Y.x to main
