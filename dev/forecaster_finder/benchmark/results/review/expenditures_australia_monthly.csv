@@ -75,3 +75,4 @@ expenditures_australia_monthly,36,36,LightGBM snippet v2 [refit],ML,2.1788030998
 expenditures_australia_monthly,60,60,LightGBM snippet v2 [refit],ML,2.01492594783007,0.1419709909996527,as written by finder_tree.py,1.018201310480458,1
 expenditures_australia_monthly,120,120,LightGBM snippet v2 [refit],ML,1.8531803751013227,0.2396729439997216,as written by finder_tree.py,0.9364665180459363,1
 expenditures_australia_monthly,full,393,LightGBM snippet v2 [refit],ML,2.2362002861964445,0.3201030919999539,as written by finder_tree.py,1.1300177380484153,1
+expenditures_australia_monthly,full,393,LightGBM tuned [refit],ML,1.1611624788036845,2.0755620439999802,"diff=1; lags=strong; {'n_estimators': 100, 'learning_rate': 0.0593, 'num_leaves': 38, 'min_child_samples': 10, 'colsample_bytree': 0.6612, 'reg_lambda': 0.6055}; n_val=36; validation MASE 1.710",0.5867695330798124,1

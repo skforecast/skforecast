@@ -13,3 +13,4 @@ bike_sharing_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),Fo
 bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (no exog),Foundation,0.5388137679037043,11.349873923999894,,0.7749839764525226,1
 bike_sharing_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",Foundation,0.5388137679037043,11.476578028999938,,0.7749839764525226,1
 bike_sharing_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),Foundation,0.5358583587176968,40.98641836799993,,0.7707331668046413,1
+bike_sharing_hourly_past_only,full,8928,LightGBM tuned [refit],ML,0.5532356563010222,13.08708647100002,"diff=None; lags=strong; {'n_estimators': 100, 'learning_rate': 0.1189, 'num_leaves': 41, 'min_child_samples': 24, 'colsample_bytree': 0.7371, 'reg_lambda': 0.0165}; n_val=72; validation MASE 0.429",0.7957271962510661,1

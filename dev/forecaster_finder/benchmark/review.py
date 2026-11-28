@@ -27,6 +27,7 @@ Usage:
     python -I review.py --snippet    # the ML block of the finder snippets, as written
     python -I review.py --d4         # the cases of cases_d4.py (more datasets per type of data)
     python -I review.py --arima      # AutoARIMA (also with exog) in daily, monthly and quarterly series
+    python -I review.py --tune       # LightGBM with 20 trials of search on validation
 """
 
 from __future__ import annotations
@@ -594,6 +595,120 @@ def run_arima():
         print(t[["model", "rel", "seconds"]].round(3).to_string(index=False), flush=True)
 
 
+def run_tune(words):
+    """
+    LightGBM with a small, fixed tuning budget, to answer how often the ML
+    forecaster reaches Chronos-2 once it is worked on: 20 trials of Bayesian
+    search (10 without differentiation and 10 with `differentiation=1`) over
+    the lags and six hyperparameters, scored on a validation period taken from
+    the end of the training data (never on the test period). The best
+    configuration is then backtested on the test period, refitted in every
+    fold. Full history of every case. Adds the model 'LightGBM tuned [refit]'.
+    """
+    from cases_d4 import D4_CASES
+    from skforecast.model_selection import (
+        bayesian_search_forecaster,
+        bayesian_search_forecaster_multiseries,
+    )
+    todo = [(c, OUT / f"{c.name}.csv") for c in B.CASES]
+    todo += [(c, OUT / f"d4_{c.name}.csv") for c, _, _ in D4_CASES]
+    label = "LightGBM tuned [refit]"
+    for case, path in todo:
+        if words and not any(w in case.name for w in words):
+            continue
+        print(f"\n=== tune {case.name}", flush=True)
+        series, exog = case.loader()
+        past = case.exog_mode == "past"
+        if past:
+            series = series[[series.columns[0]]]  # Only the target, no extra variables
+        test_start = len(series) - case.steps * case.n_folds
+        multi = series.shape[1] > 1
+        target = series.columns[0]
+        levels = list(series.columns)
+        use_exog = case.exog_mode == "future" and exog is not None
+        X = exog if use_exog else None
+        data = series if multi else series[target]
+        n_val = 0
+        for folds in (min(case.n_folds, 3), 2, 1):
+            if test_start - folds * case.steps >= 3 * case.season:
+                n_val = folds * case.steps
+                break
+        if not n_val:
+            print("    no validation period available", flush=True)
+            continue
+        strong_lags, _ = strong_settings(case, test_start - n_val)
+
+        def search_space(trial):
+            return {
+                "lags": trial.suggest_categorical("lags", [case.lags, strong_lags]),
+                "n_estimators": trial.suggest_int("n_estimators", 100, 600, step=100),
+                "learning_rate": trial.suggest_float("learning_rate", 0.01, 0.2, log=True),
+                "num_leaves": trial.suggest_int("num_leaves", 7, 63),
+                "min_child_samples": trial.suggest_int("min_child_samples", 5, 40),
+                "colsample_bytree": trial.suggest_float("colsample_bytree", 0.6, 1.0),
+                "reg_lambda": trial.suggest_float("reg_lambda", 1e-3, 10, log=True),
+            }
+        cv_val = TimeSeriesFold(steps=case.steps, initial_train_size=test_start - n_val,
+                                refit=False, verbose=False)
+        t0 = time.perf_counter()
+        best = None
+        for diff in (None, 1):
+            forecaster = make_ml(case, "lgbm", diff, use_exog, multi, test_start, len(levels))
+            try:
+                if multi:
+                    res, _ = bayesian_search_forecaster_multiseries(
+                        forecaster, series=data.iloc[:test_start],
+                        exog=X.iloc[:test_start] if use_exog else None, cv=cv_val,
+                        search_space=search_space, metric="mean_absolute_scaled_error",
+                        aggregate_metric="average", n_trials=10, random_state=123,
+                        return_best=False, show_progress=False, suppress_warnings=True)
+                else:
+                    res, _ = bayesian_search_forecaster(
+                        forecaster, y=data.iloc[:test_start],
+                        exog=X.iloc[:test_start] if use_exog else None, cv=cv_val,
+                        search_space=search_space, metric="mean_absolute_scaled_error",
+                        n_trials=10, random_state=123, return_best=False,
+                        show_progress=False, suppress_warnings=True)
+            except Exception as error:
+                print(f"    diff={diff} FAILED: {type(error).__name__}: {str(error)[:120]}", flush=True)
+                continue
+            row = res.iloc[0]
+            score = float(row[[c for c in res.columns if "mean_absolute_scaled_error" in c][0]])
+            if best is None or score < best[0]:
+                best = (score, diff, row["lags"], dict(row["params"]))
+        if best is None:
+            continue
+        score, diff, lags, params = best
+        forecaster = make_ml(case, "lgbm", diff, use_exog, multi, test_start, len(levels))
+        forecaster.set_params(params)
+        forecaster.set_lags(lags)
+        search_seconds = time.perf_counter() - t0
+        cv = TimeSeriesFold(steps=case.steps, initial_train_size=test_start, refit=True,
+                            fixed_train_size=False, verbose=False)
+        pred = backtest_ml(forecaster, data, X, cv, multi, target)
+        note = (f"diff={diff}; lags={'strong' if list(np.atleast_1d(lags)) == list(strong_lags) else 'case'}; "
+                f"{ {k: (round(v, 4) if isinstance(v, float) else v) for k, v in params.items()} }; "
+                f"n_val={n_val}; validation MASE {score:.3f}")
+        res = {label: (pred, time.perf_counter() - t0, note)}
+        t, _ = tables(res, series, test_start, levels, case.steps)
+        old = pd.read_csv(path)
+        full = old[old.history == "full"]
+        naive = full.loc[full.model == "Seasonal naive"].iloc[0]
+        t.insert(0, "history_obs", test_start)
+        t.insert(0, "history", "full")
+        t.insert(0, "case", case.name)
+        t["rel"] = t["MASE"] / naive["MASE"]
+        for c in old.columns:
+            if c not in t:
+                t[c] = naive[c]
+        pd.concat([old[old.model != label], t[old.columns]]).to_csv(path, index=False)
+        ref = {m: float(full.loc[full.model == m, "rel"].iloc[0]) for m in
+               ("LightGBM [refit]", "LightGBM (no exog) [refit]", "Chronos-2", "Chronos-2 (no exog)")
+               if (full.model == m).any()}
+        print(f"    tuned rel {t['rel'].iloc[0]:.3f} ({search_seconds:.0f} s of search) | {ref} | {note[:110]}",
+              flush=True)
+
+
 def run_stats():
     """
     Run again only the statistical models and replace their rows in the CSV
@@ -858,7 +973,7 @@ if __name__ == "__main__":
     env["git_commit"] = os.popen("git rev-parse --short HEAD 2>/dev/null").read().strip()
     name = ("environment_stats.json" if "--stats" in sys.argv else
             "environment_d4.json" if "--d4" in sys.argv else "environment.json")
-    partial = any(flag in sys.argv for flag in ("--extra", "--horizon", "--snippet", "--arima"))
+    partial = any(flag in sys.argv for flag in ("--extra", "--horizon", "--snippet", "--arima", "--tune"))
     if name != "environment.json" or not partial:
         (OUT / name).write_text(json.dumps(env, indent=2))
     print(env, flush=True)
@@ -874,6 +989,8 @@ if __name__ == "__main__":
         run_d4(args)
     elif "--arima" in sys.argv:
         run_arima()
+    elif "--tune" in sys.argv:
+        run_tune(args)
     else:
         for case in B.CASES:
             if not args or any(w in case.name for w in args):

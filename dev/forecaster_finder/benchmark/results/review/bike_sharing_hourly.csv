@@ -35,3 +35,4 @@ bike_sharing_hourly,full,8928,Chronos-2 base,Foundation,0.4118774593443381,43.66
 bike_sharing_hourly,full,8928,Chronos-2 synth,Foundation,0.4915378268146957,40.07047357300007,,0.7069862766939616,1
 bike_sharing_hourly,2160,2160,LightGBM snippet v2 [refit],ML,0.5963735403694619,2.2170110630004274,as written by finder_tree.py,0.8577730661277284,1
 bike_sharing_hourly,full,8928,LightGBM snippet v2 [refit],ML,0.5103421376385313,3.12983490500028,as written by finder_tree.py,0.7340328008267856,1
+bike_sharing_hourly,full,8928,LightGBM tuned [refit],ML,0.4488437978324588,15.058867182999961,"diff=None; lags=strong; {'n_estimators': 100, 'learning_rate': 0.1189, 'num_leaves': 41, 'min_child_samples': 24, 'colsample_bytree': 0.7371, 'reg_lambda': 0.0165}; n_val=72; validation MASE 0.459",0.6455788102883399,1

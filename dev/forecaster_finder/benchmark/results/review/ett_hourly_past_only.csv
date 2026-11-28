@@ -13,3 +13,4 @@ ett_hourly_past_only,full,8928,Chronos-2 base (past-only covariates),Foundation,
 ett_hourly_past_only,full,8928,Chronos-2 synth (no exog),Foundation,2.794456058544124,10.80368351800007,,0.7054829542984657,1
 ett_hourly_past_only,full,8928,"Chronos-2 synth (no exog, own loop)",Foundation,2.794456058544124,10.202929390000008,,0.7054829542984657,1
 ett_hourly_past_only,full,8928,Chronos-2 synth (past-only covariates),Foundation,2.6133988452937467,70.83756552499995,,0.6597736015568554,1
+ett_hourly_past_only,full,8928,LightGBM tuned [refit],ML,2.788972768235288,988.257459057,"diff=None; lags=strong; {'n_estimators': 100, 'learning_rate': 0.1189, 'num_leaves': 41, 'min_child_samples': 24, 'colsample_bytree': 0.7371, 'reg_lambda': 0.0165}; n_val=72; validation MASE 1.122",0.7040986534666362,1

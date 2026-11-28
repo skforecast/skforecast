@@ -16,3 +16,4 @@ m4_hourly_50_series,full,816,Chronos-2,Foundation,0.1964908889410465,2.306538943
 m4_hourly_50_series,full,816,Chronos-2 base,Foundation,0.1627221775142225,8.849135052000065,,0.5029933074703927,50
 m4_hourly_50_series,full,816,Chronos-2 synth,Foundation,0.17586490997286025,9.325784457000054,,0.5436190326761096,50
 m4_hourly_50_series,full,816,LightGBM snippet v2 [refit],ML,0.1522531590799106,1.1658941240002605,as written by finder_tree.py,0.4706323454387557,50
+m4_hourly_50_series,full,816,LightGBM tuned [refit],ML,0.11486507556441752,167.6081324559999,"diff=1; lags=strong; {'n_estimators': 600, 'learning_rate': 0.0461, 'num_leaves': 45, 'min_child_samples': 26, 'colsample_bytree': 0.85, 'reg_lambda': 0.4998}; n_val=144; validation MASE 0.136",0.3550614006866587,50

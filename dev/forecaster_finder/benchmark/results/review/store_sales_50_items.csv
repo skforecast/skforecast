@@ -46,3 +46,4 @@ store_sales_50_items,full,1602,Chronos-2 synth,Foundation,0.6571833658231333,34.
 store_sales_50_items,182,182,LightGBM snippet v2 [refit],ML,0.7505539252052266,2.0937135100002706,as written by finder_tree.py,0.746909831889855,50
 store_sales_50_items,365,365,LightGBM snippet v2 [refit],ML,0.6509493058406547,2.3963351540005533,as written by finder_tree.py,0.6477888133904807,50
 store_sales_50_items,full,1602,LightGBM snippet v2 [refit],ML,0.7033135130579652,4.2229256959999475,as written by finder_tree.py,0.6998987816369762,50
+store_sales_50_items,full,1602,LightGBM tuned [refit],ML,0.6654800373829733,39.53878160100021,"diff=None; lags=strong; {'n_estimators': 600, 'learning_rate': 0.0461, 'num_leaves': 45, 'min_child_samples': 26, 'colsample_bytree': 0.85, 'reg_lambda': 0.4998}; n_val=84; validation MASE 0.674",0.6622489952495552,50

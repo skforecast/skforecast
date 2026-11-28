@@ -46,3 +46,4 @@ bdg2_buildings_energy,full,563,Chronos-2 synth,Foundation,1.479474196122796,15.9
 bdg2_buildings_energy,90,90,LightGBM snippet v2 [refit],ML,1.6976873601285192,1.2962913829996978,as written by finder_tree.py,0.9359551013375499,40
 bdg2_buildings_energy,182,182,LightGBM snippet v2 [refit],ML,1.6460698785504657,1.5784829760004868,as written by finder_tree.py,0.907497773836732,40
 bdg2_buildings_energy,full,563,LightGBM snippet v2 [refit],ML,1.6378253203849387,1.735834246000195,as written by finder_tree.py,0.9029524515032282,40
+bdg2_buildings_energy,full,563,LightGBM tuned [refit],ML,1.6357999949323336,20.93447354099999,"diff=None; lags=strong; {'n_estimators': 600, 'learning_rate': 0.0461, 'num_leaves': 45, 'min_child_samples': 26, 'colsample_bytree': 0.85, 'reg_lambda': 0.4998}; n_val=84; validation MASE 1.673",0.9018358656501705,40

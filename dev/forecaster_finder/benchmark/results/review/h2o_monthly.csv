@@ -75,3 +75,4 @@ h2o_monthly,36,36,LightGBM snippet v2 [refit],ML,0.7758782565515027,0.0819356199
 h2o_monthly,60,60,LightGBM snippet v2 [refit],ML,0.6923279624128152,0.0917806939996808,as written by finder_tree.py,0.9517866873643077,1
 h2o_monthly,120,120,LightGBM snippet v2 [refit],ML,0.6891840849420597,0.1322913409994726,as written by finder_tree.py,0.9474646017548499,1
 h2o_monthly,full,168,LightGBM snippet v2 [refit],ML,0.7148812805174054,0.16262303999974392,as written by finder_tree.py,0.9827921487832441,1
+h2o_monthly,full,168,LightGBM tuned [refit],ML,0.9603471891963615,1.6844160850000662,"diff=1; lags=strong; {'n_estimators': 600, 'learning_rate': 0.0461, 'num_leaves': 45, 'min_child_samples': 26, 'colsample_bytree': 0.85, 'reg_lambda': 0.4998}; n_val=36; validation MASE 0.859",1.3202495342515284,1

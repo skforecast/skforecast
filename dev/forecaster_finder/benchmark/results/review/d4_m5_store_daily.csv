@@ -7,3 +7,4 @@ m5_store_daily,full,1801,Chronos-2,Foundation,0.4140135986966386,0.9449981420000
 m5_store_daily,full,1801,AutoETS,Statistical,0.47312827994812073,1.1228079930000376,,0.718673056940738,1,m5,calendar,"one series, known in advance"
 m5_store_daily,full,1801,AutoARIMA,Statistical,0.505162989980988,4.603025437000042,,0.7673331856273076,1,m5,calendar,"one series, known in advance"
 m5_store_daily,full,1801,AutoARIMA (exog),Statistical,0.6472669972444876,8.408909305999941,,0.9831865294916532,1,m5,calendar,"one series, known in advance"
+m5_store_daily,full,1801,LightGBM tuned [refit],ML,0.6399481037327174,11.09209605199976,"diff=1; lags=strong; {'n_estimators': 600, 'learning_rate': 0.0461, 'num_leaves': 45, 'min_child_samples': 26, 'colsample_bytree': 0.85, 'reg_lambda': 0.4998}; n_val=84; validation MASE 0.528",0.9720692663804641,1,m5,calendar,"one series, known in advance"

@@ -75,3 +75,4 @@ bike_sharing_daily,365,365,LightGBM snippet v2 [refit],ML,1.1321528304624815,0.5
 bike_sharing_daily,full,563,LightGBM snippet v2 [refit],ML,1.0408482117863669,0.5314599920002365,as written by finder_tree.py,0.5848691898858605,1
 bike_sharing_daily,full,563,AutoARIMA,Statistical,1.4425084158793593,0.35617267700013144,,0.8105684566157098,1
 bike_sharing_daily,full,563,AutoARIMA (exog),Statistical,1.2657209775849978,1.4665716639999573,,0.7112287789889762,1
+bike_sharing_daily,full,563,LightGBM tuned [refit],ML,1.52049432694051,3.483435929000052,"diff=1; lags=case; {'n_estimators': 400, 'learning_rate': 0.0492, 'num_leaves': 43, 'min_child_samples': 35, 'colsample_bytree': 0.8898, 'reg_lambda': 0.278}; n_val=84; validation MASE 1.198",0.8543899822794419,1

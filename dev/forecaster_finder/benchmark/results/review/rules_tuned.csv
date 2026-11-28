@@ -1,0 +1,4 @@
+cell,datasets,untuned < Chronos-2,tuned < Chronos-2,tuned within 5% of Chronos-2 or better,tuning improved LightGBM,tuning made it worse by more than 5%,tuned >= naive,untuned >= naive,median Chronos-2,median untuned,median tuned
+"one series, known in advance",7,2,1,1,1,5,2,1,0.661,0.761,0.926
+"one series, nothing known in advance",16,2,4,5,9,5,4,3,0.685,0.9,0.793
+several series,10,2,2,4,8,1,1,2,0.722,0.902,0.9

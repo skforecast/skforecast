@@ -4,3 +4,4 @@ items_sales_3_items,full,929,LightGBM [refit],ML,0.9225578960810011,0.9260515459
 items_sales_3_items,full,929,LightGBM+ [refit],ML,0.9054187354431328,3.073923516000036,,0.8078182905939779,3,items_sales,,several series
 items_sales_3_items,full,929,LightGBM snippet v2 [refit],ML,0.9202791147251143,0.6782541469999614,,0.8210767816315785,3,items_sales,,several series
 items_sales_3_items,full,929,Chronos-2,Foundation,0.7660998927405925,0.8178681580000102,,0.6835174506026168,3,items_sales,,several series
+items_sales_3_items,full,929,LightGBM tuned [refit],ML,0.8345404867681014,7.53769810499989,"diff=None; lags=strong; {'n_estimators': 100, 'learning_rate': 0.0593, 'num_leaves': 38, 'min_child_samples': 10, 'colsample_bytree': 0.6612, 'reg_lambda': 0.6055}; n_val=84; validation MASE 0.744",0.7445804278862487,3,items_sales,,several series

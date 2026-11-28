@@ -7,3 +7,4 @@ bdg2_one_building,full,563,Chronos-2,Foundation,1.6800891183652762,0.59192579099
 bdg2_one_building,full,563,AutoETS,Statistical,3.7662759567851865,1.7765530419999322,,1.4593658953287467,1,bdg2_daily,weather,"one series, known in advance"
 bdg2_one_building,full,563,AutoARIMA,Statistical,2.8185018212344977,0.9993054130000019,,1.09212003608534,1,bdg2_daily,weather,"one series, known in advance"
 bdg2_one_building,full,563,AutoARIMA (exog),Statistical,2.8183751396629284,0.7143559369999366,,1.092070949197593,1,bdg2_daily,weather,"one series, known in advance"
+bdg2_one_building,full,563,LightGBM tuned [refit],ML,2.3889384471962845,3.7729556489998686,"diff=1; lags=case; {'n_estimators': 400, 'learning_rate': 0.0492, 'num_leaves': 43, 'min_child_samples': 35, 'colsample_bytree': 0.8898, 'reg_lambda': 0.278}; n_val=84; validation MASE 1.663",0.9256717606146242,1,bdg2_daily,weather,"one series, known in advance"

@@ -102,6 +102,9 @@ a{color:var(--accent)}
 .opt:hover{border-color:var(--accent)}
 .opt[aria-checked="true"]{background:var(--accent-fill);border-color:var(--accent-fill);color:var(--accent-ink);font-weight:600}
 .opt small{display:block;font-size:.76rem;font-weight:400;opacity:.85}
+.chips{display:flex;flex-wrap:wrap;gap:.4rem}
+.chip{background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:.25rem .7rem;font-size:.85rem}
+.chip:hover{border-color:var(--accent)}
 .reset{align-self:flex-start;background:none;border:0;padding:0;color:var(--accent);font-size:.85rem;text-decoration:underline}
 .result{min-width:0;display:flex;flex-direction:column;gap:1rem}
 /* Answer box */
@@ -231,9 +234,14 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
 (function(){
   const D = JSON.parse(document.getElementById("finder-data").textContent);
   const DOCS = "https://skforecast.org/latest/";
+  // Notebook written by build.py. While this is a prototype it is opened from the
+  // branch of the pull request; the page will point to its final path.
+  const COLAB = "https://colab.research.google.com/github/skforecast/skforecast/blob/docs/forecaster-finder/dev/forecaster_finder/benchmark/results/review/first_comparison.ipynb";
   const state = {};
   let previous = {};          // Text of each block in the last render, to flash what changed
   let showImports = false;
+  let editing = null;         // Question reopened from its chip (narrow screens)
+  const narrow = window.matchMedia("(max-width: 979px)");
   let lastLines = null;       // Lines of the last complete script, to flash the ones that change
   const PRESETS = [
     ["Ventas diarias de una tienda", {target:"number", series:"one", freq:"daily", extra:"no"}],
@@ -283,19 +291,35 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     if (ok){ Object.keys(state).forEach(k => delete state[k]); Object.assign(state, s); }
   }
 
-  function renderRows(){
-    const form = document.getElementById("rows");
-    let n = 0;
-    form.innerHTML = rowsShown().map(r => {
-      n += 1;
-      return '<fieldset class="row' + (state[r.id] ? " done" : "") + '" id="row-' + r.id + '" role="radiogroup" aria-labelledby="lg-' + r.id + '">' +
+  function rowHtml(r, n){
+    return '<fieldset class="row' + (state[r.id] ? " done" : "") + '" id="row-' + r.id + '" role="radiogroup" aria-labelledby="lg-' + r.id + '">' +
       '<legend id="lg-' + r.id + '"><span class="n">' + n + "</span>" + esc(r.text) + "</legend>" +
       (r.hint ? '<div class="hint">' + esc(r.hint) + "</div>" : "") +
       '<div class="opts">' + r.options.map(o =>
         '<button type="button" class="opt" role="radio" id="opt-' + r.id + "-" + o[0] + '" data-row="' + r.id + '" data-value="' + o[0] +
         '" aria-checked="' + (state[r.id] === o[0]) + '">' + esc(o[1]) + (o[2] ? "<small>" + esc(o[2]) + "</small>" : "") + "</button>").join("") +
       "</div></fieldset>";
-    }).join("") + (Object.keys(state).length ? '<button type="button" class="reset" id="reset">Start over</button>' : "");
+  }
+
+  function renderRows(){
+    const form = document.getElementById("rows");
+    const rows = rowsShown();
+    const reset = Object.keys(state).length ? '<button type="button" class="reset" id="reset">Start over</button>' : "";
+    if (!narrow.matches){
+      form.innerHTML = rows.map((r, n) => rowHtml(r, n + 1)).join("") + reset;
+      return;
+    }
+    // Narrow screens: one question open at a time, so the answer box stays in
+    // view right below it. The answered ones become chips that reopen them.
+    const pending = rows.find(r => !state[r.id]);
+    const open = (editing && rows.some(r => r.id === editing)) ? editing : (pending ? pending.id : null);
+    const chips = rows.filter(r => state[r.id] && r.id !== open).map(r => {
+      const o = r.options.find(x => x[0] === state[r.id]);
+      return '<button type="button" class="chip" id="chip-' + r.id + '" data-edit="' + r.id + '" aria-label="Change: ' + esc(r.text) + '">' +
+        esc(r.id === "freq" && state[r.id] !== "other" ? "One value per " + o[1].toLowerCase() : r.id === "extra" ? "Known in advance: " + o[1].toLowerCase() : o[1]) + " ✎</button>";
+    }).join("");
+    const n = rows.findIndex(r => r.id === open);
+    form.innerHTML = (chips ? '<div class="chips">' + chips + "</div>" : "") + (open ? rowHtml(rows[n], n + 1) : "") + reset;
   }
 
   function blockHtml(b, changed){
@@ -395,7 +419,7 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
       '<p class="caption">Runs as it is: tested on sample data every time the docs are built. Needs at least ' +
       D.min_history[state.freq] + " values" + (SPAN[state.freq] ? " (" + SPAN[state.freq] + ")" : "") + ".</p>" +
       '<div class="actions"><button type="button" class="btn primary" id="copy-code-2">Copy script</button>' +
-      '<button type="button" class="btn" id="colab">Run it in Google Colab</button>' +
+      '<a class="btn" id="colab" href="' + COLAB + '" target="_blank" rel="noopener">Run it in Google Colab</a>' +
       '<span class="status" id="status" role="status"></span></div>' + ai +
       '<details class="more"><summary>Using an AI assistant?</summary><div class="body">' + mcp +
       '<div class="opt2"><b>' + (c.agent ? "If it does not" : "Any assistant") + '</b>: copy the script with instructions to adapt it to your data. The assistant is told to ask for a sample of your data first and to keep the forecasters as they are until the script runs.' +
@@ -425,10 +449,13 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
   }
 
   document.getElementById("rows").addEventListener("click", e => {
-    if (e.target.id === "reset"){ Object.keys(state).forEach(k => delete state[k]); showImports = false; update(); return; }
+    if (e.target.id === "reset"){ Object.keys(state).forEach(k => delete state[k]); showImports = false; editing = null; update(); return; }
+    const chip = e.target.closest(".chip");
+    if (chip){ editing = chip.dataset.edit; update(); const f = document.querySelector("#row-" + editing + " .opt"); if (f) f.focus(); return; }
     const b = e.target.closest(".opt"); if (!b) return;
     state[b.dataset.row] = b.dataset.value;
     if (state.target === "category") delete state.series;
+    editing = null;
     update();
     const again = document.getElementById(b.id); if (again) again.focus();
   });
@@ -445,7 +472,7 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     if (e.target.id === "copy-prompt") copy(el.dataset.prompt, "Prompt copied");
     if (e.target.id === "copy-ai") copy(el.dataset.ai, "Lines copied");
     if (e.target.id === "copy-agent") copy(el.dataset.agent, "Message copied");
-    if (e.target.id === "colab") copy(el.dataset.colab, "Script copied with sample data. In the published page this button also opens the notebook: paste it in the second cell.");
+    if (e.target.id === "colab") copy(el.dataset.colab, "Script copied with sample data: paste it in the second cell of the notebook that just opened.");
     if (e.target.id === "fold"){
       showImports = !showImports;
       lastLines = new Set(D.snippets[D.combos[key()].snippet].split("\n"));
@@ -475,6 +502,7 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     .filter(o => o[0] !== "other")
     .map(o => "<tr><td>" + esc(o[1]) + '</td><td class="num">' + D.min_history[o[0]] + "</td><td>" + SPAN_ES[o[0]] + "</td></tr>").join("");
   window.addEventListener("hashchange", () => { fromHash(); update(); });
+  narrow.addEventListener("change", () => { editing = null; renderRows(); });
   fromHash(); update();
 })();
 </script>

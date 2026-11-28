@@ -6,3 +6,4 @@ wikipedia_visits,full,2796,LightGBM snippet v2 [refit],ML,1.4333292617444493,0.5
 wikipedia_visits,full,2796,Chronos-2,Foundation,1.1581174130870147,0.64960398300002,,0.7041436118377955,1,wikipedia_visits,,"one series, nothing known in advance"
 wikipedia_visits,full,2796,AutoETS,Statistical,1.4896729064938175,2.811120797000058,,0.9057317064592408,1,wikipedia_visits,,"one series, nothing known in advance"
 wikipedia_visits,full,2796,AutoARIMA,Statistical,1.579330259891692,9.48294730800012,,0.9602440140508491,1,wikipedia_visits,,"one series, nothing known in advance"
+wikipedia_visits,full,2796,LightGBM tuned [refit],ML,1.8259673766736377,7.878080715999658,"diff=None; lags=case; {'n_estimators': 300, 'learning_rate': 0.0888, 'num_leaves': 31, 'min_child_samples': 7, 'colsample_bytree': 0.7592, 'reg_lambda': 0.8953}; n_val=84; validation MASE 0.778",1.110201132613793,1,wikipedia_visits,,"one series, nothing known in advance"

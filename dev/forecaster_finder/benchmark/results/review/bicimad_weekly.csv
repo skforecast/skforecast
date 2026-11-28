@@ -54,3 +54,4 @@ bicimad_weekly,full,382,AutoARIMA,Statistical,1.625280598322793,9.86353974999929
 bicimad_weekly,104,104,LightGBM snippet v2 [refit],ML,2.5559222710114207,0.1761809549998361,as written by finder_tree.py,1.4580221846500567,1
 bicimad_weekly,208,208,LightGBM snippet v2 [refit],ML,1.7797361964550173,0.29959092999979475,as written by finder_tree.py,1.015247954402496,1
 bicimad_weekly,full,382,LightGBM snippet v2 [refit],ML,1.4445942752985772,0.3451544859999558,as written by finder_tree.py,0.824066727338433,1
+bicimad_weekly,full,382,LightGBM tuned [refit],ML,1.3280964155077166,2.1312789370000473,"diff=1; lags=case; {'n_estimators': 300, 'learning_rate': 0.0198, 'num_leaves': 23, 'min_child_samples': 27, 'colsample_bytree': 0.6368, 'reg_lambda': 0.0543}; n_val=24; validation MASE 1.021",0.7576106907187781,1

@@ -124,6 +124,11 @@ REASON = {
 NOTES = [
     "Need to explain the forecast? LightGBM gives feature importances "
     "(`forecaster.get_feature_importances()`); foundation models do not.",
+    "The first run downloads the weights of Chronos-2 (about 110 MB) from Hugging Face and "
+    "takes a little longer. If your network blocks Hugging Face, that block of the script "
+    "fails: remove it to run the rest.",
+    "On Linux, `pip` installs PyTorch with its GPU libraries (several GB). For a CPU only "
+    "install, first run `pip install torch --index-url https://download.pytorch.org/whl/cpu`.",
     "Forecasting many series often? Chronos-2 needs PyTorch and, at scale, a GPU.",
     "Chronos-2 is Apache-2.0. Other foundation models in skforecast have licenses that "
     "restrict commercial use.",
@@ -420,7 +425,7 @@ def _edit(f: dict, text: str = "edit for your data") -> str:
 
 HEADER = (
     "# Example settings so that the script runs: they are not tuned.\n"
-    "# pip install skforecast {packages}"
+    "# pip install {skforecast} {packages}"
 )
 
 
@@ -441,7 +446,9 @@ def render(a: dict, leaf: dict) -> str:
     freq_note = ("a DatetimeIndex with a frequency" if f.get("edit")
                  else f'a DatetimeIndex, freq="{f["alias"]}"')
 
-    head = [HEADER.format(packages="lightgbm chronos-forecasting"), ""]
+    # ARIMA needs statsmodels, an optional dependency of skforecast (extra `stats`)
+    head = [HEADER.format(skforecast='"skforecast[stats]"' if leaf["stats"] else "skforecast",
+                          packages="lightgbm chronos-forecasting"), ""]
     if several:
         head.append(f"# series: dict with one pandas Series per series, each with {freq_note},")
         head.append("#         e.g. series = {name: data[name] for name in data.columns}")
@@ -576,7 +583,7 @@ def render_classification(a, f):
         "from skforecast.recursive import ForecasterRecursiveClassifier",
         "from sklearn.metrics import balanced_accuracy_score",
         "",
-        HEADER.format(packages="lightgbm"),
+        HEADER.format(skforecast="skforecast", packages="lightgbm"),
         "",
         f'# y: pandas Series of categories ("low", "medium", "high") with {freq_note}',
     ]

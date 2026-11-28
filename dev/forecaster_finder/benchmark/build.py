@@ -71,7 +71,7 @@ def notebook():
                  "second cell and run it.\n\n"
                  "The script comes with sample data, so it runs as it is. To use your own "
                  "data, replace the block marked as sample data."),
-            cell("code", "%pip install -q skforecast lightgbm chronos-forecasting"),
+            cell("code", '%pip install -q "skforecast[stats]" lightgbm chronos-forecasting'),
             cell("code", "# Paste your script here (Ctrl+V or Cmd+V) and run this cell\n"),
         ],
     }

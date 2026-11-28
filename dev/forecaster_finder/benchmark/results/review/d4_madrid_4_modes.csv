@@ -4,3 +4,4 @@ madrid_4_modes,full,547,LightGBM [refit],ML,0.39841818187360295,0.96891179899989
 madrid_4_modes,full,547,LightGBM+ [refit],ML,0.4885447450841565,3.731513074000077,,0.8400256877567909,4,public_transport_madrid,,several series
 madrid_4_modes,full,547,LightGBM snippet v2 [refit],ML,0.3903273443017283,0.6952255210001113,,0.6711462954961468,4,public_transport_madrid,,several series
 madrid_4_modes,full,547,Chronos-2,Foundation,0.2596666154203961,0.7471382580001773,,0.4464823936821221,4,public_transport_madrid,,several series
+madrid_4_modes,full,547,LightGBM tuned [refit],ML,0.7125385290030721,7.959489217000282,"diff=1; lags=case; {'n_estimators': 300, 'learning_rate': 0.0198, 'num_leaves': 23, 'min_child_samples': 27, 'colsample_bytree': 0.6368, 'reg_lambda': 0.0543}; n_val=84; validation MASE 0.632",1.2251706192764629,4,public_transport_madrid,,several series

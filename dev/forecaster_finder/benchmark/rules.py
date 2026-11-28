@@ -79,6 +79,7 @@ a["ml"] = col("LightGBM snippet v2 [refit]", "LightGBM (no exog) [refit]")
 a["ets"] = col("AutoETS")
 a["arima"] = col("AutoARIMA")
 a["arima_exog"] = col("AutoARIMA (exog)")
+a["tuned"] = col("LightGBM tuned [refit]")
 a.round(3).to_csv(RES / "rules_runs.csv", index=False)
 
 print(f"{len(a)} runs, {a.dataset.nunique()} datasets")
@@ -116,6 +117,33 @@ known = a[a.cell == ONE_KNOWN]
 for kind, g in known.groupby("exog_kind"):
     by = g.groupby("dataset")[["fm", "ml"]].mean()
     print(f"known in advance, {kind}: {len(by)} datasets, Chronos-2 ahead in {int((by.fm < by.ml).sum())}")
+
+# ==============================================================================
+# LightGBM with a small tuning budget (20 trials on validation), full history
+# ==============================================================================
+tuned = a[a.tuned.notna()]
+rows = []
+print("\n--- LightGBM tuned on validation against the untuned one and Chronos-2 (full history)")
+for cell, g in tuned.groupby("cell"):
+    by = g.groupby("dataset")[["fm", "lgbm", "tuned"]].mean()
+    best = by[["lgbm", "tuned"]].min(axis=1)
+    rows.append({
+        "cell": cell, "datasets": len(by),
+        "untuned < Chronos-2": int((by.lgbm < by.fm).sum()),
+        "tuned < Chronos-2": int((by.tuned < by.fm).sum()),
+        "tuned within 5% of Chronos-2 or better": int((by.tuned < 1.05 * by.fm).sum()),
+        "tuning improved LightGBM": int((by.tuned < by.lgbm).sum()),
+        "tuning made it worse by more than 5%": int((by.tuned > 1.05 * by.lgbm).sum()),
+        "tuned >= naive": int((by.tuned >= 1).sum()),
+        "untuned >= naive": int((by.lgbm >= 1).sum()),
+        "median Chronos-2": by.fm.median(), "median untuned": by.lgbm.median(),
+        "median tuned": by.tuned.median(),
+    })
+    print(f"\n{cell}")
+    print(by.round(2).to_string())
+tuned_cells = pd.DataFrame(rows).round(3)
+print(tuned_cells.T.to_string())
+tuned_cells.to_csv(RES / "rules_tuned.csv", index=False)
 
 # ==============================================================================
 # Statistical reference: AutoETS or AutoARIMA, and with which frequencies

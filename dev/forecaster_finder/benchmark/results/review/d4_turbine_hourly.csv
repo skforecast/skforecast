@@ -4,3 +4,4 @@ turbine_hourly,full,8928,LightGBM [refit],ML,3.461505521383857,4.929005093000001
 turbine_hourly,full,8928,LightGBM+ [refit],ML,3.1430051906534286,20.38470685300001,,0.9199705509495943,1,turbine_emission,weather,"one series, known in advance"
 turbine_hourly,full,8928,LightGBM snippet v2 [refit],ML,3.4410582391978526,2.931760426999972,,1.0072119045741532,1,turbine_emission,weather,"one series, known in advance"
 turbine_hourly,full,8928,Chronos-2,Foundation,3.173451863945239,11.116936353000028,,0.9288824174925274,1,turbine_emission,weather,"one series, known in advance"
+turbine_hourly,full,8928,LightGBM tuned [refit],ML,3.602455279715842,15.08606573599991,"diff=1; lags=case; {'n_estimators': 200, 'learning_rate': 0.0522, 'num_leaves': 48, 'min_child_samples': 20, 'colsample_bytree': 0.9923, 'reg_lambda': 0.5487}; n_val=72; validation MASE 3.062",1.0544534823890788,1,turbine_emission,weather,"one series, known in advance"

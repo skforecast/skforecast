@@ -13,3 +13,4 @@ vic_electricity_daily_past_only,full,927,Chronos-2 base (past-only covariates),F
 vic_electricity_daily_past_only,full,927,Chronos-2 synth (no exog),Foundation,0.5087481853089459,0.8485183590000815,,0.6374565642589379,1
 vic_electricity_daily_past_only,full,927,"Chronos-2 synth (no exog, own loop)",Foundation,0.5087481853089459,0.9099795479999102,,0.6374565642589379,1
 vic_electricity_daily_past_only,full,927,Chronos-2 synth (past-only covariates),Foundation,0.5003999977273921,1.723942174000058,,0.6269963658205007,1
+vic_electricity_daily_past_only,full,927,LightGBM tuned [refit],ML,0.6305618498419057,3.6151340530000198,"diff=None; lags=strong; {'n_estimators': 100, 'learning_rate': 0.1189, 'num_leaves': 41, 'min_child_samples': 24, 'colsample_bytree': 0.7371, 'reg_lambda': 0.0165}; n_val=84; validation MASE 0.474",0.7900879098151221,1

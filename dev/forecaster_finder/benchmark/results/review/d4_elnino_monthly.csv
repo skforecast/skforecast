@@ -6,3 +6,4 @@ elnino_monthly,full,672,LightGBM snippet v2 [refit],ML,0.9055125954949645,0.3635
 elnino_monthly,full,672,Chronos-2,Foundation,0.9294667183172792,0.3951637599999458,,0.7713192810941907,1,elnino,,"one series, nothing known in advance"
 elnino_monthly,full,672,AutoETS,Statistical,1.4068645316374142,1.9141264910000473,,1.1674885369796164,1,elnino,,"one series, nothing known in advance"
 elnino_monthly,full,672,AutoARIMA,Statistical,0.946598776318796,8.308589392000044,,0.785536343847462,1,elnino,,"one series, nothing known in advance"
+elnino_monthly,full,672,LightGBM tuned [refit],ML,0.9986395204728076,3.1560984719999396,"diff=None; lags=strong; {'n_estimators': 100, 'learning_rate': 0.0593, 'num_leaves': 38, 'min_child_samples': 10, 'colsample_bytree': 0.6612, 'reg_lambda': 0.6055}; n_val=36; validation MASE 0.537",0.8287224295646021,1,elnino,,"one series, nothing known in advance"

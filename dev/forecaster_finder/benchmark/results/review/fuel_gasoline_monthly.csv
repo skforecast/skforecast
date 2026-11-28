@@ -75,3 +75,4 @@ fuel_gasoline_monthly,36,36,LightGBM snippet v2 [refit],ML,0.46332970031154824,0
 fuel_gasoline_monthly,60,60,LightGBM snippet v2 [refit],ML,0.4343825273795604,0.14872764200026722,as written by finder_tree.py,1.3716979420030548,1
 fuel_gasoline_monthly,120,120,LightGBM snippet v2 [refit],ML,0.4909759592774034,0.2574243220005883,as written by finder_tree.py,1.5504093062318687,1
 fuel_gasoline_monthly,full,552,LightGBM snippet v2 [refit],ML,0.3379086585656815,0.4026816649993634,as written by finder_tree.py,1.067051693666646,1
+fuel_gasoline_monthly,full,552,LightGBM tuned [refit],ML,0.4213125780829219,5.54895843700001,"diff=1; lags=strong; {'n_estimators': 600, 'learning_rate': 0.0461, 'num_leaves': 45, 'min_child_samples': 26, 'colsample_bytree': 0.85, 'reg_lambda': 0.4998}; n_val=36; validation MASE 0.382",1.3304255117779369,1

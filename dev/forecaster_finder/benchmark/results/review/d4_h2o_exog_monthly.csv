@@ -7,3 +7,4 @@ h2o_exog_monthly,full,159,Chronos-2,Foundation,0.5983832122881787,0.346070431999
 h2o_exog_monthly,full,159,AutoETS,Statistical,0.6964250015239946,0.3531009240000458,,0.9686673058155602,1,h2o_exog,calendar,"one series, known in advance"
 h2o_exog_monthly,full,159,AutoARIMA,Statistical,0.7257343202398688,0.5268379920000825,,1.00943404844207,1,h2o_exog,calendar,"one series, known in advance"
 h2o_exog_monthly,full,159,AutoARIMA (exog),Statistical,0.558470193143172,0.23378066899999794,,0.7767840272627738,1,h2o_exog,calendar,"one series, known in advance"
+h2o_exog_monthly,full,159,LightGBM tuned [refit],ML,0.7371797523676974,1.3089905480001107,"diff=1; lags=case; {'n_estimators': 300, 'learning_rate': 0.0888, 'num_leaves': 31, 'min_child_samples': 7, 'colsample_bytree': 0.7592, 'reg_lambda': 0.8953}; n_val=36; validation MASE 0.833",1.025353660573882,1,h2o_exog,calendar,"one series, known in advance"
