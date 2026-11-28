@@ -194,6 +194,9 @@ hooks:
   # Sets the search engine title and description of each page from
   # tools/docs/hooks/page_meta.yml
   - tools/docs/hooks/page_meta.py
+  # Corrects a bug of lunr.js that makes some searches return no results,
+  # depending on the vocabulary of the site (see the file)
+  - tools/docs/hooks/search_fix.py
 
 # `mkdocs serve` only watches docs_dir and mkdocs.yml, so the examples data needs
 # to be watched explicitly. Note that edits to the hook module itself require a

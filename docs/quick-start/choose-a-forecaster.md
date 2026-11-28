@@ -3,6 +3,8 @@ template: finder.html
 hide:
   - navigation
   - toc
+search:
+  boost: 2
 ---
 
 # Which forecaster should I use?
