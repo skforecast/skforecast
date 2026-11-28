@@ -436,6 +436,12 @@ faq/profiling-skforecast.ipynb:
     Profiling skforecast performance: time spent by fit, create_train_X_y and
     predict of the forecasters to find bottlenecks and use the library efficiently.
 
+faq/how-forecasters-create-training-matrices.md:
+  title: How forecasters build training matrices
+  description: >-
+    How skforecast forecasters build the training matrices: lags, window
+    features, exogenous and categorical variables, missing values and memory use.
+
 faq/pandas-2-and-pandas-3.md:
   title: pandas 2 and pandas 3 in skforecast
   description: >-
