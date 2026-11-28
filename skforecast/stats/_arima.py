@@ -38,13 +38,20 @@ class Arima(BaseEstimator, RegressorMixin):
         - d: Degree of differencing (number of times to difference the series)
         - q: MA order (size of moving average window)
         If None, the order will be automatically selected using auto_arima during fitting.
+        The automatic selection searches the AR and MA orders of both components:
+        if `seasonal_order` is None and `order` is a tuple, only its differencing
+        order `d` is kept and `p` and `q` are searched anyway.
     seasonal_order : tuple of int or None, default (0, 0, 0)
         The (P, D, Q) order of the seasonal component:
         - P: Seasonal AR order
         - D: Seasonal differencing order
         - Q: Seasonal MA order
         If None, the seasonal order will be automatically selected using auto_arima during
-        fitting.
+        fitting. The automatic selection searches the AR and MA orders of both
+        components: if `order` is None and `seasonal_order` is a tuple, only its
+        differencing order `D` is kept and `P` and `Q` are searched anyway (with
+        `m > 1`). For a fully automatic seasonal model, set both to None and `m`
+        to the seasonal period.
     m : int, default 1
         Seasonal period (e.g., 12 for monthly data with yearly seasonality, 
         4 for quarterly data). Set to 1 for non-seasonal models.

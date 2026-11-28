@@ -209,9 +209,15 @@ def skill_block(facts):
     )
     s, t = facts["stats"], facts["search"]
     return (
-        "For a new problem, compare these forecasters with the same backtesting "
-        "(`TimeSeriesFold(refit=True, fixed_train_size=False)`) and keep what beats the "
-        "baseline. They are two candidates with different roles, not a ranking.\n\n"
+        "For a new problem, compare these forecasters on the same folds and keep what beats "
+        "the baseline. They are two candidates with different roles, not a ranking.\n\n"
+        "Pass the same `TimeSeriesFold(refit=True, fixed_train_size=False)` to every "
+        "backtesting function, so that every model uses all the data before each fold: "
+        "`backtesting_stats` refits every estimator except `Sarimax` in each fold and "
+        "`backtesting_foundation` always forecasts from the history up to the fold, so with "
+        "`refit=False` only the model you train would forecast from old data. "
+        "`backtesting_foundation` warns that `refit` does not apply to it: pass "
+        "`suppress_warnings=True` there.\n\n"
         + rules_markdown(lambda cls: f"`{cls}`") + "\n\n"
         "Chronos-2 is `FoundationModel(\"autogluon/chronos-2-small\")` (Apache-2.0, no "
         "training). LightGBM is the model the user trains and shapes with their own variables.\n\n"

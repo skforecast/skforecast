@@ -3,7 +3,7 @@ name: baseline-forecasting
 description: >
   Builds and evaluates simple baseline forecasts with ForecasterEquivalentDate
   (equivalent-date / seasonal-naive / moving-average) to benchmark machine
-  learning models. Covers offset (int vs pandas DateOffset), n_offsets with
+  learning and foundation models. Covers offset (int vs pandas DateOffset), n_offsets with
   agg_func, backtesting a baseline, comparing against ML with MASE, conformal
   intervals, and grid_search_equivalent_date. Use when the user wants a baseline,
   a naive or seasonal reference, or to check whether a model beats a simple rule.

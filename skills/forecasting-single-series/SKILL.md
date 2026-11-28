@@ -13,15 +13,18 @@ description: >
 
 Use this workflow when you have **one time series** and want to predict its future values.
 
-- **ForecasterRecursive**: Default choice. Uses its own predictions as inputs for multi-step forecasting. Works with any sklearn-compatible regressor.
+- **ForecasterRecursive**: Default choice of the two. Uses its own predictions as inputs for multi-step forecasting. Works with any sklearn-compatible regressor.
 - **ForecasterDirect**: Trains one model per forecast step. Better when the relationship between lags and target changes across the horizon.
+
+These are the models you train on your data. On a new problem, do not evaluate one alone: compare it with a foundation model (`ForecasterFoundation` with Chronos-2, no training) and a seasonal baseline (`ForecasterEquivalentDate`) on the same folds. See the `choosing-a-forecaster` skill.
 
 ### Related skills
 
-- **Prerequisite**: `choosing-a-forecaster` (decide between Recursive and Direct based on the data)
+- **Prerequisite**: `choosing-a-forecaster` (the first comparison for a new problem, and Recursive or Direct)
 - **Prerequisite**: `autocorrelation-and-lag-selection` (pick the `lags` argument from ACF/PACF analysis)
 - **Prerequisite**: `feature-engineering` (assemble the rolling, calendar, and exogenous features)
 - **Alongside**: `baseline-forecasting` (establish a naive reference to benchmark the model against)
+- **Alongside**: `foundation-forecasting` (the pre-trained candidate to compare the trained model with)
 - **Next**: `hyperparameter-optimization` (tune the forecaster once a baseline is trained)
 - **Next**: `prediction-intervals` (add bootstrap or conformal intervals on top of the point forecasts)
 
