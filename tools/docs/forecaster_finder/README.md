@@ -109,14 +109,16 @@ data block short, and do not grow the script to cover every kind of file.
 | Check | What it covers | Where it runs |
 |:--|:--|:--|
 | `build.py --check` | Generated files up to date, sentences supported by the study, links, line length. Runs nothing, needs only pandas | CI, job "Generated files are up to date" |
-| `build.py` | Every script runs on sample data without errors or warnings | CI, job "Every script runs as it is" (also weekly) |
+| `build.py` | Every script runs on sample data without errors or warnings | CI, job "Every script runs as it is" |
 | `check_snippets.py` | Each kind of script runs with the minimum history the page states | Same job |
 | `build.py --ai` | The lines of skforecast-ai shown under the script | By hand, in an environment with `skforecast-ai[foundation]` |
 | `check_mcp.py` | The skforecast-ai MCP server answers the path the page describes | By hand, same environment plus the `mcp` extra |
 | `check_clean_install.sh` | Install line of the script in a new environment, first and second run, and the script without access to Hugging Face | By hand (it installs about 6 GB) |
 
 The workflow is `.github/workflows/forecaster-finder.yml`. It installs the
-packages as the scripts tell the reader to, without pinned versions.
+packages as the scripts tell the reader to, without pinned versions. It runs on
+the pull requests that touch the finder or its study, and by hand from the
+Actions tab.
 
 The link of "Run it in Google Colab" points to `first_comparison.ipynb` on the
 `main` branch (`COLAB` in `finder.py`), so it works once this folder is there.
