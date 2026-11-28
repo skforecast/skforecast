@@ -1,6 +1,5 @@
 # Unit test fit method - Arima
 # ==============================================================================
-import warnings
 import numpy as np
 import pandas as pd
 import re
@@ -535,38 +534,19 @@ def test_arima_fit_returns_self():
     assert model.model_ is not None
 
 
-def test_arima_fit_UserWarning_when_auto_arima_with_m_and_default_seasonal_order():
+def test_arima_fit_auto_arima_with_default_seasonal_order_selects_a_non_seasonal_model():
     """
-    Test that the automatic selection warns that `D` is fixed to 0 when `m` is
-    greater than 1 and `seasonal_order` is left at (0, 0, 0), that it selects
-    seasonal orders without seasonal differencing, and that there is no warning
-    with `suppress_warnings=True`, with `m=1` or with `seasonal_order=None`.
+    Test that `order=None` with the default `seasonal_order` and `m` selects
+    a non-seasonal model, the same as with `seasonal_order=None` and `m=1`.
     """
     y = air_passengers
 
-    msg = re.escape(
-        "`order` is None, `m` = 12 and `seasonal_order` = (0, 0, 0): the "
-        "seasonal differencing order `D` is fixed to 0 and only the seasonal AR "
-        "and MA orders are selected. Set `seasonal_order=None` to select `D` "
-        "too, which is usually more accurate with seasonal data."
-    )
-    model = Arima(order=None, m=12)
-    with pytest.warns(UserWarning, match=msg):
-        model.fit(y)
+    model = Arima(order=None).fit(y, suppress_warnings=True)
+    model_both_none = Arima(order=None, seasonal_order=None).fit(y, suppress_warnings=True)
 
-    assert model.best_params_['seasonal_order'][1] == 0
-
-    for model in [Arima(order=None, m=12), Arima(order=None)]:
-        with warnings.catch_warnings(record=True) as record:
-            warnings.simplefilter("always")
-            model.fit(y, suppress_warnings=True)
-        assert not [w for w in record if "seasonal differencing" in str(w.message)]
-
-    for model in [Arima(order=None), Arima(order=None, seasonal_order=None, m=12)]:
-        with warnings.catch_warnings(record=True) as record:
-            warnings.simplefilter("always")
-            model.fit(y)
-        assert not [w for w in record if "seasonal differencing" in str(w.message)]
+    assert model.best_params_['seasonal_order'] == (0, 0, 0)
+    assert model.best_params_['m'] == 1
+    assert model.best_params_ == model_both_none.best_params_
 
 
 def test_arima_fit_auto_arima_air_passengers_data():

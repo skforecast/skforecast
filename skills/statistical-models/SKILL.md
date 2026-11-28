@@ -41,7 +41,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Model | Class | Description |
 |-------|-------|-------------|
 | **ARIMA** | `Arima` | AutoRegressive Integrated Moving Average |
-| **Auto-ARIMA** | `Arima(order=None, seasonal_order=None, m=...)` | Automatic order selection. With the default `m=1` no seasonal term is searched. Set both orders to `None`: next to a `None`, a tuple can only fix its differencing order, as `(0, d, 0)` or `(0, D, 0)`; with AR or MA orders other than 0 it raises a `ValueError`. `Arima(order=None, m=12)` alone fixes `D=0` and warns |
+| **Auto-ARIMA** | `Arima(order=None)` or `Arima(order=None, seasonal_order=None, m=...)` | Automatic order selection: non-seasonal with `order=None` alone (`m=1`), seasonal with `seasonal_order=None` and `m`. Any other mix of `None` and a tuple (`Arima(order=None, m=12)`, `Arima(order=(1, 1, 1), seasonal_order=None)`) raises a `ValueError` |
 | **SARIMAX** | `Sarimax` | ARIMA with exogenous variables (seasonal) |
 | **ETS** | `Ets` | Exponential Smoothing (Error-Trend-Seasonal) |
 | **ARAR** | `Arar` | Autoregressive model with memory shortening |

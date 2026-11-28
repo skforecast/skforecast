@@ -21,15 +21,19 @@ from ..exceptions import IgnoredArgumentWarning
 
 def _check_auto_orders(
     order: tuple | None,
-    seasonal_order: tuple | None
+    seasonal_order: tuple | None,
+    m: int
 ) -> None:
     """
-    Check `order` and `seasonal_order` when only one of them is None.
+    Check that `order`, `seasonal_order` and `m` ask for a model that the
+    automatic selection can fit.
 
-    The automatic selection searches the AR and MA orders of both components.
-    From a tuple passed next to a None it can only keep the differencing order
-    (`d` or `D`), so a tuple with AR or MA orders other than 0 asks for a model
-    that would not be fitted.
+    The automatic selection chooses the orders of the whole model: it cannot
+    keep a given order while it selects the other. It has two forms:
+    `order=None` with `seasonal_order=(0, 0, 0)` and `m=1` (non-seasonal
+    model) and `order=None` with `seasonal_order=None` (seasonal model when
+    `m > 1`). Any other combination of None and a tuple raises an error instead
+    of fitting a model that is not the one requested.
 
     Parameters
     ----------
@@ -37,6 +41,8 @@ def _check_auto_orders(
         The (p, d, q) order of the non-seasonal component.
     seasonal_order : tuple, None
         The (P, D, Q) order of the seasonal component.
+    m : int
+        Seasonal period.
 
     Returns
     -------
@@ -47,20 +53,29 @@ def _check_auto_orders(
     if (order is None) == (seasonal_order is None):
         return
 
-    if order is None:
-        name, given, diff = "seasonal_order", seasonal_order, "D"
-    else:
-        name, given, diff = "order", order, "d"
-
-    if given[0] != 0 or given[2] != 0:
+    if order is not None:
         raise ValueError(
-            f"`{name}` = {tuple(given)} cannot be used when the other order is "
-            f"None. The automatic selection searches the AR and MA orders of "
-            f"both components and only keeps the differencing order (`{diff}`) "
-            f"of `{name}`, so its AR and MA orders would be ignored. Set both "
-            f"`order` and `seasonal_order` to None for a fully automatic model, "
-            f"pass both as tuples to fit a given model, or pass "
-            f"`{name}` = (0, {given[1]}, 0) to fix only `{diff}`."
+            f"`seasonal_order=None` requires `order=None`, got `order` = "
+            f"{tuple(order)}. The automatic selection chooses both orders and "
+            f"cannot keep a given `order`. Set `order=None` to select both, or "
+            f"pass `seasonal_order` as a tuple to fit a given model."
+        )
+
+    if tuple(seasonal_order) != (0, 0, 0):
+        raise ValueError(
+            f"`order=None` cannot be combined with `seasonal_order` = "
+            f"{tuple(seasonal_order)}. The automatic selection chooses both "
+            f"orders and cannot keep a given `seasonal_order`. Set "
+            f"`seasonal_order=None` to select both, or pass `order` as a tuple "
+            f"to fit a given model."
+        )
+
+    if m > 1:
+        raise ValueError(
+            f"`order=None` with `seasonal_order` = (0, 0, 0) selects a "
+            f"non-seasonal model, but `m` = {m} indicates seasonal data. Set "
+            f"`seasonal_order=None` to select the seasonal order too, or "
+            f"`m=1` for a non-seasonal model."
         )
 
 
@@ -82,24 +97,19 @@ class Arima(BaseEstimator, RegressorMixin):
         - p: AR order (number of lag observations)
         - d: Degree of differencing (number of times to difference the series)
         - q: MA order (size of moving average window)
-        If None, the order will be automatically selected using auto_arima during fitting.
-        The automatic selection searches the AR and MA orders of both components:
-        if `seasonal_order` is None, `order` can only fix the differencing order
-        `d`, as (0, d, 0). A tuple with `p` or `q` other than 0 raises a
-        `ValueError`.
+        If None, the model is selected automatically with auto_arima during
+        fitting, in one of two forms: with `seasonal_order=(0, 0, 0)` and `m=1`
+        (the defaults), a non-seasonal model; with `seasonal_order=None` and `m`
+        set to the seasonal period, a seasonal model. Any other combination of
+        None and a tuple raises a `ValueError`, since the selection cannot keep
+        a given order.
     seasonal_order : tuple of int or None, default (0, 0, 0)
         The (P, D, Q) order of the seasonal component:
         - P: Seasonal AR order
         - D: Seasonal differencing order
         - Q: Seasonal MA order
-        If None, the seasonal order will be automatically selected using auto_arima during
-        fitting. The automatic selection searches the AR and MA orders of both
-        components: if `order` is None, `seasonal_order` can only fix the
-        differencing order `D`, as (0, D, 0), and `P` and `Q` are selected (with
-        `m > 1`). A tuple with `P` or `Q` other than 0 raises a `ValueError`. For
-        a fully automatic seasonal model, set both to None and `m` to the
-        seasonal period: with the default (0, 0, 0), `D` is fixed to 0 and a
-        warning is issued.
+        If None, the seasonal order is selected automatically, together with
+        `order`: it requires `order=None`.
     m : int, default 1
         Seasonal period (e.g., 12 for monthly data with yearly seasonality, 
         4 for quarterly data). Set to 1 for non-seasonal models.
@@ -432,7 +442,7 @@ class Arima(BaseEstimator, RegressorMixin):
             )
         if not isinstance(m, int) or m < 1:
             raise ValueError("`m` must be a positive integer (seasonal period).")
-        _check_auto_orders(order=order, seasonal_order=seasonal_order)
+        _check_auto_orders(order=order, seasonal_order=seasonal_order, m=m)
         
         self.order                = order
         self.seasonal_order       = seasonal_order
@@ -601,19 +611,6 @@ class Arima(BaseEstimator, RegressorMixin):
                 warnings.simplefilter("ignore")
             
             if self.is_auto:
-                if (
-                    self.m > 1
-                    and self.seasonal_order is not None
-                    and tuple(self.seasonal_order) == (0, 0, 0)
-                ):
-                    warnings.warn(
-                        f"`order` is None, `m` = {self.m} and `seasonal_order` = "
-                        f"(0, 0, 0): the seasonal differencing order `D` is fixed "
-                        f"to 0 and only the seasonal AR and MA orders are "
-                        f"selected. Set `seasonal_order=None` to select `D` too, "
-                        f"which is usually more accurate with seasonal data.",
-                        UserWarning
-                    )
                 # As in R's forecast::auto.arima, the default method lets the
                 # search fit the candidates with CSS when the approximation is
                 # active. The selected model is always refitted with CSS-ML.
@@ -1165,7 +1162,8 @@ class Arima(BaseEstimator, RegressorMixin):
 
         _check_auto_orders(
             order          = params.get('order', self.order),
-            seasonal_order = params.get('seasonal_order', self.seasonal_order)
+            seasonal_order = params.get('seasonal_order', self.seasonal_order),
+            m              = params.get('m', self.m)
         )
 
         for key, value in params.items():

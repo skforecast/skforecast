@@ -39,53 +39,86 @@ def test_arima_init_seasonal_order_and_m_validation():
         Arima(order=(0, 0, 0), seasonal_order=(1, 1, 1), m='not_int')
 
 @pytest.mark.parametrize(
-    "order, seasonal_order, name, fix",
-    [((3, 0, 2), None, "order", "(0, 0, 0)"),
-     ((0, 1, 1), None, "order", "(0, 1, 0)"),
-     (None, (1, 1, 0), "seasonal_order", "(0, 1, 0)"),
-     (None, (0, 0, 2), "seasonal_order", "(0, 0, 0)")],
-    ids=lambda v: f"{v}"
+    "order",
+    [(3, 0, 2), (0, 1, 0), (0, 0, 0)],
+    ids=lambda v: f"order: {v}"
 )
-def test_arima_init_ValueError_when_one_order_is_None_and_the_other_has_ar_or_ma(
-    order, seasonal_order, name, fix
-):
+def test_arima_init_ValueError_when_seasonal_order_is_None_and_order_is_not(order):
     """
-    Test that a tuple with AR or MA orders other than 0 raises an error when
-    the other order is None: the automatic selection would ignore them.
+    Test that `seasonal_order=None` with an `order` raises an error: the
+    automatic selection chooses both orders and cannot keep a given one.
     """
-    given = order if order is not None else seasonal_order
-    diff = "d" if name == "order" else "D"
     msg = re.escape(
-        f"`{name}` = {given} cannot be used when the other order is "
-        f"None. The automatic selection searches the AR and MA orders of "
-        f"both components and only keeps the differencing order (`{diff}`) "
-        f"of `{name}`, so its AR and MA orders would be ignored. Set both "
-        f"`order` and `seasonal_order` to None for a fully automatic model, "
-        f"pass both as tuples to fit a given model, or pass "
-        f"`{name}` = {fix} to fix only `{diff}`."
+        f"`seasonal_order=None` requires `order=None`, got `order` = "
+        f"{order}. The automatic selection chooses both orders and "
+        f"cannot keep a given `order`. Set `order=None` to select both, or "
+        f"pass `seasonal_order` as a tuple to fit a given model."
     )
     with pytest.raises(ValueError, match=msg):
-        Arima(order=order, seasonal_order=seasonal_order, m=12)
+        Arima(order=order, seasonal_order=None, m=12)
 
 
 @pytest.mark.parametrize(
-    "order, seasonal_order",
-    [(None, None), ((0, 1, 0), None), (None, (0, 1, 0)), (None, (0, 0, 0)),
-     ((2, 1, 1), (1, 1, 1))],
-    ids=lambda v: f"{v}"
+    "seasonal_order",
+    [(1, 1, 0), (0, 1, 0), (0, 0, 2)],
+    ids=lambda v: f"seasonal_order: {v}"
 )
-def test_arima_init_accepts_orders_that_the_automatic_selection_can_keep(
-    order, seasonal_order
+def test_arima_init_ValueError_when_order_is_None_and_seasonal_order_is_not_zero(
+    seasonal_order
 ):
     """
-    Test that both orders None, both tuples, or one None with a tuple that
-    only fixes the differencing order are accepted.
+    Test that `order=None` with a `seasonal_order` other than (0, 0, 0)
+    raises an error: the automatic selection cannot keep a given seasonal
+    order.
     """
-    model = Arima(order=order, seasonal_order=seasonal_order, m=12)
+    msg = re.escape(
+        f"`order=None` cannot be combined with `seasonal_order` = "
+        f"{seasonal_order}. The automatic selection chooses both "
+        f"orders and cannot keep a given `seasonal_order`. Set "
+        f"`seasonal_order=None` to select both, or pass `order` as a tuple "
+        f"to fit a given model."
+    )
+    with pytest.raises(ValueError, match=msg):
+        Arima(order=None, seasonal_order=seasonal_order, m=12)
+
+
+def test_arima_init_ValueError_when_order_is_None_m_greater_than_1_and_no_seasonal_order():
+    """
+    Test that `order=None` with the default `seasonal_order=(0, 0, 0)` and
+    `m` greater than 1 raises an error: it would select a non-seasonal model
+    for data declared as seasonal.
+    """
+    msg = re.escape(
+        "`order=None` with `seasonal_order` = (0, 0, 0) selects a "
+        "non-seasonal model, but `m` = 12 indicates seasonal data. Set "
+        "`seasonal_order=None` to select the seasonal order too, or "
+        "`m=1` for a non-seasonal model."
+    )
+    with pytest.raises(ValueError, match=msg):
+        Arima(order=None, m=12)
+
+
+@pytest.mark.parametrize(
+    "order, seasonal_order, m, is_auto",
+    [(None, (0, 0, 0), 1, True),
+     (None, None, 1, True),
+     (None, None, 12, True),
+     ((2, 1, 1), (1, 1, 1), 12, False),
+     ((2, 1, 1), (0, 0, 0), 12, False)],
+    ids=lambda v: f"{v}"
+)
+def test_arima_init_accepted_combinations_of_order_seasonal_order_and_m(
+    order, seasonal_order, m, is_auto
+):
+    """
+    Test the combinations that are accepted: the two forms of the automatic
+    selection (non-seasonal and with the seasonal order) and a given model.
+    """
+    model = Arima(order=order, seasonal_order=seasonal_order, m=m)
 
     assert model.order == order
     assert model.seasonal_order == seasonal_order
-    assert model.is_auto is (order is None or seasonal_order is None)
+    assert model.is_auto is is_auto
 
 
 def test_arima_init_default_params():
