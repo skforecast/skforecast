@@ -116,7 +116,9 @@ data block short, and do not grow the script to cover every kind of file.
 | `check_clean_install.sh` | Install line of the script in a new environment, first and second run, and the script without access to Hugging Face | By hand (it installs about 6 GB) |
 
 The workflow is `.github/workflows/forecaster-finder.yml`. It installs the
-packages as the scripts tell the reader to, without pinned versions.
+packages as the scripts tell the reader to, without pinned versions. Its weekly
+run checks the default branch, that is, the scripts of the published
+documentation.
 
 The link of "Run it in Google Colab" points to `first_comparison.ipynb` on the
 `main` branch (`COLAB` in `finder.py`), so it works once this folder is there.

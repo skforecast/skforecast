@@ -10,10 +10,12 @@ name: Forecaster Finder
 # (their versions are not pinned), so the weekly run also catches a release of
 # LightGBM, chronos-forecasting or pandas that breaks a script.
 #
-# The schedule is launched from the default branch, but it checks out the
-# highest release branch (`X.Y.x`), where the development happens. Pull
-# requests run it when they touch the finder, its study or the code of the
-# foundation models.
+# The weekly run checks the default branch, which holds the scripts of the
+# published documentation: the ones readers copy. It does not check out any
+# other branch, so no code from outside the default branch runs with its
+# permissions and caches. Pull requests run it when they touch the finder, its
+# study or the code of the foundation models, and the manual trigger runs it
+# on the branch selected in the Actions tab.
 
 permissions:
   contents: read
@@ -41,38 +43,15 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  setup:
-    name: Resolve the branch to check
-    # Skipped on the pull requests of Dependabot, and with it the rest of the jobs.
-    if: github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    outputs:
-      ref: ${{ steps.branch.outputs.ref }}
-    steps:
-      # Empty for the other events: the checkout then uses the branch of the
-      # pull request or the one selected in the manual trigger.
-      - name: Find the highest release branch
-        id: branch
-        if: github.event_name == 'schedule'
-        run: |
-          ref=$(git ls-remote --heads "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" '*.x' \
-            | sed 's|.*refs/heads/||' \
-            | grep -E '^[0-9]+\.[0-9]+\.x$' \
-            | sort -V \
-            | tail -n 1)
-          echo "Branch to check: ${ref:-default branch}"
-          echo "ref=$ref" >> "$GITHUB_OUTPUT"
-
   check:
-    needs: setup
     name: Generated files are up to date
+    # Skipped on the pull requests of Dependabot, which only bump the actions.
+    if: github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ needs.setup.outputs.ref }}
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
@@ -83,14 +62,13 @@ jobs:
           python tools/docs/forecaster_finder/build.py --check
 
   scripts:
-    needs: setup
     name: Every script runs as it is
+    if: github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ needs.setup.outputs.ref }}
           persist-credentials: false
       - uses: actions/setup-python@v7
         with:
