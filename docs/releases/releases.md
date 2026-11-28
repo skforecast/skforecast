@@ -60,7 +60,7 @@ The main changes in this release are:
 
     + <code>[Ets]</code>: the estimates and predictions of a model with a multiplicative error or seasonality change when its previous fit had a level or forecasts that were not positive, as in some refits of <code>[backtesting_stats]</code> with `freeze_params=True`. The other fits are unchanged.
 
-    + <code>[Arima]</code> with automatic selection: mixing `None` with a tuple raises a `ValueError`. Replace `Arima(order=None, m=12)` with `Arima(order=None, seasonal_order=None, m=12)`, which also selects the seasonal differencing, and set `order=None` too wherever `seasonal_order=None` is used with a given `order`.
+    + <code>[Arima]</code> with automatic selection: mixing `None` with a tuple raises a `ValueError`. Replace `Arima(order=None, m=12)` with `Arima(order=None, seasonal_order=None, m=12)`, which also selects the seasonal differencing. With a given `order`, replace `seasonal_order=None` with `(0, 0, 0)` (the default) for a model without a seasonal component, or set `order=None` too to select both.
 
 
 **Added**

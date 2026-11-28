@@ -55,10 +55,11 @@ def _check_auto_orders(
 
     if order is not None:
         raise ValueError(
-            f"`seasonal_order=None` requires `order=None`, got `order` = "
-            f"{tuple(order)}. The automatic selection chooses both orders and "
-            f"cannot keep a given `order`. Set `order=None` to select both, or "
-            f"pass `seasonal_order` as a tuple to fit a given model."
+            f"`seasonal_order=None` selects the model automatically and "
+            f"cannot keep `order` = {tuple(order)}. For a model without a "
+            f"seasonal component, use `seasonal_order=(0, 0, 0)` (the "
+            f"default). To select both orders automatically, set `order=None` "
+            f"too."
         )
 
     if tuple(seasonal_order) != (0, 0, 0):

@@ -45,14 +45,16 @@ def test_arima_init_seasonal_order_and_m_validation():
 )
 def test_arima_init_ValueError_when_seasonal_order_is_None_and_order_is_not(order):
     """
-    Test that `seasonal_order=None` with an `order` raises an error: the
-    automatic selection chooses both orders and cannot keep a given one.
+    Test that `seasonal_order=None` with an `order` raises an error that
+    names the two things the user may want: a model without a seasonal
+    component or the automatic selection of both orders.
     """
     msg = re.escape(
-        f"`seasonal_order=None` requires `order=None`, got `order` = "
-        f"{order}. The automatic selection chooses both orders and "
-        f"cannot keep a given `order`. Set `order=None` to select both, or "
-        f"pass `seasonal_order` as a tuple to fit a given model."
+        f"`seasonal_order=None` selects the model automatically and "
+        f"cannot keep `order` = {order}. For a model without a "
+        f"seasonal component, use `seasonal_order=(0, 0, 0)` (the "
+        f"default). To select both orders automatically, set `order=None` "
+        f"too."
     )
     with pytest.raises(ValueError, match=msg):
         Arima(order=order, seasonal_order=None, m=12)
