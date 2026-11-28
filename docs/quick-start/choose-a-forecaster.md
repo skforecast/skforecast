@@ -135,6 +135,7 @@ print(f"Chronos-2: {error[metric].item():.3f}")
 
 ## Next steps
 
+- Use your own data: [Input data](../user_guides/input-data.ipynb) explains the format that skforecast expects.
 - Compare more model families with the same method: [Comparing forecasting models](../user_guides/comparing-forecasting-models.ipynb).
 - Improve the LightGBM forecaster with your own variables and a search of its settings: [Exogenous variables](../user_guides/exogenous-variables.ipynb) and [Hyperparameter tuning and lags selection](../user_guides/hyperparameter-tuning-and-lags-selection.ipynb).
 - Learn the API step by step: [Quick start](quick-start-skforecast.ipynb).
