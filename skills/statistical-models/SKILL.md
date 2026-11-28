@@ -41,7 +41,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Model | Class | Description |
 |-------|-------|-------------|
 | **ARIMA** | `Arima` | AutoRegressive Integrated Moving Average |
-| **Auto-ARIMA** | `Arima(order=None)` | Automatic order selection |
+| **Auto-ARIMA** | `Arima(order=None, seasonal_order=None, m=...)` | Automatic order selection. With the default `m=1` no seasonal term is searched |
 | **SARIMAX** | `Sarimax` | ARIMA with exogenous variables (seasonal) |
 | **ETS** | `Ets` | Exponential Smoothing (Error-Trend-Seasonal) |
 | **ARAR** | `Arar` | Autoregressive model with memory shortening |
@@ -154,7 +154,8 @@ predictions = forecaster.predict(steps=12)
 cv = TimeSeriesFold(
     steps=12,
     initial_train_size=len(data) - 60,
-    refit=False,
+    refit=True,  # Arima, Ets and Arar are refitted in every fold: with False, it is
+                 # set to True with an IgnoredArgumentWarning (only Sarimax accepts it)
 )
 
 metric, predictions_bt = backtesting_stats(

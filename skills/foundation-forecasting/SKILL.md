@@ -29,8 +29,9 @@ Foundation models are **pre-trained on massive corpora** — `fit()` does not tr
 
 ### Related skills
 
-- **Prerequisite**: `choosing-a-forecaster` (decide whether a zero-shot model fits the problem at all)
+- **Prerequisite**: `choosing-a-forecaster` (the first comparison for a new problem: a model you train, a foundation model and a baseline)
 - **Alongside**: `baseline-forecasting` (compare the zero-shot model against a naive rule with MASE)
+- **Alongside**: `forecasting-single-series` / `forecasting-multiple-series` (the trained candidate to compare it with)
 - **Next**: `hyperparameter-optimization` (tune `context_length` with `bayesian_search_foundation`)
 - **Next**: `metric-selection` (probabilistic metrics for the native quantile output)
 
@@ -41,7 +42,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Rule | Symptom | Recovery |
 |------|---------|----------|
 | `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
-| `cv.refit` and `cv.fixed_train_size` are overridden by `backtesting_foundation` | `IgnoredArgumentWarning` when `refit=True` or `fixed_train_size=False` | Leave them at their defaults; the context window expands per fold either way |
+| `cv.refit` and `cv.fixed_train_size` are overridden by `backtesting_foundation` | `IgnoredArgumentWarning` when `refit=True` or `fixed_train_size=False` | Evaluating it alone: leave them at their defaults. Comparing it with trained models: share their `cv` (`refit=True, fixed_train_size=False`) and pass `suppress_warnings=True`. The context window expands per fold either way |
 | Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, T0, Nori, TS-ICL, Timestral, and TiRex-2 use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `IgnoredArgumentWarning`, forecast made without `exog` | Pick an exog-capable adapter when covariates matter |
 | TimesFM (2.5 and 3.0), Moirai-2 and TiRex-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]`; TS-ICL to a 0.01 grid; Timestral to 21 levels (`0.01`, `0.05`, `0.1`, ..., `0.95`, `0.99`) | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
 | Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
@@ -181,6 +182,8 @@ For TimesFM (2.5 and 3.0), Moirai-2 and TiRex-2, requested quantiles must be a s
 
 The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
+For a first comparison, use `autogluon/chronos-2-small`: Apache-2.0, small enough for a CPU and the model measured against LightGBM in the `choosing-a-forecaster` skill. The other models are not part of that measurement.
+
 To check what a model supports before installing its backend or loading its weights, use `get_model_info` (one `model_id`) or `list_adapters` (one entry per adapter, or a DataFrame with `as_frame=True`). Both return a frozen `FoundationModelInfo` read from the adapter classes, so it always matches the installed skforecast version; prefer it over hard-coding the table above.
 
 ```python
@@ -224,6 +227,13 @@ metric, predictions = backtesting_foundation(
 # metric columns: levels, mean_absolute_error, coverage, interval_width, n_evaluated
 # predictions columns: level, fold, step, y_true, q_0.1, q_0.5, q_0.9
 ```
+
+To compare with a model you train (`backtesting_forecaster`) or a statistical model
+(`backtesting_stats`), pass the same `cv` to the three functions, with
+`refit=True, fixed_train_size=False`: the foundation model always forecasts from the
+history up to each fold, so the trained model must be refitted in each fold to use the
+same data. `backtesting_foundation` then warns that those arguments do not apply to it;
+pass `suppress_warnings=True`.
 
 The metrics (and `n_evaluated`) use `q_0.5` as the point forecast. With two quantiles, optionally
 with the median (`[0.1, 0.9]` or `[0.1, 0.5, 0.9]`), `metric` also reports the

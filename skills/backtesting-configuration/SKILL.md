@@ -126,6 +126,7 @@ by_step = predictions.assign(
 | Retrain monthly (with daily forecasts, steps=7) | `refit=4` (every 4 folds × 7 steps ≈ monthly) |
 | Retrain at each month end and forecast the whole next month (daily data) | `steps=31`, `fold_stride=1`, `skip_folds` = folds not starting on day 1, `refit=True` (see example below) |
 | Never retrain / train once, evaluate across time | `refit=False` (`fixed_train_size` has no effect without refit) |
+| Compare model families (a model you train, a statistical model, a foundation model) | The same `cv` for all, with `refit=True, fixed_train_size=False`. `backtesting_stats` refits every estimator except `Sarimax` in each fold and `backtesting_foundation` always forecasts from the history up to the fold: with `refit=False` only the trained model would forecast from old data. Pass `suppress_warnings=True` to `backtesting_foundation`, which warns that `refit` does not apply to it |
 
 ### Data freshness vs volume
 
