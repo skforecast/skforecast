@@ -253,3 +253,24 @@ def test_set_params_to_auto_mode():
     
     assert model.is_auto is True
     assert model.estimator_name_ == "AutoArima()"
+
+
+def test_set_params_ValueError_when_one_order_is_None_and_the_other_has_ar_or_ma():
+    """
+    Test that set_params raises an error, and leaves the parameters as they
+    were, when it would leave one order as None and the other with AR or MA
+    orders that the automatic selection would ignore.
+    """
+    model = Arima(order=(1, 0, 0), seasonal_order=(1, 1, 1), m=12)
+
+    msg = re.escape("`seasonal_order` = (1, 1, 1) cannot be used when the other order is None.")
+    with pytest.raises(ValueError, match=msg):
+        model.set_params(order=None)
+
+    assert model.order == (1, 0, 0)
+    assert model.seasonal_order == (1, 1, 1)
+    assert model.is_auto is False
+
+    model.set_params(order=None, seasonal_order=None)
+
+    assert model.is_auto is True

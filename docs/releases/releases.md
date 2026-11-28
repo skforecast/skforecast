@@ -60,6 +60,8 @@ The main changes in this release are:
 
     + <code>[Ets]</code>: the estimates and predictions of a model with a multiplicative error or seasonality change when its previous fit had a level or forecasts that were not positive, as in some refits of <code>[backtesting_stats]</code> with `freeze_params=True`. The other fits are unchanged.
 
+    + <code>[Arima]</code> with automatic selection: a tuple with AR or MA orders other than 0 next to an order set to `None` (for example `order=(1, 1, 1), seasonal_order=None`) raises a `ValueError`, since those orders were ignored. Set both to `None`, or pass `(0, d, 0)` to fix only the differencing order.
+
 
 **Added**
 
@@ -113,6 +115,8 @@ The main changes in this release are:
 + The error raised by <code>[PopulationDriftDetector]</code> when `chunk_size` is not a valid pandas frequency shows the value and the error of pandas, which names the alias to use when the one given was removed (with pandas 3, `'ME'` instead of `'M'`). ([#1510](https://github.com/skforecast/skforecast/pull/1510))
 
 + <code>[Ets]</code> with automatic selection raises an `IgnoredArgumentWarning` when the seasonal period `m` is greater than 24 (for example, `m=52` with weekly data): only non-seasonal models are considered, which was done without any warning. Use `seasonal=False` to select a non-seasonal model without the warning.
+
++ <code>[Arima]</code> with one order set to `None` (automatic selection) raises a `ValueError` when the other is a tuple with AR or MA orders other than 0, which were ignored without notice (`Arima(order=(3, 0, 2), seasonal_order=None)` selected `p` and `q` anyway). A tuple can still fix the differencing order, as `(0, d, 0)`. With `order=None`, `m > 1` and the default `seasonal_order`, `fit` warns that `D` is fixed to 0.
 
 
 **Fixed**

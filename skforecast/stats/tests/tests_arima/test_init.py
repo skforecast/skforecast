@@ -38,6 +38,56 @@ def test_arima_init_seasonal_order_and_m_validation():
     with pytest.raises(ValueError, match=msg):
         Arima(order=(0, 0, 0), seasonal_order=(1, 1, 1), m='not_int')
 
+@pytest.mark.parametrize(
+    "order, seasonal_order, name, fix",
+    [((3, 0, 2), None, "order", "(0, 0, 0)"),
+     ((0, 1, 1), None, "order", "(0, 1, 0)"),
+     (None, (1, 1, 0), "seasonal_order", "(0, 1, 0)"),
+     (None, (0, 0, 2), "seasonal_order", "(0, 0, 0)")],
+    ids=lambda v: f"{v}"
+)
+def test_arima_init_ValueError_when_one_order_is_None_and_the_other_has_ar_or_ma(
+    order, seasonal_order, name, fix
+):
+    """
+    Test that a tuple with AR or MA orders other than 0 raises an error when
+    the other order is None: the automatic selection would ignore them.
+    """
+    given = order if order is not None else seasonal_order
+    diff = "d" if name == "order" else "D"
+    msg = re.escape(
+        f"`{name}` = {given} cannot be used when the other order is "
+        f"None. The automatic selection searches the AR and MA orders of "
+        f"both components and only keeps the differencing order (`{diff}`) "
+        f"of `{name}`, so its AR and MA orders would be ignored. Set both "
+        f"`order` and `seasonal_order` to None for a fully automatic model, "
+        f"pass both as tuples to fit a given model, or pass "
+        f"`{name}` = {fix} to fix only `{diff}`."
+    )
+    with pytest.raises(ValueError, match=msg):
+        Arima(order=order, seasonal_order=seasonal_order, m=12)
+
+
+@pytest.mark.parametrize(
+    "order, seasonal_order",
+    [(None, None), ((0, 1, 0), None), (None, (0, 1, 0)), (None, (0, 0, 0)),
+     ((2, 1, 1), (1, 1, 1))],
+    ids=lambda v: f"{v}"
+)
+def test_arima_init_accepts_orders_that_the_automatic_selection_can_keep(
+    order, seasonal_order
+):
+    """
+    Test that both orders None, both tuples, or one None with a tuple that
+    only fixes the differencing order are accepted.
+    """
+    model = Arima(order=order, seasonal_order=seasonal_order, m=12)
+
+    assert model.order == order
+    assert model.seasonal_order == seasonal_order
+    assert model.is_auto is (order is None or seasonal_order is None)
+
+
 def test_arima_init_default_params():
     """
     Test Arima initialization with default parameters.
