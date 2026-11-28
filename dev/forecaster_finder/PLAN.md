@@ -6,6 +6,11 @@
   `Ets`, prototipo nuevo, estudio ampliado a 26 datasets y decisiones D1 a D5 cerradas). Sustituye a la versión 1
   (commit `407746d`) después de la revisión independiente de `REVISION.md`. Base:
   skforecast 0.28.0.
+- Cuarta pasada, del 2026-11-28: medido LightGBM con un presupuesto de ajuste (4.7),
+  probada la primera ejecución en un entorno limpio, el notebook de Colab y el servidor MCP
+  (7.4), diseño para pantallas estrechas, y dos propuestas nuevas que esperan respuesta:
+  cómo presentar LightGBM y Chronos-2 (6.9, decisión D9) y dónde va la página (6.5,
+  decisión D10).
 - Del selector no hay nada implementado en `docs/` ni `skills/`. En esta rama sí están
   arreglados los dos fallos de `Ets` que encontró la revisión (commit `5f020a0`, con tests,
   notas de versión y la skill `statistical-models`), y el prototipo de la fuente única
@@ -36,6 +41,8 @@ Contenido de la carpeta:
 | `benchmark/rules.py` | **Respaldo de cada regla** con el estudio ampliado (26 datasets) y comparación de AutoETS con AutoARIMA; escribe `rules_*.csv`, que `build.py` usa para comprobar las frases de la página |
 | `benchmark/finder_tree.py`, `build.py` | Prototipo de la fuente única con el diseño de la sección 6: 4 filas, reglas por tipo de datos, 36 fragmentos. `build.py` los ejecuta con los avisos como errores, calcula las cifras del respaldo y escribe `results/review/finder.json` (los datos de la página) |
 | `benchmark/check_snippets.py` | Comprueba que cada tipo de fragmento se ejecuta con su historia mínima |
+| `benchmark/check_clean_install.sh` | Primera ejecución real: entorno nuevo, la línea de instalación del propio script, primera y segunda ejecución, y el mismo script sin acceso a Hugging Face |
+| `benchmark/check_mcp.py` | Recorre el servidor MCP de skforecast-ai como lo haría un agente (profile, plan, create_cv, compare, get_code) y falla si no devuelve un script. Necesita skforecast-ai con `foundation` y `mcp` |
 | `benchmark/mock.py`, `mock.html` | Maqueta de la página: las 4 filas y el resultado de cada combinación, con los datos de `finder.json` |
 | `benchmark/repro_ets_freeze_params.py` | Reproducción de `BUG-ets-freeze-params` |
 | `benchmark/summarize.py`, `evidence.py`, `report_data.py` | Resúmenes de la versión 1 (leen `results/*.csv`) |
@@ -52,11 +59,14 @@ python -I review.py --stats      # solo AutoETS y AutoARIMA, sustituidos en los 
 python -I review.py --snippet    # el LightGBM del fragmento, tal como se escribe (3 min)
 python -I review.py --d4         # los 20 casos de cases_d4.py (25 min, con la carga de M5)
 python -I review.py --arima      # AutoARIMA, también con exog, en diario, mensual y trimestral (2 min)
+python -I review.py --tune       # LightGBM con 20 pruebas de búsqueda en validación (unos 50 min)
 python -I recount.py             # cifras de la revisión (secciones 4.2 y 4.3)
 python -I rules.py               # respaldo de las reglas con los 26 datasets (secciones 4.6 y 6.2)
 python -I build.py               # 36 combinaciones, 36 fragmentos, medio minuto
 python -I check_snippets.py      # historia mínima de cada tipo de fragmento
 python -I mock.py                # maqueta navegable (../mock.html)
+bash check_clean_install.sh      # instalación limpia (unos 6 GB) y primera ejecución
+python -I check_mcp.py           # servidor MCP de skforecast-ai (en un entorno que lo tenga)
 ```
 
 Entorno: Python 3.12.3, skforecast 0.28.0, numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1,
@@ -246,6 +256,49 @@ Referencia estadística, con una serie (AutoETS frente a AutoARIMA):
   datasets): le gana en 0 o 1 de 6. Lo que sí respalda el estudio es que supera al LightGBM
   sin ajustar en 6 de 8 datasets mensuales y trimestrales.
 
+### 4.7 LightGBM con un presupuesto de ajuste
+
+Pregunta: el titular acordado dice "then try to beat it with LightGBM". ¿Cuántas veces lo
+consigue quien hace un ajuste ligero y automático?
+
+- Método (`review.py --tune`): `bayesian_search_forecaster` (o la versión multiserie) con 20
+  pruebas, 10 sin diferenciar y 10 con `differentiation=1`; busca los lags (los del caso o
+  los del LightGBM+), `n_estimators`, `learning_rate`, `num_leaves`, `min_child_samples`,
+  `colsample_bytree` y `reg_lambda`; métrica MASE en validación (hasta 3 bloques al final
+  del entrenamiento, nunca el test); después, el mismo backtest de test que el resto, con
+  reentrenamiento. Toda la historia. 33 pares de dataset y tipo de datos. Resultados en la
+  fila "LightGBM tuned [refit]" de cada CSV y en `rules_tuned.csv`.
+
+| Tipo de datos | Datasets | Sin ajustar, menos error que Chronos-2 | Ajustado, menos error que Chronos-2 | Ajustado, a un 5 % o mejor | El ajuste mejora a LightGBM | El ajuste lo empeora más de un 5 % | Mediana: Chronos-2 / sin ajustar / ajustado |
+|:--|--:|--:|--:|--:|--:|--:|:--|
+| Una serie, nada conocido a futuro | 16 | 2 | 4 | 5 | 9 | 5 | 0,69 / 0,90 / 0,79 |
+| Una serie, variables conocidas a futuro | 7 | 2 | 1 | 1 | 1 | 5 | 0,66 / 0,76 / 0,93 |
+| Varias series | 10 | 2 | 2 | 4 | 8 | 1 | 0,72 / 0,90 / 0,90 |
+| **Total** | **33** | **6** | **7** | **10** | **18** | **11** | |
+
+Lectura:
+
+- Un ajuste ligero no cambia el orden: LightGBM ajustado tiene menos error que Chronos-2 en
+  7 de 33, frente a 6 de 33 sin ajustar. La mediana del cociente entre el error del ajustado
+  y el de Chronos-2 es 1,12.
+- Donde gana, gana de verdad: `australia_tourism` (0,67 frente a 0,74; sin ajustar, 1,38),
+  `co2` (0,26 frente a 0,38), `expenditures_australia` (0,59 frente a 0,69), `macrodata`
+  (0,44 frente a 0,47), `m4_hourly` (0,36 frente a 0,61), `m4_daily` y `vic_electricity`.
+  Cuatro de los siete son series mensuales, trimestrales o semanales con tendencia, donde
+  diferenciar es lo que cambia el resultado.
+- El ajuste automático no es gratis: empeora a LightGBM más de un 5 % en 11 de 33, y en 5 de
+  los 7 datasets con variables conocidas a futuro. Con poca historia, 3 bloques de
+  validación no bastan para elegir entre 20 configuraciones.
+- Ni eligiendo a posteriori el mejor de los dos LightGBM (algo que el usuario no puede
+  hacer) pasa de 10 de 33.
+- Límites: 20 pruebas, un solo espacio de búsqueda, sin variables nuevas ni conocimiento del
+  problema. No mide lo que consigue alguien que conoce sus datos; mide lo que consigue
+  "ejecuta una búsqueda".
+
+Consecuencia: "then try to beat it" promete una carrera que el usuario pierde unas dos de
+cada tres veces aunque ajuste. No es un motivo para esconder a LightGBM, sino para cambiar
+el argumento con el que se presenta (6.9).
+
 ## 5. Correcciones de la base
 
 Hallazgos sobre `skills/choosing-a-forecaster/SKILL.md` (S), `tools/ai/llms-base.txt` (L) y
@@ -273,9 +326,10 @@ relacionados, verificados contra el código el 2026-11-27 (`REVISION.md` H11).
 
 ### 6.1 Formato y preguntas
 
-Un selector de una pantalla, no un test por pasos: cuatro filas de opciones con una
-selección por defecto, y debajo el resultado, que cambia con cada clic. Título del bloque:
-"Build your first comparison"; "Not sure where to start?" queda como gancho en la portada.
+Un selector de una pantalla, no un test por pasos: cuatro filas de opciones, sin nada
+elegido al llegar (D7), y el resultado, que se rellena con cada clic. Título del bloque:
+"Build your first comparison"; el gancho en la portada es "Not sure which one to use?"
+(6.5).
 
 | # | Row | Options (hint) | Shown if |
 |--:|:--|:--|:--|
@@ -411,14 +465,83 @@ Además: enlace compartible con las respuestas en el `#` (solo con las respuesta
 debajo del bloque, "How we chose these rules"; sin JavaScript se ve la página estática
 completa (tabla de reglas y scripts de ejemplo).
 
-### 6.5 Ubicación y enlaces
+### 6.5 Ubicación y enlaces (propuesta del 2026-11-28, decisión D10)
 
-- Página `docs/user_guides/choose-a-forecaster.md`, primera de *Choosing a model*
-  (`mkdocs.yml:44`), antes de *Comparing forecasting models*, con la sección "How we chose
-  these rules".
-- Portada: "Not sure which one to use?" (`docs/overrides/home.html:189`) cambia de destino.
-- Quick start, introducción (bajo la tabla de forecasters) y *AI-assisted forecasting*.
+**Recomendación: página propia en la pestaña *Quick start*, segunda entrada, y la mayor
+parte del esfuerzo en los enlaces que llevan a ella, no en el menú.** Sustituye a la
+propuesta anterior (primera página de *User Guides → Choosing a model*).
+
+Hechos de la documentación actual (leídos en `mkdocs.yml` y `docs/overrides/home.html`):
+
+- La pestaña *Quick start* tiene 5 páginas y su primera página es el notebook *Quick start*,
+  el destino del botón principal de la portada ("Get started", `home.html:68`). Enseña
+  `ForecasterRecursive` con LightGBM y no dice por qué ese forecaster.
+- *User Guides* tiene 52 páginas; la pestaña abre en *Table of contents*. La sección
+  *Choosing a model* tiene una sola página, *Comparing forecasting models* (un notebook
+  largo con el mismo tema, visto desde "cómo comparar bien").
+- En la portada, justo debajo de las tres familias de modelos, hay una frase suelta: "Not
+  sure which one to use? Compare all forecasters in the Introduction" (`home.html:189`). Es
+  el punto exacto en el que surge la pregunta, y hoy lleva a una tabla.
+- La página necesita ancho completo (preguntas a la izquierda, respuesta y código a la
+  derecha a partir de 980 px): `hide: [navigation, toc]` o una plantilla propia, como la
+  portada. Sirve en cualquier pestaña.
+- `navigation.instant` está activo: el script del selector tiene que inicializarse en cada
+  navegación (`document$.subscribe`), no solo al cargar.
+- La documentación está versionada con `mike`: el enlace de Colab y las cifras del respaldo
+  son por versión.
+
+Opciones comparadas:
+
+| Opción | A favor | En contra | Veredicto |
+|:--|:--|:--|:--|
+| **A. *Quick start*, segunda entrada** | Es una herramienta de primera visita, y esa pestaña es donde va quien empieza; menú corto (6 entradas), así que se ve; la pregunta "¿qué forecaster?" va justo antes o justo después del primer ejemplo; no cambia el destino de "Get started" | La pestaña mezcla tutorial y referencia (parámetros, atributos); el selector propone Chronos-2 y LightGBM y el notebook de al lado solo enseña LightGBM (se resuelve con una frase en cada uno) | **Recomendada** |
+| B. *User Guides → Choosing a model*, primera | Agrupa por tema con *Comparing forecasting models*; la sección deja de tener una sola página | Una entrada entre 52, en la pestaña a la que se va cuando ya se sabe qué se busca; quien no sabe qué forecaster usar no abre las guías | Enlazarla desde ahí, no alojarla ahí |
+| C. Pestaña propia | Máxima visibilidad | Ya hay 11 pestañas; es una página, no una sección; da a una herramienta de arranque el peso de un producto | No |
+| D. Incrustado en la portada | Cero clics | La portada ya es larga; el selector necesita ancho y altura; sin URL propia no se puede enlazar ni medir aparte | Solo el gancho, no el selector |
+| E. Sección de *Intro to Forecasting* o del notebook *Quick start* | Contexto natural | Páginas largas: el selector quedaría a media página y sin ancho completo | Enlace, no alojamiento |
+
+Lo que pesa más que el menú: de dónde llega la gente. Una página nueva no recibe visitas
+por estar en un menú; las recibe por los enlaces desde las páginas que ya tienen tráfico.
+Por orden de valor esperado:
+
+1. **Portada, bajo las familias de modelos** (`home.html:189`): la frase suelta pasa a ser
+   un bloque visible con un botón, "Not sure which one to use? Answer four questions and
+   get a script that runs." Es el mejor sitio de toda la documentación para el gancho.
+2. **Notebook *Quick start*, arriba**: una nota de dos líneas ("This guide uses
+   `ForecasterRecursive`. Not sure it is the right forecaster for your data? ..."). Es la
+   página de entrada de quien pulsa "Get started".
+3. **Portada, "Start here"** (`home.html:288`): una tarjeta más, después de *Quick start*.
+4. **Introducción**, debajo de la tabla de forecasters, y **README** del repositorio.
+5. ***User Guides***: enlace en la tarjeta *Choosing a model* de *Table of contents* (con
+   `extra_links` de `tools/docs/hooks/toc_cards.yml`, que ya existe para esto) y una nota al
+   principio de *Comparing forecasting models*. En el otro sentido, el resultado del
+   selector enlaza a esa guía como paso siguiente ("compare more models properly").
+6. *AI-assisted forecasting* y la skill `choosing-a-forecaster` (la URL, para que los
+   asistentes la citen).
+
+Detalles:
+
+- Fichero `docs/quick-start/choose-a-forecaster.md`; título de la página "Which forecaster
+  should I use?" (es la búsqueda literal) y entrada de menú "Choose a forecaster". La URL no
+  lleva el nombre de la pestaña en el texto, pero sí en la ruta: si más adelante se mueve,
+  hace falta una redirección (hoy no está el plugin `mkdocs-redirects`).
+- Segunda entrada y no primera: la primera es la página en la que abre la pestaña, y
+  cambiarla es cambiar el destino real de "Quick start". Subirla a primera, o cambiar "Get
+  started", se decide con los datos de la fase 3.
+- El gancho es "Not sure which one to use?", el que ya usa la portada. "Not sure where to
+  start?" ya se usa en la página de consultoría (`docs/more/consulting.md:9`) con otro
+  significado.
+- El respaldo ("How we chose these rules") va plegado en la propia página, con la tabla
+  corta, y enlaza al README de `benchmarks/forecaster_finder/` para el detalle.
 - Entrada en `tools/docs/hooks/page_meta.yml`.
+
+Lo que no he podido comprobar: de dónde entra hoy la gente. La recomendación supone que
+quien empieza llega por la portada o por *Quick start*. Diez minutos en GA4 lo confirman o
+lo cambian: el informe de páginas de entrada (qué parte de las sesiones empieza en la
+portada, en *Quick start* y en una guía) y cuántos clics recibe hoy el enlace de
+`home.html:189`. Si la mayoría entra por una guía desde un buscador y no pasa por *Quick
+start*, la pestaña importa aún menos y los enlaces 5 y 6 suben de prioridad; la elección
+entre A y B cambia poco el resultado en cualquiera de los dos casos.
 
 ### 6.6 Fuente única y validación
 
@@ -448,8 +571,13 @@ Eventos con consentimiento (`__md_get("__consent")?.analytics`), solo identifica
 cerrados: `finder_change {row, option}`, `finder_copy {kind}`, `finder_cta {target}`; widget
 de feedback de Material en la página; UTM en los enlaces salientes.
 
-Antes de publicar, anotar las visitas de 4 semanas de *Comparing forecasting models* y de la
-tabla de la introducción: son la referencia. Sin ella no hay umbrales.
+Referencia para comparar después: las visitas de *Comparing forecasting models*, de la
+introducción y de *Quick start* en las 4 semanas anteriores a publicar. **No hay que
+esperar para tenerla** (corrige la versión anterior de este punto): GA4 ya guarda las
+visitas de cada página y se pueden consultar el día de la publicación. Lo único que no se
+recupera hacia atrás son los eventos que hoy no existen (copias de código, clics en los
+botones del selector), y esos solo tienen sentido con la página publicada. Al publicar,
+exportar ese informe y guardarlo con la nota de la fase 3.
 
 | Pregunta | Señal | Criterio a las 8 semanas |
 |:--|:--|:--|
@@ -467,6 +595,72 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
 - Dependencia de PyTorch para Chronos-2: el fragmento lo dice; el workflow de CI es aparte.
 - Divergencia con skforecast-ai: fuente legible por máquina e incidencia en su repositorio.
 - Coste de mantenimiento del JavaScript: sin dependencias, y la página funciona sin él.
+
+### 6.9 Cómo se presentan LightGBM y Chronos-2 (propuesta del 2026-11-28, decisión D9)
+
+El problema: skforecast se ha presentado siempre como una librería de machine learning, y
+el estudio dice que, sin trabajar el modelo, Chronos-2 tiene menos error que LightGBM en 27
+de 33 pares de dataset y tipo de datos, y que un ajuste automático ligero lo deja en 26 de
+33 (4.7).
+
+Lo que la evidencia permite y lo que no:
+
+| Afirmación | ¿Se puede sostener? |
+|:--|:--|
+| "Empieza por LightGBM, es el mejor punto de partida" (la skill hoy) | No. Un asistente que lo siga da un primer resultado peor en unos 4 de cada 5 datasets, y peor que el naive en 7 de 16 con una serie y sin variables |
+| "Chronos-2 es mejor que el machine learning" | No. El estudio mide un LightGBM sin trabajar o con 20 pruebas de búsqueda; no mide variables propias, conocimiento del problema ni más historia |
+| "Sin ajustar nada, Chronos-2 suele tener menos error" | Sí (27 de 33; nunca peor que el naive por dataset) |
+| "Intenta superarlo con LightGBM" (titular acordado) | A medias: con un ajuste ligero lo supera en 7 de 33 y queda a un 5 % o mejor en 10 de 33. Como reto, el usuario lo pierde dos de cada tres veces |
+| "LightGBM es el modelo que entrenas con tus datos: admite tus variables, se explica, se ajusta, no depende de pesos externos ni de PyTorch y es barato de entrenar y de ejecutar en CPU" | Sí, por capacidad, no por el estudio |
+
+**Recomendación: dos candidatos en primer lugar, con papeles distintos, y la identidad de
+la librería en el flujo de trabajo, no en una familia de modelos.**
+
+1. **Identidad.** skforecast es la librería de forecasting con machine learning: los
+   forecasters, el backtesting, la búsqueda, los intervalos, la explicabilidad y el paso a
+   producción. Los modelos fundacionales son una familia más que se usa *dentro* de ese
+   flujo, con el mismo backtesting; no compiten con la librería. Es lo que ya dice la
+   portada ("One API for every kind of model", con machine learning como primera tarjeta),
+   así que la portada no cambia.
+2. **Los dos van primero.** En cualquier problema nuevo se comparan los dos contra un
+   baseline. No es incorrecto poner el machine learning en uno de los primeros lugares; lo
+   incorrecto sería decir que es el más preciso de entrada.
+3. **Cada uno con su argumento.**
+   - Chronos-2 (`ForecasterFoundation`): "No training. Usually the most accurate before any
+     tuning: the error to beat."
+   - LightGBM (`ForecasterRecursive`, `ForecasterRecursiveMultiSeries`): "The model you
+     train on your data. Add your own variables and knowledge of the problem, explain its
+     forecasts, tune it. Out of the box it is usually behind Chronos-2."
+   - La elección final es del usuario y depende de más cosas que el error: explicabilidad,
+     coste a escala, dependencias, control. El selector no decide eso (alcance); lo nombra.
+4. **Titular del selector.** Cambiar "Start with Chronos-2, then try to beat it with
+   LightGBM" por uno que no sea una carrera: **"Compare two forecasters: LightGBM and
+   Chronos-2"** (más "and keep ARIMA as a reference" en mensual y trimestral). La frase de
+   debajo, comprobada contra el estudio, sigue diciendo cuál suele ir por delante.
+5. **Orden del script: baseline, LightGBM, Chronos-2, y cada resultado impreso en cuanto
+   se obtiene.** Motivo medido, no de imagen: sin acceso a Hugging Face el script falla en
+   Chronos-2 a los 29 segundos, y como hoy es el primer bloque y la tabla se imprime al
+   final, el usuario se queda sin nada (7.4, punto 2). Con LightGBM antes, siempre ve un
+   resultado.
+6. **Skill y `llms-base.txt` (fase 0).** Es donde más importa, porque los asistentes lo
+   siguen al pie de la letra. Sustituir "machine learning-first" y los dos "START HERE" por
+   la regla de los dos candidatos, por ejemplo: "For a new problem, compare two forecasters
+   against a seasonal baseline: a gradient boosting forecaster (`ForecasterRecursive` or
+   `ForecasterRecursiveMultiSeries` with LightGBM), which you train and shape with your own
+   variables, and a foundation model (`ForecasterFoundation` with Chronos-2), which needs
+   no training and is usually the more accurate of the two before any tuning." El consejo 6
+   de `llms-base.txt` ("Start simple: Begin with ForecasterRecursive") pasa a "Start with a
+   comparison: a baseline, LightGBM and Chronos-2".
+7. **Notebook *Quick start*.** Sigue enseñando `ForecasterRecursive` con LightGBM: enseña
+   la API, y ahí el machine learning primero es lo natural. Solo gana la nota que enlaza al
+   selector (6.5).
+
+Alternativas descartadas: mantener "ML first" como recomendación de modelo (contradice los
+datos y deja en mal lugar a la documentación cuando el usuario prueba Chronos-2); pasar a
+"Foundation first" sin más (convierte a skforecast en un envoltorio de un modelo ajeno y
+esconde lo que la librería hace mejor).
+
+La maqueta conserva el titular acordado (D2 y D6) hasta que se decida D9.
 
 ## 7. Plan de desarrollo
 
@@ -504,9 +698,15 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
 
 ### 7.2 Decisiones que necesitan respuesta
 
-Ninguna de diseño: D1 a D8 están cerradas (D8: Colab con un único notebook de "Paste your
-script here" y el script copiado con datos de ejemplo). Lo que queda son comprobaciones y
-trabajo, en 7.4.
+D1 a D8 están cerradas (D8: Colab con un único notebook de "Paste your script here" y el
+script copiado con datos de ejemplo). Quedan dos, las dos con recomendación:
+
+| # | Decisión | Opciones | Recomendación |
+|:--|:--|:--|:--|
+| **D9** | Cómo se presentan LightGBM y Chronos-2 (6.9): titular del selector, orden del script y texto de la skill | (a) Dejar "Start with Chronos-2, then try to beat it with LightGBM". (b) "Compare two forecasters: LightGBM and Chronos-2", cada uno con su papel, y el script en el orden baseline, LightGBM, Chronos-2 | **(b)**. Con un ajuste ligero LightGBM supera a Chronos-2 en 7 de 33: "try to beat it" es un reto que se pierde dos de cada tres veces |
+| **D10** | Dónde va la página (6.5) | (a) *Quick start*, segunda entrada. (b) *User Guides → Choosing a model*, primera | **(a)**, con el gancho en la portada (`home.html:189`) y la nota en el notebook *Quick start*. Antes de decidir, mirar en GA4 las páginas de entrada |
+
+Ninguna de las dos bloquea la fase 0, salvo el texto de la skill, que depende de D9.
 
 ### 7.3 Fases
 
@@ -530,7 +730,7 @@ trabajo, en 7.4.
 **Fase 1. Fuente única y página estática** (`FEAT-forecaster-finder`, P3, parte 1)
 
 - Entregables: fichero de reglas y módulo de plantillas (6.6); página
-  `choose-a-forecaster` con la tabla de reglas, el respaldo generado, un fragmento por
+  `choose-a-forecaster` (ubicación según D10, 6.5) con la tabla de reglas, el respaldo generado, un fragmento por
   combinación representativa (una serie y varias, con y sin `exog`, categoría) con la tabla
   de constantes por frecuencia, y "How we chose these rules"; sección de la skill generada
   entre marcadores; enlaces de 6.5; workflow de ejecución de fragmentos; widget de feedback.
@@ -554,7 +754,8 @@ trabajo, en 7.4.
 
 **Fase 3. Medición y decisión** (`FEAT-forecaster-finder`, parte 3)
 
-- Entregables: referencia de visitas previa (6.7) y una nota a las 8 semanas con las cuatro
+- Entregables: informe de visitas de las 4 semanas anteriores, exportado de GA4 el día de
+  la publicación (6.7), y una nota a las 8 semanas con las cuatro
   señales y la decisión: mantener, simplificar a la página estática o ampliar.
 - Terminado cuando: la decisión está escrita en el roadmap.
 - Esfuerzo: S.
@@ -569,40 +770,61 @@ en la PR de esta rama (D5). La fase 0 tiene valor aunque no se haga nada más: h
 que empiecen por `ForecasterRecursive` con LightGBM y reserva los fundacionales para "sin
 datos".
 
-### 7.4 Lo que falta por comprobar antes de publicar
+### 7.4 Comprobaciones antes de publicar (estado del 2026-11-28)
 
-Por orden de importancia. Ninguno cambia el diseño; los dos primeros pueden cambiar una
-frase.
+| # | Qué | Estado | Resultado |
+|--:|:--|:--|:--|
+| 1 | LightGBM con algo de ajuste | **Medido** (4.7) | Supera a Chronos-2 en 7 de 33 y queda a un 5 % o mejor en 10 de 33; el ajuste lo empeora en 11. Lleva a D9 |
+| 2 | Primera ejecución real | **Medido** (`check_clean_install.sh`) | Funciona; dos hallazgos, abajo |
+| 3 | Colab y MCP | **Comprobado, con un límite** | Abajo |
+| 4 | Pantallas estrechas | **Hecho en la maqueta** | Por debajo de 980 px, las respuestas dadas se pliegan en etiquetas y solo queda abierta la pregunta siguiente, con la respuesta a la vista. Probado a 400 px |
+| 5 | El resto de la documentación dice otra cosa | Pendiente (fase 0) | Texto propuesto en 6.9; depende de D9 |
+| 6 | El arreglo de `Ets` | Pendiente de revisión | Corrige un fallo de la 0.27.0 publicada: que lo revise alguien más como cambio de la librería y decidir si merece versión de parche. Los notebooks de la documentación con AutoETS no se han vuelto a ejecutar |
+| 7 | Clasificación | Sin cambios | Un solo dataset: la rama se sostiene por capacidad, no por evidencia |
+| 8 | Referencia de visitas | **Retirado como bloqueo** | GA4 ya guarda las visitas por página; se exporta el día de publicar (6.7) |
 
-1. **LightGBM con algo de ajuste no está medido.** El titular dice "then try to beat it with
-   LightGBM", y el estudio solo mide un LightGBM sin ajustar. Falta saber cuántas veces
-   alcanza a Chronos-2 con un presupuesto pequeño y fijo (por ejemplo, 20 pruebas de
-   `bayesian_search_forecaster` en validación) en los 33 pares de dataset y tipo de datos.
-   Si lo alcanza a menudo, la segunda mitad del titular queda respaldada; si casi nunca, el
-   mensaje honesto es otro. Unas horas de cómputo: va en la fase 0.
-2. **La primera ejecución real.** "Runs as it is" está comprobado con todo instalado y los
-   pesos descargados. No está medido lo que tarda en un entorno limpio (instalar PyTorch y
-   `chronos-forecasting`, descargar los pesos), ni qué pasa en una red de empresa que
-   bloquea Hugging Face: el script empieza por Chronos-2, así que fallaría en el primer
-   paso, antes de LightGBM. Medirlo y, si hace falta, decirlo en una línea o cambiar el
-   orden de los bloques del script.
-3. **Colab y MCP, sin probar de verdad.** El notebook no se ha abierto en Colab (hace falta
-   una rama pública) y el servidor MCP de skforecast-ai no se ha probado con un agente; los
-   nombres de fichero y de columna del mensaje son de ejemplo.
-4. **Móvil.** En una pantalla estrecha el recuadro de respuesta queda debajo de las cuatro
-   preguntas, así que no se ve cómo se rellena. Hace falta un resumen fijo o intercalar la
-   respuesta: por diseñar en la fase 2.
-5. **El resto de la documentación dice otra cosa.** La skill `choosing-a-forecaster` afirma
-   que skforecast es "machine learning-first" y manda empezar por `ForecasterRecursive`; el
-   consejo 6 de `llms-base.txt`, lo mismo. Es la fase 0, y es lo que leen hoy los
-   asistentes. La portada es neutra y no hay que tocarla.
-6. **El arreglo de `Ets`** corrige un fallo de la 0.27.0 publicada y cambia qué ajustes se
-   aceptan en los modelos multiplicativos. Va en esta rama (D5), pero conviene que lo revise
-   alguien más como cambio de la librería, y decidir si merece una versión de parche. Los
-   notebooks de la documentación con AutoETS no se han vuelto a ejecutar.
-7. **Clasificación**: un solo dataset. La rama se sostiene por capacidad, no por evidencia.
-8. **Tiempo de calendario**: la referencia de visitas (4 semanas) hay que empezar a
-   anotarla ya; es lo único del plan que no se puede acelerar.
+**Punto 2, instalación limpia** (Linux, `pip`, Python 3.12, sin nada en caché):
+
+- `pip install "skforecast[stats]" lightgbm chronos-forecasting`: 150 segundos y 5,8 GB,
+  casi todo PyTorch con sus 15 paquetes de CUDA, que es lo que instala `pip` por defecto en
+  Linux. Instala skforecast 0.27.0 y pandas 2.3.3 (el estudio usa 0.28.0 y pandas 3.1.1).
+- Los 36 scripts se ejecutan en ese entorno. Primera ejecución del script mensual (tres
+  modelos): 20 segundos, con la descarga de los pesos de Chronos-2 small (107 MB); la
+  segunda, 7 segundos.
+- **Hallazgo 1 (arreglado)**: el script con ARIMA fallaba con `ImportError` porque
+  `statsmodels` es opcional. La línea de instalación de esos scripts y la del notebook
+  ahora piden `"skforecast[stats]"`. Solo se ve en un entorno creado con la línea de
+  instalación del propio script: **la CI de los fragmentos tiene que instalar así**, no con
+  los extras de desarrollo.
+- **Hallazgo 2 (nota añadida, orden por decidir en D9)**: sin acceso a Hugging Face (red de
+  empresa), el script falla con `OSError` a los 29 segundos en el bloque de Chronos-2, que
+  es el primero, y no imprime nada. La nota "First run" lo avisa; la solución de fondo es el
+  orden baseline, LightGBM, Chronos-2 con cada resultado impreso al obtenerlo (6.9).
+- Nota añadida también para quien no tiene GPU: instalar antes PyTorch solo para CPU
+  (`pip install torch --index-url https://download.pytorch.org/whl/cpu`). De los 5,8 GB,
+  3,0 son los paquetes de CUDA y 1,2 PyTorch (0,8 en su versión de CPU); el tamaño de la
+  instalación solo para CPU no está medido.
+
+**Punto 3, Colab y MCP:**
+
+- Notebook `first_comparison.ipynb` (celda de instalación y celda "Paste your script
+  here"): ejecutado de principio a fin con `nbclient` en un kernel nuevo del entorno limpio,
+  con dos scripts distintos pegados. La URL pública de Colab abre el notebook desde esta
+  rama (HTTP 200, con las dos celdas). **No comprobado**: la ejecución dentro de Colab, que
+  pide iniciar sesión en Google. Es una prueba manual de dos minutos: abrir el enlace de la
+  maqueta, ejecutar la primera celda, pegar y ejecutar. Al publicar, el enlace tiene que
+  apuntar a la rama de la versión, no a `docs/forecaster-finder`.
+- Servidor MCP de skforecast-ai 0.5.0 (`check_mcp.py`): recorrido completo con un cliente
+  MCP como el de un agente, sobre un CSV diario: `profile`, `plan`, `create_cv`, `compare`
+  y `get_code`. Devuelve la comparación (gana `chronos-2-small`) y el script del mejor.
+  **No comprobado**: un asistente real (Claude Code, Cursor) eligiendo esas herramientas a
+  partir del mensaje en lenguaje natural que redacta el selector.
+- Las líneas de skforecast-ai del desplegable: los 24 fragmentos que las llevan se ejecutan
+  (`build.py --ai`, `skforecast_ai_check.json`).
+
+Pequeño, sin decidir: en el script que se copia con datos de ejemplo, la línea `# pip
+install ...` queda después del bloque de datos y de los imports; debería ser la primera
+línea de lo que se copia.
 
 ## 8. Fase 4: fila de incertidumbre (más adelante)
 

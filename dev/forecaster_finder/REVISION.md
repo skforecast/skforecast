@@ -13,6 +13,9 @@
 - **Tercera pasada (mismo día), tras las respuestas a D1 a D5: estudio ampliado a 26
   datasets, ARIMA como referencia estadística y un resultado más simple. Está en la sección
   7 y corrige H2: con más datasets, Chronos-2 va por delante en los tres tipos de datos.**
+- **Cuarta pasada (2026-11-28): LightGBM con un presupuesto de ajuste, primera ejecución
+  en un entorno limpio, Colab, servidor MCP, cómo presentar LightGBM y Chronos-2 y dónde va
+  la página. Está en la sección 8, responde a dos puntos de H16 y corrige 3.4.**
 - Etiquetas: **[Medido]** ejecutado en esta revisión, **[Código]** verificado leyendo el código
   de skforecast 0.28.0, **[Plausible]** razonado, sin prueba concluyente.
 
@@ -426,6 +429,8 @@ PyPI, leído por un subagente y comprobado en tres puntos]
 - Datos posteriores al entrenamiento de Chronos-2 o privados. El control con el modelo synth
   (H17) cubre la memorización, no la semejanza de dominio.
 - Chronos-2 base en GPU y coste de producción, no segundos de backtest.
+- Estado (2026-11-28): medidos el primer punto (26 datasets: 16, 7 y 10 por celda, sección
+  7.1) y el tercero (sección 8.1). Los otros tres siguen sin medir.
 
 **H17. Contaminación y tamaño del modelo.** [Medido]
 
@@ -667,3 +672,107 @@ reglas. Un voto por dataset en cada tipo de datos; LightGBM es el que escribe el
 
 36 combinaciones, 36 fragmentos, 0 avisos, las 5 frases respaldadas por el estudio, los 18
 tipos de fragmento se ejecutan con su historia mínima. Maqueta: `mock.html`.
+
+## 8. Cuarta pasada: ajuste de LightGBM, primera ejecución real, posicionamiento y ubicación
+
+Del 2026-11-28. Responde a los puntos que quedaban en "Lo que falta por comprobar" y a dos
+preguntas del usuario: cómo presentar el machine learning frente a los modelos
+fundacionales y dónde va la página.
+
+### 8.1 LightGBM con 20 pruebas de ajuste [Medido]
+
+Responde al tercer punto de H16 (ML con un presupuesto fijo de ajuste) en su versión más
+barata: una búsqueda automática de 20 pruebas en validación (`review.py --tune`, método y tabla en
+`PLAN.md` 4.7), en los 33 pares de dataset y tipo de datos.
+
+| | Una serie, nada conocido | Una serie, conocidas a futuro | Varias series | Total |
+|:--|--:|--:|--:|--:|
+| Datasets | 16 | 7 | 10 | 33 |
+| Sin ajustar, menos error que Chronos-2 | 2 | 2 | 2 | 6 |
+| Ajustado, menos error que Chronos-2 | 4 | 1 | 2 | 7 |
+| Ajustado, a un 5 % de Chronos-2 o mejor | 5 | 1 | 4 | 10 |
+| El ajuste mejora a LightGBM | 9 | 1 | 8 | 18 |
+| El ajuste lo empeora más de un 5 % | 5 | 5 | 1 | 11 |
+| Ajustado, peor que el naive | 4 | 2 | 1 | 7 |
+
+- El ajuste ligero no cambia el orden entre los dos modelos (de 6 a 7 de 33). Mediana del
+  cociente de errores ajustado / Chronos-2: 1,12; en 11 pares el ajustado tiene más de un
+  25 % más de error.
+- Donde LightGBM ajustado gana, la ganancia es grande y viene sobre todo de diferenciar en
+  series con tendencia y poca frecuencia: `australia_tourism` 1,38 → 0,67 (Chronos-2, 0,74),
+  `co2` 0,52 → 0,26 (0,38), `expenditures_australia` 0,93 → 0,59 (0,69), `macrodata` 0,83 →
+  0,44 (0,47).
+- Con variables conocidas a futuro el ajuste empeora 5 de 7: la validación (hasta 3 bloques)
+  es demasiado corta para elegir entre 20 configuraciones, y el LightGBM del caso ya era
+  razonable.
+- Lo que sigue sin medir: variables propias, conocimiento del problema, más pruebas. El
+  estudio mide "ejecuta una búsqueda", no "trabaja el modelo".
+
+**Corrige 3.4**: decía que el mensaje honesto era que LightGBM "es el modelo que se puede
+mejorar". Con esta medición hay que matizarlo: se puede mejorar, pero un ajuste automático
+ligero no basta para alcanzar a Chronos-2 en dos de cada tres casos, así que el titular
+"then try to beat it with LightGBM" promete más de lo que el estudio respalda.
+
+### 8.2 Cómo presentar LightGBM y Chronos-2 [Plausible, sobre lo medido]
+
+Propuesta completa en `PLAN.md` 6.9 (decisión D9). En resumen:
+
+- Ni "ML first" ni "Foundation first" como recomendación de modelo: dos candidatos en
+  primer lugar, con papeles distintos. Chronos-2 es el error a batir sin entrenar nada;
+  LightGBM es el modelo que se entrena con los datos propios, admite variables y
+  conocimiento del problema, se explica y no depende de pesos externos.
+- La identidad "librería de machine learning" se sostiene en el flujo de trabajo
+  (forecasters, backtesting, búsqueda, intervalos, producción), que es el mismo para los
+  modelos fundacionales. La portada ya lo dice así y no cambia.
+- Lo que sí cambia: el titular del selector ("Compare two forecasters: LightGBM and
+  Chronos-2"), el orden del script (baseline, LightGBM, Chronos-2) y, sobre todo, la skill
+  `choosing-a-forecaster` (línea 26, "machine learning-first"; líneas 74 y 84, "START
+  HERE"; línea 170, "best starting point") y el consejo 6 de `llms-base.txt`.
+
+### 8.3 Primera ejecución en un entorno limpio [Medido]
+
+`benchmark/check_clean_install.sh`. Linux, `pip`, Python 3.12.
+
+- Instalación con la línea del propio script: 150 s y 5,8 GB (3,0 GB de paquetes de CUDA,
+  1,2 GB de PyTorch). Versiones: skforecast 0.27.0, pandas 2.3.3, numpy 2.5.5, LightGBM
+  4.7.0, chronos-forecasting 2.3.2, statsmodels 0.15.0.
+- Primera ejecución del script mensual: 20 s, con 107 MB de pesos descargados; segunda, 7 s.
+  Los 36 scripts se ejecutan con la versión publicada (0.27.0) y pandas 2.
+- **Fallo encontrado y arreglado**: los scripts con ARIMA fallaban con `ImportError`
+  (`statsmodels` es un extra). Ninguna comprobación anterior podía verlo porque el entorno
+  de desarrollo lo tiene instalado. La línea de instalación pide ahora `"skforecast[stats]"`.
+  Lección para la CI: instalar con la línea del script.
+- **Sin acceso a Hugging Face**: `OSError` a los 29 s en Chronos-2, el primer bloque, sin
+  ningún resultado impreso. Nota añadida; el arreglo de fondo es el orden del script (8.2).
+
+### 8.4 Colab, MCP y pantallas estrechas [Medido, con dos límites]
+
+- Colab: el notebook de "pega aquí tu script" se ejecuta de principio a fin en un kernel
+  nuevo (`nbclient`, dos scripts) y la URL pública de Colab lo abre desde la rama. No se
+  pudo ejecutar dentro de Colab (pide una cuenta de Google): prueba manual pendiente.
+- MCP (`benchmark/check_mcp.py`): el servidor de skforecast-ai 0.5.0 responde al recorrido
+  de un agente (`profile`, `plan`, `create_cv`, `compare`, `get_code`) y devuelve el script
+  del mejor modelo. No se probó con un asistente real que elija las herramientas a partir
+  del mensaje.
+- Pantallas estrechas: por debajo de 980 px las respuestas dadas se pliegan en etiquetas y
+  queda abierta solo la pregunta siguiente, con el recuadro de respuesta a la vista.
+  Probado a 400 px con Playwright.
+
+### 8.5 Dónde va la página [Código, y un supuesto sin comprobar]
+
+Análisis completo en `PLAN.md` 6.5 (decisión D10). Recomendación: página propia en la
+pestaña *Quick start*, segunda entrada, con el gancho en la portada bajo las familias de
+modelos (`docs/overrides/home.html:189`, donde hoy hay una frase que lleva a una tabla), una
+nota al principio del notebook *Quick start* y enlaces desde *Choosing a model*, la
+introducción y el README. No en *User Guides* (52 páginas, la pestaña de quien ya sabe qué
+busca), ni en una pestaña propia (ya hay 11), ni incrustada en la portada.
+
+El supuesto: que quien empieza entra por la portada o por *Quick start*. No tengo acceso a
+GA4; el informe de páginas de entrada lo confirma en diez minutos.
+
+### 8.6 Corrección de un punto mío
+
+En la lista de "lo que falta" puse como único punto que no se podía acelerar una referencia
+de visitas de 4 semanas. Estaba exagerado: GA4 ya guarda las visitas de cada página y se
+consultan el día de publicar. Lo único que no existe hacia atrás son los eventos nuevos
+(copias, clics del selector), y no hay nada que comparar con ellos antes de publicar.
