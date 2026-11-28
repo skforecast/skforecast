@@ -78,7 +78,7 @@ The main changes in this release are:
 
 + New page [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) in the FAQ with the differences that pandas 3 brings to skforecast (text dtype, dates in microseconds, time zones, read-only arrays, saving forecasters) and how to write code that works with both versions. ([#1510](https://github.com/skforecast/skforecast/pull/1510))
 
-+ New page [How forecasters create the training matrices](../faq/how-forecasters-create-training-matrices.md) in the FAQ: how each forecaster builds `X_train` and `y_train` from the lags, window features, exogenous variables and calendar features, what the estimator receives (numpy array or DataFrame) and how it handles missing values and categorical features.
++ New page [How forecasters create the training matrices](../faq/how-forecasters-create-training-matrices.md) in the FAQ: how each forecaster builds `X_train` and `y_train` from the lags, window features, exogenous variables and calendar features, what the estimator receives (numpy array or DataFrame) and how it handles missing values and categorical features. ([#1549](https://github.com/skforecast/skforecast/pull/1549))
 
 + When <code>[load_forecaster]</code> fails with pandas 2, the error notes that a forecaster saved with pandas 3 can only be loaded with pandas 3, or with pandas 2.3 if it was saved with `backend='skops'`. With pandas 3, a forecaster saved with pandas 2 with `joblib`, `pickle` or `cloudpickle` and a named time zone (for example, `'Europe/Madrid'`) needs `pytz`, which pandas 3 does not install: the `ModuleNotFoundError` notes it. ([#1497](https://github.com/skforecast/skforecast/pull/1497), [#1536](https://github.com/skforecast/skforecast/pull/1536))
 
