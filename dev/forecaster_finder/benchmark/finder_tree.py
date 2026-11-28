@@ -166,13 +166,15 @@ def blocks(a: dict) -> dict:
     skforecast provides forecasters, so each block is headed by its
     forecaster class (with the link to its user guide), then the model it
     wraps. While the number of series is not known, the block of LightGBM
-    shows its two possible forecasters.
+    shows its two possible forecasters. The baseline, which is the same in
+    every case, is a line under the blocks.
     """
     target = a.get("target")
     missing = [r["id"] for r in ROWS if r["id"] not in a
                and all(a.get(k) == v for k, v in r.get("show_if", {}).items())]
     if target is None:
-        return {"headline": None, "blocks": [], "missing": missing, "complete": False}
+        return {"headline": None, "blocks": [], "baseline": None, "missing": missing,
+                "complete": False}
     f = FREQ.get(a.get("freq"))
     season = f["season_text"] if f else None
     exog = a.get("extra") == "yes"
@@ -189,10 +191,9 @@ def blocks(a: dict) -> dict:
         headline = "Start with a machine learning classifier and compare it with a simple rule"
         block("Model", [("ForecasterRecursiveClassifier", "")], "with a LightGBM classifier",
               "Machine learning classifier", ["uses your known variables"] if exog else [])
-        out.append({"role": "Baseline", "model": "Seasonal rule", "forecasters": [], "tags": [],
-                    "text": (f"The category of the {season}" if season
-                             else "The category one season before")
-                            + ". No forecaster needed: y.shift(season)"})
+        baseline = {"cls": None, "guide": None,
+                    "text": "Always compared with a simple rule: the category of the "
+                            + (season or "same period one season before") + "."}
     else:
         headline = "Start with Chronos-2, then try to beat it with LightGBM"
         series = a.get("series")
@@ -209,10 +210,13 @@ def blocks(a: dict) -> dict:
         if series == "one" and a.get("freq") in ("monthly", "quarterly"):
             headline += ", and keep ARIMA as a reference"
             block("Reference", [("ForecasterStats", "")], "with ARIMA", "Classic statistical model")
-        block("Baseline", [("ForecasterEquivalentDate", "")], "Seasonal baseline",
-              (f"Repeats the {season}" if season else "Repeats the value one season before")
-              + (", one per series" if series == "several" else ""))
-    return {"headline": headline, "blocks": out, "missing": missing, "complete": not missing}
+        # The baseline is the same in every case: a line under the blocks, not a block
+        baseline = {"cls": "ForecasterEquivalentDate", "guide": GUIDES["ForecasterEquivalentDate"],
+                    "text": "Always compared with a seasonal baseline"
+                            + (", one per series" if series == "several" else "") + ": the "
+                            + (season or "value one season before") + "."}
+    return {"headline": headline, "blocks": out, "baseline": baseline, "missing": missing,
+            "complete": not missing}
 
 
 def ai_snippet(a: dict) -> str | None:

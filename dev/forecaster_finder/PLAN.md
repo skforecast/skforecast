@@ -346,7 +346,11 @@ cada respuesta, y el bloque que cambia se ilumina un momento:
   (skforecast proporciona forecasters, no modelos), en la letra más grande del bloque;
   debajo, el modelo que envuelve ("with Chronos-2"), una línea de para qué sirve y el
   enlace a la guía de usuario del forecaster. Encima, su papel (First, Challenger,
-  Reference, Baseline).
+  Reference).
+- **El baseline no es un bloque**: es igual en todos los casos y como bloque era ruido. Va
+  en una línea bajo los bloques, "Always compared with a seasonal baseline: the same day the
+  week before. `ForecasterEquivalentDate` · User guide", que cambia con la frecuencia. En el
+  script sigue como un modelo más.
 - Mientras no se sabe cuántas series hay, el bloque de LightGBM enseña sus dos forecasters
   posibles (`ForecasterRecursive`, one series, o `ForecasterRecursiveMultiSeries`, several
   series), cada uno con su guía; "How many time series?" deja el que corresponde. La
@@ -500,11 +504,9 @@ tabla de la introducción: son la referencia. Sin ella no hay umbrales.
 
 ### 7.2 Decisiones que necesitan respuesta
 
-Propuestas ya montadas en la maqueta, pendientes de confirmar:
-
-| ID | Decisión | Opciones | Recomendación |
-|:--|:--|:--|:--|
-| D8 | Google Colab | (a) un notebook con "Paste your script here" y el script copiado con datos de ejemplo; (b) un notebook generado por combinación (36); (c) sin Colab | (a). Un clic y un pegado, sin notebooks que mantener, y lo pegado es lo que prueba CI |
+Ninguna de diseño: D1 a D8 están cerradas (D8: Colab con un único notebook de "Paste your
+script here" y el script copiado con datos de ejemplo). Lo que queda son comprobaciones y
+trabajo, en 7.4.
 
 ### 7.3 Fases
 
@@ -566,6 +568,41 @@ Orden y dependencias: fase 0 → fase 1 → fase 2 → fase 3 → fase 4. El arr
 en la PR de esta rama (D5). La fase 0 tiene valor aunque no se haga nada más: hoy la skill dice a los asistentes
 que empiecen por `ForecasterRecursive` con LightGBM y reserva los fundacionales para "sin
 datos".
+
+### 7.4 Lo que falta por comprobar antes de publicar
+
+Por orden de importancia. Ninguno cambia el diseño; los dos primeros pueden cambiar una
+frase.
+
+1. **LightGBM con algo de ajuste no está medido.** El titular dice "then try to beat it with
+   LightGBM", y el estudio solo mide un LightGBM sin ajustar. Falta saber cuántas veces
+   alcanza a Chronos-2 con un presupuesto pequeño y fijo (por ejemplo, 20 pruebas de
+   `bayesian_search_forecaster` en validación) en los 33 pares de dataset y tipo de datos.
+   Si lo alcanza a menudo, la segunda mitad del titular queda respaldada; si casi nunca, el
+   mensaje honesto es otro. Unas horas de cómputo: va en la fase 0.
+2. **La primera ejecución real.** "Runs as it is" está comprobado con todo instalado y los
+   pesos descargados. No está medido lo que tarda en un entorno limpio (instalar PyTorch y
+   `chronos-forecasting`, descargar los pesos), ni qué pasa en una red de empresa que
+   bloquea Hugging Face: el script empieza por Chronos-2, así que fallaría en el primer
+   paso, antes de LightGBM. Medirlo y, si hace falta, decirlo en una línea o cambiar el
+   orden de los bloques del script.
+3. **Colab y MCP, sin probar de verdad.** El notebook no se ha abierto en Colab (hace falta
+   una rama pública) y el servidor MCP de skforecast-ai no se ha probado con un agente; los
+   nombres de fichero y de columna del mensaje son de ejemplo.
+4. **Móvil.** En una pantalla estrecha el recuadro de respuesta queda debajo de las cuatro
+   preguntas, así que no se ve cómo se rellena. Hace falta un resumen fijo o intercalar la
+   respuesta: por diseñar en la fase 2.
+5. **El resto de la documentación dice otra cosa.** La skill `choosing-a-forecaster` afirma
+   que skforecast es "machine learning-first" y manda empezar por `ForecasterRecursive`; el
+   consejo 6 de `llms-base.txt`, lo mismo. Es la fase 0, y es lo que leen hoy los
+   asistentes. La portada es neutra y no hay que tocarla.
+6. **El arreglo de `Ets`** corrige un fallo de la 0.27.0 publicada y cambia qué ajustes se
+   aceptan en los modelos multiplicativos. Va en esta rama (D5), pero conviene que lo revise
+   alguien más como cambio de la librería, y decidir si merece una versión de parche. Los
+   notebooks de la documentación con AutoETS no se han vuelto a ejecutar.
+7. **Clasificación**: un solo dataset. La rama se sostiene por capacidad, no por evidencia.
+8. **Tiempo de calendario**: la referencia de visitas (4 semanas) hay que empezar a
+   anotarla ya; es lo único del plan que no se puede acelerar.
 
 ## 8. Fase 4: fila de incertidumbre (más adelante)
 

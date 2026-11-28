@@ -109,7 +109,7 @@ a{color:var(--accent)}
 .answer .eyebrow{color:var(--stage-muted);display:flex;justify-content:space-between;gap:1rem}
 .answer .headline{font-family:var(--display);font-weight:600;font-size:1.3rem;line-height:1.3;text-wrap:balance;color:#fff}
 .answer .headline.pending{color:var(--stage-muted);font-weight:500}
-.blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(11.5rem,1fr));gap:.6rem}
+.blocks{display:grid;grid-template-columns:repeat(auto-fit,minmax(13rem,1fr));gap:.6rem}
 .block{background:var(--stage-panel);border:1px solid var(--stage-line);border-radius:10px;padding:.65rem .75rem;min-width:0;
   display:flex;flex-direction:column;gap:.15rem}
 .block.empty{border-style:dashed;background:transparent;color:var(--stage-muted);min-height:5.2rem;justify-content:center;align-items:center;font-size:.85rem}
@@ -124,6 +124,9 @@ a{color:var(--accent)}
 .block a{font-size:.8rem;color:var(--accent-fill)}
 .block.flash{animation:flash 1.1s ease-out}
 @keyframes flash{0%{border-color:var(--accent-fill);box-shadow:0 0 0 3px rgba(247,153,57,.45)}100%{border-color:var(--stage-line);box-shadow:0 0 0 0 rgba(247,153,57,0)}}
+.answer .base{font-size:.86rem;color:var(--stage-muted);border-top:1px solid var(--stage-line);padding-top:.6rem}
+.answer .base code{background:none;padding:0;color:var(--stage-ink);font-size:.95em}
+.answer .base a{color:var(--accent-fill);white-space:nowrap}
 .answer .why{font-size:.92rem;color:var(--stage-ink);display:flex;flex-direction:column;gap:.3rem}
 .answer .why a{color:var(--accent-fill)}
 /* Script */
@@ -314,7 +317,7 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     const head = '<div class="eyebrow"><span>Your starting point</span><span>' + done + " of " + total + " answered</span></div>";
     if (!P.headline){
       el.innerHTML = head + '<p class="headline pending">Answer the first question to see which forecasters to try.</p>' +
-        '<div class="blocks"><div class="block empty">Forecaster</div><div class="block empty">Forecaster</div><div class="block empty">Baseline</div></div>';
+        '<div class="blocks"><div class="block empty">Forecaster</div><div class="block empty">Forecaster</div></div>';
       previous = {};
       return;
     }
@@ -329,7 +332,9 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
     const c = D.combos[key()];
     const why = c ? '<div class="why">' + c.why.map(w => "<p>" + esc(w) + "</p>").join("") +
       '<p><a href="#how" id="how-link">How we chose these rules</a></p></div>' : "";
-    el.innerHTML = head + '<p class="headline">' + esc(P.headline) + "</p>" + '<div class="blocks">' + blocks + "</div>" + why;
+    const B = P.baseline;
+    const base = '<p class="base">' + esc(B.text) + (B.cls ? " <code>" + esc(B.cls) + '</code> · <a href="' + DOCS + B.guide + '" target="_blank" rel="noopener">User guide →</a>' : "") + "</p>";
+    el.innerHTML = head + '<p class="headline">' + esc(P.headline) + "</p>" + '<div class="blocks">' + blocks + "</div>" + base + why;
   }
 
   function codeHtml(code){
@@ -354,7 +359,8 @@ td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
       // Outline of the script: what the answers so far already decide
       const left = P.missing.length;
       const outline = P.blocks.map((b, n) => "# " + (n + 1) + ". " + b.model.replace(/^with (a )?/, "") +
-        (b.forecasters.length ? " (" + b.forecasters.map(f => f.cls).join(" or ") + ")" : "")).join("\n");
+        (b.forecasters.length ? " (" + b.forecasters.map(f => f.cls).join(" or ") + ")" : "")).join("\n") +
+        (P.baseline ? "\n# " + (P.blocks.length + 1) + ". " + (P.baseline.cls ? "Seasonal baseline (" + P.baseline.cls + ")" : "Simple rule") : "");
       const wait = "# Your script appears here when you answer the " + (left === 1 ? "last question" : left + " questions left") + ".";
       el.innerHTML = '<div class="window"><div class="window-bar"><i></i><i></i><i></i><span>first_comparison.py</span></div>' +
         '<pre class="waiting"><code><span class="tk-m">' + esc(wait + (outline ? "\n#\n# So far it will compare:\n" + outline : "")) + "</span></code></pre></div>";

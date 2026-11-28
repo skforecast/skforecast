@@ -100,6 +100,7 @@
   "_-_-_-_": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target",
     "freq",
@@ -122,15 +123,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category one season before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same period one season before."
+   },
    "missing": [
     "freq",
     "extra"
@@ -170,21 +169,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the value one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the value one season before."
+   },
    "missing": [
     "series",
     "freq",
@@ -220,21 +211,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the value one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the value one season before."
+   },
    "missing": [
     "freq",
     "extra"
@@ -269,21 +252,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the value one season before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the value one season before."
+   },
    "missing": [
     "freq",
     "extra"
@@ -293,6 +268,7 @@
   "_-_-_-yes": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target",
     "freq"
@@ -316,15 +292,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category one season before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same period one season before."
+   },
    "missing": [
     "freq"
    ],
@@ -367,21 +341,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the value one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the value one season before."
+   },
    "missing": [
     "series",
     "freq"
@@ -420,21 +386,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the value one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the value one season before."
+   },
    "missing": [
     "freq"
    ],
@@ -472,21 +430,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the value one season before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the value one season before."
+   },
    "missing": [
     "freq"
    ],
@@ -495,6 +445,7 @@
   "_-_-_-no": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target",
     "freq"
@@ -516,15 +467,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category one season before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same period one season before."
+   },
    "missing": [
     "freq"
    ],
@@ -563,21 +512,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the value one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the value one season before."
+   },
    "missing": [
     "series",
     "freq"
@@ -612,21 +553,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the value one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the value one season before."
+   },
    "missing": [
     "freq"
    ],
@@ -660,21 +593,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the value one season before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the value one season before."
+   },
    "missing": [
     "freq"
    ],
@@ -683,6 +608,7 @@
   "_-_-hourly-_": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target",
     "extra"
@@ -704,15 +630,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same hour the day before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same hour the day before."
+   },
    "missing": [
     "extra"
    ],
@@ -751,21 +675,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same hour the day before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same hour the day before."
+   },
    "missing": [
     "series",
     "extra"
@@ -800,21 +716,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same hour the day before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same hour the day before."
+   },
    "missing": [
     "extra"
    ],
@@ -848,21 +756,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same hour the day before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same hour the day before."
+   },
    "missing": [
     "extra"
    ],
@@ -871,6 +771,7 @@
   "_-_-hourly-yes": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -893,15 +794,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same hour the day before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same hour the day before."
+   },
    "missing": [],
    "complete": true
   },
@@ -942,21 +841,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same hour the day before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same hour the day before."
+   },
    "missing": [
     "series"
    ],
@@ -994,21 +885,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same hour the day before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same hour the day before."
+   },
    "missing": [],
    "complete": true
   },
@@ -1044,27 +927,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same hour the day before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same hour the day before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-hourly-no": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -1085,15 +961,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same hour the day before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same hour the day before."
+   },
    "missing": [],
    "complete": true
   },
@@ -1130,21 +1004,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same hour the day before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same hour the day before."
+   },
    "missing": [
     "series"
    ],
@@ -1178,21 +1044,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same hour the day before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same hour the day before."
+   },
    "missing": [],
    "complete": true
   },
@@ -1224,27 +1082,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same hour the day before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same hour the day before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-daily-_": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target",
     "extra"
@@ -1266,15 +1117,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same day the week before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same day the week before."
+   },
    "missing": [
     "extra"
    ],
@@ -1313,21 +1162,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same day the week before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same day the week before."
+   },
    "missing": [
     "series",
     "extra"
@@ -1362,21 +1203,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same day the week before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same day the week before."
+   },
    "missing": [
     "extra"
    ],
@@ -1410,21 +1243,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same day the week before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same day the week before."
+   },
    "missing": [
     "extra"
    ],
@@ -1433,6 +1258,7 @@
   "_-_-daily-yes": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -1455,15 +1281,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same day the week before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same day the week before."
+   },
    "missing": [],
    "complete": true
   },
@@ -1504,21 +1328,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same day the week before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same day the week before."
+   },
    "missing": [
     "series"
    ],
@@ -1556,21 +1372,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same day the week before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same day the week before."
+   },
    "missing": [],
    "complete": true
   },
@@ -1606,27 +1414,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same day the week before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same day the week before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-daily-no": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -1647,15 +1448,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same day the week before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same day the week before."
+   },
    "missing": [],
    "complete": true
   },
@@ -1692,21 +1491,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same day the week before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same day the week before."
+   },
    "missing": [
     "series"
    ],
@@ -1740,21 +1531,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same day the week before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same day the week before."
+   },
    "missing": [],
    "complete": true
   },
@@ -1786,27 +1569,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same day the week before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same day the week before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-weekly-_": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target",
     "extra"
@@ -1828,15 +1604,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same week the year before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same week the year before."
+   },
    "missing": [
     "extra"
    ],
@@ -1875,21 +1649,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same week the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same week the year before."
+   },
    "missing": [
     "series",
     "extra"
@@ -1924,21 +1690,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same week the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same week the year before."
+   },
    "missing": [
     "extra"
    ],
@@ -1972,21 +1730,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same week the year before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same week the year before."
+   },
    "missing": [
     "extra"
    ],
@@ -1995,6 +1745,7 @@
   "_-_-weekly-yes": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -2017,15 +1768,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same week the year before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same week the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -2066,21 +1815,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same week the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same week the year before."
+   },
    "missing": [
     "series"
    ],
@@ -2118,21 +1859,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same week the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same week the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -2168,27 +1901,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same week the year before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same week the year before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-weekly-no": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -2209,15 +1935,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same week the year before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same week the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -2254,21 +1978,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same week the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same week the year before."
+   },
    "missing": [
     "series"
    ],
@@ -2302,21 +2018,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same week the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same week the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -2348,27 +2056,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same week the year before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same week the year before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-monthly-_": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target",
     "extra"
@@ -2390,15 +2091,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same month the year before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same month the year before."
+   },
    "missing": [
     "extra"
    ],
@@ -2437,21 +2136,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same month the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same month the year before."
+   },
    "missing": [
     "series",
     "extra"
@@ -2499,21 +2190,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same month the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same month the year before."
+   },
    "missing": [
     "extra"
    ],
@@ -2547,21 +2230,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same month the year before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same month the year before."
+   },
    "missing": [
     "extra"
    ],
@@ -2570,6 +2245,7 @@
   "_-_-monthly-yes": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -2592,15 +2268,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same month the year before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same month the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -2641,21 +2315,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same month the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same month the year before."
+   },
    "missing": [
     "series"
    ],
@@ -2706,21 +2372,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same month the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same month the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -2756,27 +2414,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same month the year before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same month the year before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-monthly-no": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -2797,15 +2448,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same month the year before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same month the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -2842,21 +2491,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same month the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same month the year before."
+   },
    "missing": [
     "series"
    ],
@@ -2903,21 +2544,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same month the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same month the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -2949,27 +2582,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same month the year before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same month the year before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-quarterly-_": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target",
     "extra"
@@ -2991,15 +2617,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same quarter the year before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same quarter the year before."
+   },
    "missing": [
     "extra"
    ],
@@ -3038,21 +2662,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same quarter the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same quarter the year before."
+   },
    "missing": [
     "series",
     "extra"
@@ -3100,21 +2716,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same quarter the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same quarter the year before."
+   },
    "missing": [
     "extra"
    ],
@@ -3148,21 +2756,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same quarter the year before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same quarter the year before."
+   },
    "missing": [
     "extra"
    ],
@@ -3171,6 +2771,7 @@
   "_-_-quarterly-yes": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -3193,15 +2794,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same quarter the year before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same quarter the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -3242,21 +2841,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same quarter the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same quarter the year before."
+   },
    "missing": [
     "series"
    ],
@@ -3307,21 +2898,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same quarter the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same quarter the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -3357,27 +2940,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same quarter the year before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same quarter the year before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-quarterly-no": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -3398,15 +2974,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same quarter the year before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same quarter the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -3443,21 +3017,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same quarter the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same quarter the year before."
+   },
    "missing": [
     "series"
    ],
@@ -3504,21 +3070,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same quarter the year before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same quarter the year before."
+   },
    "missing": [],
    "complete": true
   },
@@ -3550,27 +3108,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same quarter the year before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same quarter the year before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-other-_": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target",
     "extra"
@@ -3592,15 +3143,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same step one season before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same step one season before."
+   },
    "missing": [
     "extra"
    ],
@@ -3639,21 +3188,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same step one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same step one season before."
+   },
    "missing": [
     "series",
     "extra"
@@ -3688,21 +3229,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same step one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same step one season before."
+   },
    "missing": [
     "extra"
    ],
@@ -3736,21 +3269,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same step one season before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same step one season before."
+   },
    "missing": [
     "extra"
    ],
@@ -3759,6 +3284,7 @@
   "_-_-other-yes": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -3781,15 +3307,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same step one season before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same step one season before."
+   },
    "missing": [],
    "complete": true
   },
@@ -3830,21 +3354,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same step one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same step one season before."
+   },
    "missing": [
     "series"
    ],
@@ -3882,21 +3398,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same step one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same step one season before."
+   },
    "missing": [],
    "complete": true
   },
@@ -3932,27 +3440,20 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same step one season before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same step one season before."
+   },
    "missing": [],
    "complete": true
   },
   "_-_-other-no": {
    "headline": null,
    "blocks": [],
+   "baseline": null,
    "missing": [
     "target"
    ],
@@ -3973,15 +3474,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal rule",
-     "forecasters": [],
-     "tags": [],
-     "text": "The category of the same step one season before. No forecaster needed: y.shift(season)"
     }
    ],
+   "baseline": {
+    "cls": null,
+    "guide": null,
+    "text": "Always compared with a simple rule: the category of the same step one season before."
+   },
    "missing": [],
    "complete": true
   },
@@ -4018,21 +3517,13 @@
        "when": "several series"
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same step one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same step one season before."
+   },
    "missing": [
     "series"
    ],
@@ -4066,21 +3557,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same step one season before",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline: the same step one season before."
+   },
    "missing": [],
    "complete": true
   },
@@ -4112,21 +3595,13 @@
        "when": ""
       }
      ]
-    },
-    {
-     "role": "Baseline",
-     "model": "Seasonal baseline",
-     "text": "Repeats the same step one season before, one per series",
-     "tags": [],
-     "forecasters": [
-      {
-       "cls": "ForecasterEquivalentDate",
-       "guide": "user_guides/forecasting-baseline.html",
-       "when": ""
-      }
-     ]
     }
    ],
+   "baseline": {
+    "cls": "ForecasterEquivalentDate",
+    "guide": "user_guides/forecasting-baseline.html",
+    "text": "Always compared with a seasonal baseline, one per series: the same step one season before."
+   },
    "missing": [],
    "complete": true
   }
@@ -4833,17 +4308,17 @@
   "s0": {
    "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"h\"\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 24   # hours ahead of each forecast (no more than one season)\nseason = 24  # the rule repeats the category of the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same hour the day before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
    "status": "ok",
-   "seconds": 1.6
+   "seconds": 2.3
   },
   "s1": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"h\",\n#    e.g. y = data[\"sales\"].asfreq(\"h\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 24    # hours ahead of each forecast\nseason = 24  # the baseline repeats the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=24),\n    calendar_features=CalendarFeatures(features=[\"hour\", \"day_of_week\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same hour the day before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 4.5
+   "seconds": 6.4
   },
   "s2": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"h\",\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 24    # hours ahead of each forecast\nseason = 24  # the baseline repeats the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=24),\n    calendar_features=CalendarFeatures(features=[\"hour\", \"day_of_week\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same hour the day before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 1.2
+   "seconds": 1.3
   },
   "s3": {
    "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"h\"\nsteps = 24   # hours ahead of each forecast (no more than one season)\nseason = 24  # the rule repeats the category of the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same hour the day before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
@@ -4853,37 +4328,37 @@
   "s4": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"h\",\n#    e.g. y = data[\"sales\"].asfreq(\"h\")\nsteps = 24    # hours ahead of each forecast\nseason = 24  # the baseline repeats the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=24),\n    calendar_features=CalendarFeatures(features=[\"hour\", \"day_of_week\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same hour the day before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 0.7
+   "seconds": 0.6
   },
   "s5": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"h\",\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 24    # hours ahead of each forecast\nseason = 24  # the baseline repeats the same hour the day before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 24, 48, 168],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=24),\n    calendar_features=CalendarFeatures(features=[\"hour\", \"day_of_week\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same hour the day before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 1.1
+   "seconds": 1.0
   },
   "s6": {
    "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"D\"\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 7    # days ahead of each forecast (no more than one season)\nseason = 7   # the rule repeats the category of the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same day the week before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
    "status": "ok",
-   "seconds": 0.5
+   "seconds": 0.6
   },
   "s7": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"D\",\n#    e.g. y = data[\"sales\"].asfreq(\"D\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 14    # days ahead of each forecast\nseason = 7   # the baseline repeats the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same day the week before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 0.8
+   "seconds": 0.7
   },
   "s8": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"D\",\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 14    # days ahead of each forecast\nseason = 7   # the baseline repeats the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same day the week before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 1.2
+   "seconds": 1.1
   },
   "s9": {
    "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"D\"\nsteps = 7    # days ahead of each forecast (no more than one season)\nseason = 7   # the rule repeats the category of the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same day the week before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
    "status": "ok",
-   "seconds": 0.5
+   "seconds": 0.4
   },
   "s10": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"D\",\n#    e.g. y = data[\"sales\"].asfreq(\"D\")\nsteps = 14    # days ahead of each forecast\nseason = 7   # the baseline repeats the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same day the week before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 0.7
+   "seconds": 0.6
   },
   "s11": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"D\",\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 14    # days ahead of each forecast\nseason = 7   # the baseline repeats the same day the week before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same day the week before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
@@ -4913,27 +4388,27 @@
   "s16": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"W\",\n#    e.g. y = data[\"sales\"].asfreq(\"W\")\nsteps = 8    # weeks ahead of each forecast\nseason = 52  # the baseline repeats the same week the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 4, 52],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=4),\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same week the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 0.6
+   "seconds": 0.5
   },
   "s17": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"W\",\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 8    # weeks ahead of each forecast\nseason = 52  # the baseline repeats the same week the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=[1, 2, 3, 4, 52],\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=4),\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same week the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 0.8
+   "seconds": 0.9
   },
   "s18": {
    "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"MS\"\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 6    # months ahead of each forecast (no more than one season)\nseason = 12  # the rule repeats the category of the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same month the year before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
    "status": "ok",
-   "seconds": 0.3
+   "seconds": 0.2
   },
   "s19": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n    backtesting_stats,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursive,\n    ForecasterStats,\n)\nfrom skforecast.stats import Arima\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"MS\",\n#    e.g. y = data[\"sales\"].asfreq(\"MS\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 6    # months ahead of each forecast\nseason = 12  # the baseline repeats the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Statistical reference: ARIMA with automatic order selection\narima = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=season))\nmetric_arima, _ = backtesting_stats(\n    arima, y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # convergence notices of the orders it tries\n)\n\n# 4. Baseline: same month the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"ARIMA\": metric_arima[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 2.0
+   "seconds": 2.3
   },
   "s20": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"MS\",\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 6    # months ahead of each forecast\nseason = 12  # the baseline repeats the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same month the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 0.7
+   "seconds": 0.8
   },
   "s21": {
    "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"MS\"\nsteps = 6    # months ahead of each forecast (no more than one season)\nseason = 12  # the rule repeats the category of the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same month the year before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
@@ -4943,12 +4418,12 @@
   "s22": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n    backtesting_stats,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursive,\n    ForecasterStats,\n)\nfrom skforecast.stats import Arima\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"MS\",\n#    e.g. y = data[\"sales\"].asfreq(\"MS\")\nsteps = 6    # months ahead of each forecast\nseason = 12  # the baseline repeats the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Statistical reference: ARIMA with automatic order selection\narima = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=season))\nmetric_arima, _ = backtesting_stats(\n    arima, y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # convergence notices of the orders it tries\n)\n\n# 4. Baseline: same month the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"ARIMA\": metric_arima[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 1.1
+   "seconds": 0.7
   },
   "s23": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"MS\",\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 6    # months ahead of each forecast\nseason = 12  # the baseline repeats the same month the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=12,\n    calendar_features=CalendarFeatures(features=[\"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same month the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 0.7
+   "seconds": 0.6
   },
   "s24": {
    "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"QS\"\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 4    # quarters ahead of each forecast (no more than one season)\nseason = 4   # the rule repeats the category of the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same quarter the year before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
@@ -4958,12 +4433,12 @@
   "s25": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n    backtesting_stats,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursive,\n    ForecasterStats,\n)\nfrom skforecast.stats import Arima\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"QS\",\n#    e.g. y = data[\"sales\"].asfreq(\"QS\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 4    # quarters ahead of each forecast\nseason = 4   # the baseline repeats the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n    calendar_features=CalendarFeatures(features=[\"quarter\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Statistical reference: ARIMA with automatic order selection\narima = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=season))\nmetric_arima, _ = backtesting_stats(\n    arima, y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # convergence notices of the orders it tries\n)\n\n# 4. Baseline: same quarter the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"ARIMA\": metric_arima[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 1.1
+   "seconds": 0.8
   },
   "s26": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"QS\",\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 4    # quarters ahead of each forecast\nseason = 4   # the baseline repeats the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n    calendar_features=CalendarFeatures(features=[\"quarter\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same quarter the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 0.7
+   "seconds": 0.6
   },
   "s27": {
    "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex, freq=\"QS\"\nsteps = 4    # quarters ahead of each forecast (no more than one season)\nseason = 4   # the rule repeats the category of the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same quarter the year before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
@@ -4973,17 +4448,17 @@
   "s28": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n    backtesting_stats,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursive,\n    ForecasterStats,\n)\nfrom skforecast.stats import Arima\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex, freq=\"QS\",\n#    e.g. y = data[\"sales\"].asfreq(\"QS\")\nsteps = 4    # quarters ahead of each forecast\nseason = 4   # the baseline repeats the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags and calendar features\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n    calendar_features=CalendarFeatures(features=[\"quarter\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Statistical reference: ARIMA with automatic order selection\narima = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=season))\nmetric_arima, _ = backtesting_stats(\n    arima, y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # convergence notices of the orders it tries\n)\n\n# 4. Baseline: same quarter the year before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"ARIMA\": metric_arima[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 1.2
+   "seconds": 1.0
   },
   "s29": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex, freq=\"QS\",\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 4    # quarters ahead of each forecast\nseason = 4   # the baseline repeats the same quarter the year before\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 2 * steps,  # last 2 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=4,\n    calendar_features=CalendarFeatures(features=[\"quarter\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same quarter the year before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 0.6
+   "seconds": 0.5
   },
   "s30": {
    "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex with a frequency\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 7    # steps ahead of each forecast (no more than one season)  # <- edit\nseason = 7   # the rule repeats the category of the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same step one season before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
    "status": "ok",
-   "seconds": 0.6
+   "seconds": 0.5
   },
   "s31": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import ForecasterEquivalentDate, ForecasterRecursive\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# y: pandas Series with a DatetimeIndex with a frequency,\n#    e.g. y = data[\"sales\"].asfreq(\"D\")\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 14    # steps ahead of each forecast  # <- edit\nseason = 7   # the baseline repeats the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursive(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n)\nmetric_ml, _ = backtesting_forecaster(\n    forecaster, y=y, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same step one season before\nbaseline = ForecasterEquivalentDate(offset=season)\nmetric_base, _ = backtesting_forecaster(baseline, y=y, cv=cv, metric=\"mean_absolute_scaled_error\")\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
@@ -4993,7 +4468,7 @@
   "s32": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex with a frequency,\n#         e.g. series = {name: data[name] for name in data.columns}\n# exog: DataFrame with the same index and the values you know in advance\nsteps = 14    # steps ahead of each forecast  # <- edit\nseason = 7   # the baseline repeats the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2 with the same exog, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean, calendar features and exog\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, exog=exog, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same step one season before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 1.1
+   "seconds": 1.5
   },
   "s33": {
    "code": "from lightgbm import LGBMClassifier\nfrom skforecast.model_selection import TimeSeriesFold, backtesting_forecaster\nfrom skforecast.recursive import ForecasterRecursiveClassifier\nfrom sklearn.metrics import balanced_accuracy_score\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm\n\n# y: pandas Series of categories (\"low\", \"medium\", \"high\") with a DatetimeIndex with a frequency\nsteps = 7    # steps ahead of each forecast (no more than one season)  # <- edit\nseason = 7   # the rule repeats the category of the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(y) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,\n)\n\n# 1. Machine learning classifier\nforecaster = ForecasterRecursiveClassifier(\n    estimator=LGBMClassifier(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n)\nmetric, pred = backtesting_forecaster(\n    forecaster, y=y, cv=cv, metric=\"balanced_accuracy_score\"\n)\n\n# 2. Baseline: the category of the same step one season before\nrule = y.shift(season).loc[pred.index]\n\n# Higher is better: keep the classifier only if it beats the rule\nprint(\"Classifier:\", metric[\"balanced_accuracy_score\"].item())\nprint(\"Rule:      \", balanced_accuracy_score(y.loc[pred.index], rule))\n",
@@ -5008,7 +4483,7 @@
   "s35": {
    "code": "import pandas as pd\nfrom lightgbm import LGBMRegressor\nfrom skforecast.foundation import ForecasterFoundation, FoundationModel\nfrom skforecast.model_selection import (\n    TimeSeriesFold,\n    backtesting_forecaster,\n    backtesting_forecaster_multiseries,\n    backtesting_foundation,\n)\nfrom skforecast.preprocessing import CalendarFeatures, RollingFeatures\nfrom skforecast.recursive import (\n    ForecasterEquivalentDate,\n    ForecasterRecursiveMultiSeries,\n)\nfrom sklearn.preprocessing import StandardScaler\n\n# Example settings so that the script runs: they are not tuned.\n# pip install skforecast lightgbm chronos-forecasting\n\n# series: dict with one pandas Series per series, each with a DatetimeIndex with a frequency,\n#         e.g. series = {name: data[name] for name in data.columns}\nsteps = 14    # steps ahead of each forecast  # <- edit\nseason = 7   # the baseline repeats the same step one season before  # <- edit\ncv = TimeSeriesFold(\n    steps=steps, initial_train_size=len(next(iter(series.values()))) - 3 * steps,  # last 3 periods\n    refit=True, fixed_train_size=False,  # every model uses all the data before each period\n)\n\n# 1. Foundation model: Chronos-2, no training (the first run downloads its weights)\nchronos = ForecasterFoundation(estimator=FoundationModel(\"autogluon/chronos-2-small\"))\nmetric_fm, _ = backtesting_foundation(\n    chronos, series=series, cv=cv, metric=\"mean_absolute_scaled_error\",\n    suppress_warnings=True,  # `refit` does not apply to it: it always sees the data before\n)\n\n# 2. Machine learning: LightGBM with lags, a rolling mean and calendar features\nforecaster = ForecasterRecursiveMultiSeries(\n    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n    lags=14,  # <- edit for your data\n    window_features=RollingFeatures(stats=\"mean\", window_sizes=7),\n    calendar_features=CalendarFeatures(features=[\"day_of_week\", \"month\"]),\n    transformer_series=StandardScaler(),  # series on different scales\n)\nmetric_ml, _ = backtesting_forecaster_multiseries(\n    forecaster, series=series, cv=cv, metric=\"mean_absolute_scaled_error\"\n)\n\n# 3. Baseline: same step one season before, one per series\nmetric_base = pd.concat([\n    backtesting_forecaster(\n        ForecasterEquivalentDate(offset=season), y=y, cv=cv, metric=\"mean_absolute_scaled_error\",\n        show_progress=False,\n    )[0]\n    for y in series.values()\n]).mean().to_frame().T\n\n# Lower is better: keep a model only if it beats the baseline\nprint(pd.Series({\n    \"Chronos-2\": metric_fm.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"LightGBM\": metric_ml.query(\"levels == 'average'\")[\"mean_absolute_scaled_error\"].item(),\n    \"Baseline\": metric_base[\"mean_absolute_scaled_error\"].item()\n}).sort_values())\n",
    "status": "ok",
-   "seconds": 0.8
+   "seconds": 0.9
   }
  }
 }
