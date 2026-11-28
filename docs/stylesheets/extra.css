@@ -563,3 +563,21 @@ Announcement Bar Styles
   height: calc(var(--skf-ratio, 0.5) * 100cqw + 48px);
   border: 0;
 }
+
+/* Mermaid diagrams (javascripts/mermaid.js), centered */
+.md-typeset .skf-mermaid {
+  margin: 1.5em 0;
+  text-align: center;
+}
+/* Node labels are <p> elements: not justified like the rest of the text */
+.md-typeset .skf-mermaid svg p {
+  text-align: center;
+}
+/* Source of a diagram not drawn yet, readable if Mermaid.js cannot be loaded */
+.md-typeset .skf-mermaid:not([data-rendered]) {
+  overflow-x: auto;
+  font-family: var(--md-code-font-family);
+  font-size: 0.85em;
+  text-align: left;
+  white-space: pre;
+}
