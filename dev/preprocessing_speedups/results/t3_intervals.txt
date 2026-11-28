@@ -1,0 +1,30 @@
+Python 3.12.3 (Linux-6.18.44-fc-v595-x86_64-with-glibc2.39)
+numpy 2.5.5, pandas 3.1.1, scikit-learn 1.9.1, numba 0.68.1, skforecast 0.28.0
+lightgbm 4.7.0
+pyarrow 26.0.1
+CPU Intel(R) Xeon(R) Processor @ 2.10GHz, 4 logical cores
+
+series: 100 | rows X_train: 249,584 | rows per series: min 976, median 2577, max 3960
+nominal coverage: 80 %, conformal
+
+--- Flow A: out-of-sample residuals (from fit, only the edges) ---
+                bins learned with rows predicted             coverage             width       cov. low third      cov. high third
+                         all rows          100 %                79.15              2.60                79.93                78.81
+                         cap 1000           40 % 79.28 [79.26, 79.32] 2.59 [2.59, 2.60] 79.98 [79.93, 80.05] 79.04 [78.97, 79.11]
+                          cap 500           20 % 79.27 [79.22, 79.35] 2.60 [2.59, 2.60] 79.95 [79.91, 80.01] 79.08 [78.96, 79.29]
+                          cap 250           10 % 79.14 [79.12, 79.17] 2.59 [2.59, 2.60] 79.71 [79.50, 79.85] 78.88 [78.81, 79.03]
+                        frac 0.25           25 % 79.18 [79.16, 79.21] 2.59 [2.59, 2.59] 79.91 [79.85, 79.99] 78.93 [78.89, 78.96]
+                         frac 0.1           10 % 79.19 [79.12, 79.25] 2.59 [2.59, 2.60] 79.86 [79.71, 79.98] 78.95 [78.80, 79.06]
+(reference: residuals not binned)                               79.75              2.55                97.46                56.99
+reference all rows: {'coverage': np.float64(79.14880952380953), 'width': np.float64(2.5961146781877784), 'cov. low third': np.float64(79.93039443155452), 'cov. high third': np.float64(78.8125)} | time 24 s
+
+--- Flow B: in-sample residuals (from fit, edges and residuals) ---
+                bins learned with rows predicted             coverage             width       cov. low third      cov. high third
+                         all rows          100 %                76.55              2.49                73.67                78.81
+                         cap 1000           40 % 76.12 [76.04, 76.23] 2.47 [2.47, 2.48] 73.23 [73.18, 73.26] 78.34 [78.29, 78.40]
+                          cap 500           20 % 75.68 [75.38, 75.89] 2.46 [2.46, 2.47] 72.75 [72.26, 73.16] 78.22 [77.88, 78.44]
+                          cap 250           10 % 74.55 [74.32, 74.85] 2.43 [2.43, 2.44] 71.56 [70.82, 72.14] 77.03 [76.67, 77.27]
+                        frac 0.25           25 % 75.81 [75.66, 75.92] 2.47 [2.47, 2.48] 73.07 [72.84, 73.28] 78.01 [77.73, 78.48]
+                         frac 0.1           10 % 74.41 [74.26, 74.53] 2.43 [2.42, 2.44] 71.09 [70.80, 71.41] 77.06 [76.54, 77.32]
+(reference: residuals not binned)                               78.30              2.43                96.84                54.74
+reference all rows: {'coverage': np.float64(76.55357142857143), 'width': np.float64(2.488249000125807), 'cov. low third': np.float64(73.66589327146171), 'cov. high third': np.float64(78.8125)} | time 21 s

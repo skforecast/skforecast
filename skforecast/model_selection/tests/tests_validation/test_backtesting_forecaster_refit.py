@@ -13,6 +13,7 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 from catboost import CatBoostRegressor
 from skforecast.recursive import ForecasterRecursive
 from skforecast.recursive import ForecasterRecursiveClassifier
+from skforecast.recursive import ForecasterEquivalentDate
 from skforecast.direct import ForecasterDirect
 from skforecast.preprocessing import RollingFeatures, CalendarFeatures
 from skforecast.model_selection._split import TimeSeriesFold
@@ -1577,6 +1578,84 @@ def test_output_backtesting_forecaster_out_sample_residuals_binned_uses_user_bin
     pd.testing.assert_frame_equal(
         backtest_predictions.drop(columns='fold'), manual_predictions, check_names=False
     )
+
+
+@pytest.mark.parametrize(
+    "use_in_sample_residuals, use_binned_residuals, expected_modes",
+    [
+        (True, True, ['binned'] * 4),
+        (True, False, ['no_binned'] * 4),
+        (False, True, []),
+        (False, False, []),
+    ],
+    ids=[
+        'in_sample_binned', 'in_sample_not_binned',
+        'out_sample_binned', 'out_sample_not_binned'
+    ]
+)
+@pytest.mark.parametrize(
+    "forecaster_class, forecaster_kwargs",
+    [
+        (ForecasterRecursive, {'estimator': LinearRegression(), 'lags': 3}),
+        (ForecasterDirect, {'estimator': LinearRegression(), 'lags': 3, 'steps': 5}),
+        (ForecasterEquivalentDate, {'offset': 7, 'n_offsets': 1}),
+    ],
+    ids=['ForecasterRecursive', 'ForecasterDirect', 'ForecasterEquivalentDate']
+)
+def test_backtesting_forecaster_refit_bins_in_sample_residuals_only_when_used(
+    forecaster_class, forecaster_kwargs, use_in_sample_residuals,
+    use_binned_residuals, expected_modes, monkeypatch
+):
+    """
+    Test that the fits of _backtesting_forecaster with refit=True and an interval
+    bin the in-sample residuals, which requires predicting over the training
+    data, only when they are used (`use_in_sample_residuals=True`). With
+    out-of-sample residuals, the binner of the user's forecaster is restored
+    after each fit, so that work is skipped. There are 4 folds, so 4 fits.
+    """
+    forecaster = forecaster_class(**forecaster_kwargs)
+    forecaster.fit(y=y_intermittent.iloc[:40], suppress_warnings=True)
+
+    rng = np.random.default_rng(42)
+    y_pred_residuals = rng.uniform(-5, 10, size=200)
+    y_true_residuals = y_pred_residuals + rng.uniform(-5, 5, size=200)
+    forecaster.set_out_sample_residuals(
+        y_true=y_true_residuals, y_pred=y_pred_residuals
+    )
+
+    modes = []
+    original_binning = forecaster_class._binning_in_sample_residuals
+
+    def recording_binning(self, *args, **kwargs):
+        modes.append(self._probabilistic_mode)
+        return original_binning(self, *args, **kwargs)
+
+    monkeypatch.setattr(
+        forecaster_class, "_binning_in_sample_residuals", recording_binning
+    )
+
+    cv = TimeSeriesFold(
+            steps              = 5,
+            initial_train_size = 60,
+            refit              = True,
+        )
+    _backtesting_forecaster(
+        forecaster              = forecaster,
+        y                       = y_intermittent,
+        exog                    = None,
+        cv                      = cv,
+        metric                  = 'mean_absolute_error',
+        interval                = [0.05, 0.95],
+        interval_method         = 'conformal',
+        use_in_sample_residuals = use_in_sample_residuals,
+        use_binned_residuals    = use_binned_residuals,
+        n_jobs                  = 1,
+        verbose                 = False,
+        show_progress           = False,
+        suppress_warnings       = True
+    )
+
+    assert modes == expected_modes
 
 
 # ******************************************************************************
