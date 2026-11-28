@@ -56,6 +56,7 @@ faq/table-of-contents.md:
     Performance Optimization: Measure and speed up training, backtesting and hyperparameter search.
     Dependencies: What changes in skforecast with the supported versions of its dependencies.
   titles:
+    faq/how-forecasters-create-training-matrices.md: How forecasters create the training matrices
     faq/pandas-2-and-pandas-3.md: "pandas 2 and pandas 3: differences in skforecast"
   extra_links:
     Forecasting Tips:
