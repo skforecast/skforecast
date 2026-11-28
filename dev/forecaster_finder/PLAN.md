@@ -667,7 +667,7 @@ Ninguna. D1 a D8 cerradas el 2026-11-28; **D9 y D10 aceptadas el mismo día**:
   Chronos-2 al final, con cada resultado impreso al obtenerlo (6.9).
 - **D10**: página propia en la pestaña *Quick start*, segunda entrada (6.5).
 
-Una propuesta nueva espera respuesta, en 7.5: la barra de anuncios.
+La barra de anuncios se descartó como gancho (7.5).
 
 ### 7.3 Fases
 
@@ -759,18 +759,15 @@ Ganchos puestos (de más a menos tráfico esperado):
 6. *User Guides*: tarjeta *Choosing a model* y frase al principio de *Comparing forecasting
    models*. FAQ: tarjeta *Forecasting Tips*.
 7. *AI-assisted forecasting* y la skill `choosing-a-forecaster` (los asistentes citan la URL).
-8. Notas de versión: destacado "Docs".
+8. Páginas de ejemplos (inglés, español y chino): una línea bajo la introducción, en cada
+   idioma, que avisa de que la página del selector está en inglés.
+9. Notas de versión: destacado "Docs".
 
-Propuestos, sin hacer (necesitan tu visto bueno):
+Decidido el 2026-11-28: **la barra de anuncios no se usa** para el selector (sigue anunciando
+Studio y skforecast-ai).
 
-- **Barra de anuncios** (`docs/overrides/partials/announce.html`): sale en todas las
-  páginas, también en las guías a las que se llega desde un buscador, que es justo el
-  tráfico al que no alcanzan los ganchos de la portada. Es el sitio de más alcance. No la
-  he tocado porque hoy anuncia Studio y skforecast-ai y es tu texto. Propuesta: durante
-  las primeras semanas, "New: not sure which forecaster to use? Answer four questions and
-  get a script that runs", delante o en lugar del texto actual.
-- **Páginas de ejemplos** (inglés, español y chino): una línea bajo el título. Hay que
-  traducirla.
+Propuestos, sin hacer:
+
 - **Fuera del repositorio**: los artículos de cienciadedatos.net que comparan modelos, la
   descripción del repositorio en GitHub y una publicación en LinkedIn al lanzar.
 - Tarjeta en "Start here" de la portada: no la he puesto porque son 4 tarjetas en una
