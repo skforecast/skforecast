@@ -1,0 +1,77 @@
+name: Forecaster Finder
+
+# The page "Which forecaster should I use?" gives the reader a script that must
+# run as it is. This workflow checks that the generated files are up to date
+# with their source (tools/docs/forecaster_finder/finder.py) and runs every
+# script on sample data, with any warning as an error, and with the shortest
+# history the page promises. See tools/docs/forecaster_finder/README.md.
+#
+# The packages are installed as the scripts tell the reader to install them
+# (their versions are not pinned).
+#
+# It runs on the pull requests that touch the finder or its study, and the
+# manual trigger runs it on the branch selected in the Actions tab.
+
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:  # Allow manual trigger
+  pull_request:
+    branches:
+      - main
+      - '*.x'  # release branches, where feature and fix branches are merged
+    paths:
+      - 'tools/docs/forecaster_finder/**'
+      - 'docs/quick-start/choose-a-forecaster.md'
+      - 'docs/javascripts/finder-data.json'
+      - 'skills/choosing-a-forecaster/SKILL.md'
+      - 'benchmarks/forecaster_finder/results/**'
+      - '.github/workflows/forecaster-finder.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  check:
+    name: Generated files are up to date
+    # Skipped on the pull requests of Dependabot, which only bump the actions.
+    if: github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Check the page data, the page, the skill and the notebook
+        run: |
+          python -m pip install pandas
+          python tools/docs/forecaster_finder/build.py --check
+
+  scripts:
+    name: Every script runs as it is
+    if: github.event_name != 'pull_request' || github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      # PyTorch for CPU first, so that pip does not download the CUDA packages;
+      # then the install line of the scripts, with skforecast from the checkout.
+      - name: Install the packages of the scripts
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install ".[stats]" lightgbm chronos-forecasting
+          python -m pip list | grep -i -E "^(skforecast|pandas|numpy|torch|lightgbm|chronos-forecasting|statsmodels|scikit-learn) "
+      - name: Run every script on sample data (warnings are errors)
+        run: python tools/docs/forecaster_finder/build.py
+      - name: Run each kind of script with its minimum history
+        run: python tools/docs/forecaster_finder/check_snippets.py

@@ -1,11 +1,16 @@
 # Unit tests for skforecast.stats.ets.ets_base
 # ==============================================================================
 import re
+import warnings
 import numpy as np
 import pytest
+from skforecast.exceptions import IgnoredArgumentWarning
+import skforecast.stats.exponential_smoothing._ets_base as ets_base_module
 from .._ets_base import (
+    ETS_PENALTY,
     PARAM_LOWER,
     PARAM_UPPER,
+    _ets_likelihood,
     _compute_prediction_variance,
     _forecast_ets,
     initial_smoothing_params,
@@ -44,6 +49,18 @@ def trend_series(n=100, seed=42):
     rng = np.random.default_rng(seed)
     t = np.arange(n)
     return 10 + 0.5 * t + rng.normal(0, 0.5, n)
+
+
+def decaying_seasonal_series(n=72, seed=123):
+    """
+    Generate a positive seasonal series (m=4) whose level decays fast in the
+    first observations and then levels off: the trend of its first
+    observations, extrapolated to the whole series, crosses zero.
+    """
+    rng = np.random.default_rng(seed)
+    t = np.arange(n)
+    season = np.tile([1.2, 0.9, 0.85, 1.05], n // 4 + 1)[:n]
+    return (60 + 60 * np.exp(-t / 6)) * season * (1 + rng.normal(0, 0.05, n))
 
 
 def positive_series(n=80, seed=123):
@@ -1381,3 +1398,129 @@ def test_ets_ZZZ_runs_automatic_selection():
     assert model.config.error == "A"
     assert model.transform.lambda_param == 0.0
     np.testing.assert_allclose(model.loglik, expected.loglik)
+
+
+@pytest.mark.parametrize(
+    "error, season, valid",
+    [(2, 1, False), (2, 2, False), (1, 2, False), (1, 1, True)],
+    ids=lambda x: str(x),
+)
+def test_ets_likelihood_inf_when_multiplicative_model_is_not_positive(error, season, valid):
+    """
+    Test that the likelihood of a model with a multiplicative error or
+    seasonality is inf when its level or its forecasts are not positive
+    (codes: 1 additive, 2 multiplicative). Otherwise such a model has a finite
+    likelihood, which can even be the best one, and forecasts of any sign and
+    magnitude. An additive model is valid with a negative level.
+    """
+    y = decaying_seasonal_series()
+    # Level 120 with a trend of -5 per step: negative from the step 25
+    seasonal = [1.2, 0.9, 0.85, 1.05] if season == 2 else [10.0, -5.0, -8.0, 3.0]
+    states = np.array([120.0, -5.0] + seasonal)
+
+    loglik, _, _, _ = _ets_likelihood(
+        y, states, 4, error, 1, season, 1e-4, 1e-4, 1e-4, 1.0
+    )
+
+    assert np.isfinite(loglik) == valid
+    if not valid:
+        assert loglik == np.inf
+
+
+@pytest.mark.parametrize("model_spec", ["MAA", "MAM"])
+def test_ets_output_when_fixed_parameters_and_initial_trend_crosses_zero(model_spec):
+    """
+    Test that a model fitted with fixed (small) smoothing parameters, as in a
+    refit with the parameters of a previous fit, has positive fitted values
+    and forecasts when the trend of the first observations, extrapolated,
+    crosses zero. The search of the initial states used to start and stay
+    there: 'MAA' returned negative fitted values and forecasts around zero
+    for a series between 40 and 150.
+    """
+    y = decaying_seasonal_series()
+
+    model = ets(y, m=4, model=model_spec, alpha=1e-4, beta=1e-4, gamma=1e-4)
+    mean = forecast_ets(model, h=4)["mean"]
+
+    assert model.fitted.min() > 0.5 * y.min()
+    assert np.all(mean > 0.5 * y.min())
+    assert np.all(mean < y.max())
+    # Not far from the fit with the same trend and no smoothing restrictions
+    assert model.loglik > -160
+
+
+def test_ets_ValueError_when_no_valid_point_is_found(monkeypatch):
+    """
+    Test that ets() raises a ValueError, instead of returning the starting
+    point as a fitted model, when the objective is the penalty at every point
+    visited by the optimizer.
+    """
+    def no_valid_point(x0, *args, **kwargs):
+        return x0, ETS_PENALTY
+
+    monkeypatch.setattr(ets_base_module, "_optimize_ets", no_valid_point)
+
+    err_msg = re.escape("The ETS model 'MAM' could not be fitted")
+    with pytest.raises(ValueError, match=err_msg):
+        ets(decaying_seasonal_series(), m=4, model="MAM")
+
+
+def test_init_states_trend_init():
+    """
+    Test the initial level and trend of init_states() with each `trend_init`:
+    regression on the first observations ('start'), on all of them ('whole')
+    and no trend ('flat'). The seasonal states are the same, and models
+    without trend ignore the argument.
+    """
+    y = decaying_seasonal_series()
+    config = ETSConfig(error="M", trend="A", season="M", damped=False, m=4)
+
+    start = init_states(y, config)
+    whole = init_states(y, config, trend_init="whole")
+    flat = init_states(y, config, trend_init="flat")
+
+    np.testing.assert_allclose(start[2:], whole[2:])
+    np.testing.assert_allclose(start[2:], flat[2:])
+    # The series decays fast at the start: steeper trend in the first observations
+    assert start[1] < whole[1] < 0
+    assert flat[1] == 0.0
+    assert flat[0] < start[0]
+
+    config_mult = ETSConfig(error="M", trend="M", season="N", damped=False, m=1)
+    assert init_states(y, config_mult, trend_init="flat")[1] == 1.0
+
+    config_no_trend = ETSConfig(error="M", trend="N", season="M", damped=False, m=4)
+    np.testing.assert_allclose(
+        init_states(y, config_no_trend, trend_init="whole"),
+        init_states(y, config_no_trend),
+    )
+
+
+def test_auto_ets_IgnoredArgumentWarning_when_m_greater_than_24():
+    """
+    Test that auto_ets() and ets(model='ZZZ') warn once that only
+    non-seasonal models are considered when m > 24, and that no warning is
+    raised with seasonal=False.
+    """
+    t = np.arange(260)
+    rng = np.random.default_rng(123)
+    y = 100 + 10 * np.sin(2 * np.pi * t / 52) + rng.normal(0, 1, 260)
+
+    warn_msg = re.escape(
+        "The seasonal period `m` = 52 is greater than 24: ETS models are "
+        "only fitted with a seasonal component when `m` <= 24"
+    )
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg) as record:
+        model = auto_ets(y, m=52)
+    assert len(record) == 1
+    assert model.config.season == "N"
+
+    with pytest.warns(IgnoredArgumentWarning, match=warn_msg) as record:
+        model = ets(y, m=52, model="ZZZ")
+    assert len(record) == 1
+    assert model.config.season == "N"
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        model = auto_ets(y, m=52, seasonal=False)
+    assert model.config.season == "N"

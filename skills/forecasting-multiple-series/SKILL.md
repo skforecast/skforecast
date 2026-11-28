@@ -11,12 +11,16 @@ description: >
 
 ## When to Use
 
-- **ForecasterRecursiveMultiSeries**: A single global model learns patterns across many series. Each series is predicted independently but the model shares parameters. Best default for multi-series.
+- **ForecasterRecursiveMultiSeries**: A single global model learns patterns across many series. Each series is predicted independently but the model shares parameters. Best default of the two.
 - **ForecasterDirectMultiVariate**: Uses values from multiple series as input features to predict one target series. Use when series are strongly correlated and influence each other.
+
+These are the models you train on your data. On a new problem, do not evaluate one alone: compare it with a foundation model (`ForecasterFoundation` with Chronos-2, no training) and a seasonal baseline per series (`ForecasterEquivalentDate`) on the same folds. See the `choosing-a-forecaster` skill.
 
 ### Related skills
 
-- **Prerequisite**: `choosing-a-forecaster` (decide between MultiSeries, MultiVariate, Rnn, or Foundation for multi-series problems)
+- **Prerequisite**: `choosing-a-forecaster` (the first comparison for a new problem, and MultiSeries or MultiVariate)
+- **Alongside**: `foundation-forecasting` (the pre-trained candidate to compare the trained model with)
+- **Alongside**: `baseline-forecasting` (one naive baseline per series, with the metric averaged)
 - **Prerequisite**: `autocorrelation-and-lag-selection` (analyse representative series to inform the shared `lags` argument)
 - **Prerequisite**: `feature-engineering` (build per-series exogenous and rolling features)
 - **Next**: `hyperparameter-optimization` (tune the global model across series)

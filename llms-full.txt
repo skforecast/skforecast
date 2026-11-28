@@ -76,13 +76,13 @@ skforecast/
 | ForecasterDirect | Single series, direct multi-step forecasting |
 | ForecasterRecursiveMultiSeries | Multiple series forecasting (global model) |
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
-| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
-To choose between model families, compare them on the same folds: each family has its own backtesting function (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats`, `backtesting_foundation`), and passing the same `TimeSeriesFold` to all of them makes the results comparable. The scaled metrics (`mean_absolute_scaled_error`, `root_mean_squared_scaled_error`) scale each error with the one-step naive forecast over the observations before its forecast origin, the same for every forecaster. The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) does this for the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM on three datasets, reporting MASE, interval coverage and computation time.
+For a new problem, compare two forecasters against a seasonal baseline (`ForecasterEquivalentDate`): a gradient boosting forecaster (`ForecasterRecursive`, or `ForecasterRecursiveMultiSeries` for several series, with LightGBM), which you train and shape with your own variables, and a foundation model (`ForecasterFoundation` with Chronos-2), which needs no training and is usually the more accurate of the two before any tuning. To choose between model families, compare them on the same folds: each family has its own backtesting function (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats`, `backtesting_foundation`), and passing the same `TimeSeriesFold(refit=True, fixed_train_size=False)` to all of them makes the results comparable: every model then uses all the data before each fold (`backtesting_stats` refits every estimator except `Sarimax` in each fold and `backtesting_foundation` always forecasts from the history up to the fold, so with `refit=False` only the machine learning model would forecast from old data). `backtesting_foundation` warns that `refit` does not apply to it: pass `suppress_warnings=True`. The scaled metrics (`mean_absolute_scaled_error`, `root_mean_squared_scaled_error`) scale each error with the one-step naive forecast over the observations before its forecast origin, the same for every forecaster. The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) does this for the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM on three datasets, reporting MASE, interval coverage and computation time.
 
 ## Basic Usage Example
 
@@ -536,7 +536,7 @@ Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
 - The index must have a frequency (`data.asfreq(...)`), same requirement as other skforecast forecasters.
 - `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
-- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. It deep-copies `cv` and forces `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained.
+- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. It deep-copies `cv` and forces `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained. Passing a `cv` with `refit=True` or `fixed_train_size=False` raises an `IgnoredArgumentWarning` that only says so: when the same `cv` is shared with trained models to compare them, pass `suppress_warnings=True`.
 - Use `bayesian_search_foundation` (not `bayesian_search_forecaster`) to tune inference-time parameters such as `context_length`. Only `TimeSeriesFold` is supported.
 - Loading a model whose weights are released under a license that restricts commercial use (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL, Timestral) raises a `LicenseWarning` naming the license and a link to the model card; review the link, since terms vary (e.g. TabPFN-TS permits commercial use under an enterprise license; Timestral grants no rights to companies above USD 20 million of monthly revenue). Absence of the warning does not guarantee a model's license is unrestricted. Suppress it like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 - At predict time, the columns of the future `exog` are validated per series against the historical exog (the one passed to `fit`, or `context_exog`). A future column with no historical values raises a `ValueError`. A historical column with no future values is a past-only covariate: used as such when `forecaster.supports_past_only_covariates` is `True` (Chronos-2, TS-ICL, TimesFM 3.0, Timestral, TiRex-2), ignored with an `IgnoredArgumentWarning` otherwise (TabICL, TabPFN-TS, TFC-T0, Nori): the forecast is then the same as without that column.
@@ -725,11 +725,12 @@ show_datasets_info()
 3. **Scale data**: Use `transformer_y` for better model performance
 4. **Use backtesting**: Always validate with realistic train/test splits
 5. **Consider differentiation**: For non-stationary series, use `differentiation` parameter
-6. **Start simple**: Begin with ForecasterRecursive before trying complex models
+6. **Start with a comparison**: a seasonal baseline (`ForecasterEquivalentDate`), LightGBM (`ForecasterRecursive`) and Chronos-2 (`ForecasterFoundation`), with the same `TimeSeriesFold(refit=True, fixed_train_size=False)`. [Which forecaster should I use?](https://skforecast.org/latest/quick-start/choose-a-forecaster.html) gives a script that runs as it is
 
 ## Documentation
 
 - Quick Start: https://skforecast.org/latest/quick-start/quick-start-skforecast.html
+- Which forecaster should I use? (the forecasters to compare first, with a script): https://skforecast.org/latest/quick-start/choose-a-forecaster.html
 - User Guides: https://skforecast.org/latest/user_guides/table-of-contents.html
 - API Reference: https://skforecast.org/latest/api/forecasterrecursive.html
 - Examples: https://skforecast.org/latest/examples/examples_english.html
@@ -755,80 +756,133 @@ Use this skill when the user needs help choosing a forecaster, comparing forecas
 
 - **Next**: `forecasting-single-series` (apply the chosen forecaster to one target series)
 - **Next**: `forecasting-multiple-series` (apply the chosen forecaster to several series jointly)
+- **Next**: `foundation-forecasting` (configure `ForecasterFoundation` and the pre-trained models)
 - **Next**: `baseline-forecasting` (build and benchmark a naive baseline with `ForecasterEquivalentDate`)
+- **Next**: `statistical-models` (ARIMA or ETS as a reference for one monthly or quarterly series)
+- **Next**: `backtesting-configuration` (the folds shared by every model of the comparison)
 - **Next**: `autocorrelation-and-lag-selection` (analyse the series dynamics before configuring `lags`)
 - **Next**: `feature-engineering` (build the input feature set: calendar, rolling, exogenous)
 
 ## Overview
 
-Skforecast is a **machine learning-first** library. The primary tools are the
-sklearn-compatible ML forecasters (`ForecasterRecursive`, `ForecasterDirect`,
-and their multi-series variants) and the zero-shot foundation models
-(`ForecasterFoundation`, e.g. Chronos-2, TimesFM 2.5/3.0) - reach for an ML or a
-foundation forecaster first. Statistical models (`ForecasterStats`) and naive
-baselines (`ForecasterEquivalentDate`) serve as comparison benchmarks to confirm
-the chosen model adds value.
+Skforecast is a **machine learning forecasting library**: one workflow
+(forecasters, backtesting, hyperparameter search, prediction intervals) for any
+model, foundation models included. For a new problem, do not pick one model:
+compare two forecasters against a seasonal baseline.
 
-## Step 1 — How Many Series?
+- **A gradient boosting forecaster** (`ForecasterRecursive`, or
+  `ForecasterRecursiveMultiSeries` for several series, with LightGBM): the model
+  you train on your data. You shape it with your own variables and knowledge of
+  the problem, explain it and tune it.
+- **A foundation model** (`ForecasterFoundation` with Chronos-2,
+  `autogluon/chronos-2-small`, Apache-2.0): no training. It is usually the more
+  accurate of the two before any tuning.
+- **A seasonal baseline** (`ForecasterEquivalentDate`): keep a model only if it
+  beats it. For one monthly or quarterly series, add a statistical model
+  (`ForecasterStats` with ARIMA or ETS) as a second reference.
 
-| Scenario | Go to |
-|----------|-------|
-| **1 target series** (with or without exogenous variables) | → Step 2a |
-| **Multiple series** to forecast simultaneously | → Step 2b |
-| **Multiple series as drivers** to predict one target | → `ForecasterDirectMultiVariate` |
-| **Categorical target** (e.g., low/medium/high) | → `ForecasterRecursiveClassifier` |
+## Where to start: the first comparison
 
-## Step 2a — Single Series
+The interactive version of these rules, for people, is
+["Which forecaster should I use?"](https://skforecast.org/latest/quick-start/choose-a-forecaster.html):
+four questions and a script that runs as it is.
 
-| Scenario | Recommended Forecaster | Why |
-|----------|----------------------|-----|
-| **General purpose** (start here) | `ForecasterRecursive` | Default choice. One model, recursive multi-step. Works with any sklearn-compatible estimator (LightGBM, XGBoost, CatBoost, RandomForest, etc.). Supports lags, window features, exog, differentiation, transformers, weight functions, and all probabilistic prediction methods (bootstrapping, conformal, quantiles, distributions) |
-| **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step — no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
-| **Statistical baseline** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. Use as a benchmark to compare against ML models, or when the series is very short (< 200 obs) and ML overfits |
-| **Zero-shot / cold-start / no training data** | `ForecasterFoundation` | Wraps pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral, TiRex-2). `fit()` only stores context, no training. Strong zero-shot accuracy, also for short or new series; needs more compute to predict. See the `foundation-forecasting` skill |
-| **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Use as a sanity-check baseline. See the `baseline-forecasting` skill |
+<!-- FORECASTER-FINDER:START - generated by tools/docs/forecaster_finder/build.py, do not edit by hand -->
+For a new problem, compare these forecasters on the same folds and keep what beats the baseline. They are two candidates with different roles, not a ranking.
 
-## Step 2b — Multiple Series
+Pass the same `TimeSeriesFold(refit=True, fixed_train_size=False)` to every backtesting function, so that every model uses all the data before each fold: `backtesting_stats` refits every estimator except `Sarimax` in each fold and `backtesting_foundation` always forecasts from the history up to the fold, so with `refit=False` only the model you train would forecast from old data. `backtesting_foundation` warns that `refit` does not apply to it: pass `suppress_warnings=True` there.
 
-| Scenario | Recommended Forecaster | Why |
-|----------|----------------------|-----|
-| **Forecast many series with a shared model** (start here) | `ForecasterRecursiveMultiSeries` | One global model learns cross-series patterns. Supports DataFrame or dict input (dict allows series with different date ranges). Encoding options: `'ordinal'` (default), `'ordinal_category'`, `'onehot'`, `None`. Supports per-series transformers, per-series differentiation, series_weights |
-| **Other series are features for one target** | `ForecasterDirectMultiVariate` | All series become input features to predict a single `level`. Per-series lags via dict (`{'sales': [1,7], 'price': [1]}`). One model per step — no error propagation |
-| **Deep learning / complex nonlinear patterns** | `ForecasterRnn` | Keras-based RNN/LSTM/GRU. Single model outputs all steps and levels simultaneously via 3D tensors. Only conformal intervals (no bootstrapping). Requires keras |
-| **Zero-shot / pre-trained generalist** | `ForecasterFoundation` | Global zero-shot forecasts via Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL / Timestral / TiRex-2. `fit()` only stores context. Native quantile intervals. Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral and TiRex-2 support exog; TimesFM 2.5 & Moirai-2 do not. See the `foundation-forecasting` skill |
+| Your data | Forecasters to compare | Baseline |
+|:--|:--|:--|
+| A number, one series | `ForecasterRecursive` with LightGBM and `ForecasterFoundation` with Chronos-2 | `ForecasterEquivalentDate`: the value one season before |
+| A number, one monthly or quarterly series | The same two, and `ForecasterStats` with ARIMA as a reference | `ForecasterEquivalentDate`: the value one season before |
+| A number, several series | `ForecasterRecursiveMultiSeries` with LightGBM and `ForecasterFoundation` with Chronos-2 | `ForecasterEquivalentDate`, one per series |
+| A category | `ForecasterRecursiveClassifier` with a LightGBM classifier | The category one season before (`y.shift(season)`) |
+
+If you know variables in advance (holidays, promotions, prices), pass them as `exog` to the forecasters. ARIMA is run without them.
+
+Chronos-2 is `FoundationModel("autogluon/chronos-2-small")` (Apache-2.0, no training). LightGBM is the model the user trains and shapes with their own variables.
+
+Example settings per frequency so that a first script runs (they are not tuned):
+
+| One value per | `freq` | `season` (offset of the baseline) | `steps` | `lags` | Minimum history (values) |
+|:--|:--|--:|--:|:--|--:|
+| Hour | `h` | 24 | 24 | `[1, 2, 3, 24, 48, 168]` | 336 |
+| Day | `D` | 7 | 14 | `14` | 90 |
+| Week | `W` | 52 | 8 | `[1, 2, 3, 4, 52]` | 104 |
+| Month | `MS` | 12 | 6 | `12` | 36 |
+| Quarter | `QS` | 4 | 4 | `4` | 24 |
+
+Evidence (26 public datasets, MASE, every model using all the data before each test period, one vote per dataset, LightGBM not tuned):
+
+| Data | Chronos-2 had the lower error | LightGBM did worse than the baseline |
+|:--|--:|--:|
+| One series, nothing known in advance | 14 of 16 | 7 of 16 |
+| One series, variables known in advance | 5 of 7 | 1 of 7 |
+| Several series | 8 of 10 | 2 of 10 |
+
+Chronos-2 did not do worse than the baseline in any dataset. With an automatic search of 20 trials, LightGBM had a lower error than Chronos-2 in 7 of 33 cases. In the 8 monthly and quarterly datasets with one series, ARIMA had a lower error than LightGBM in 6. Domain features and knowledge of the problem are not measured: on a given dataset a trained model can still win.
+<!-- FORECASTER-FINDER:END -->
+
+The rest of this skill says which forecaster class fits each shape of data and
+which capabilities each one has.
+
+## Step 1: What Is the Target?
+
+| Target | Go to |
+|--------|-------|
+| **A number, 1 series** (with or without exogenous variables) | Step 2a |
+| **A number, several series** to forecast at the same time | Step 2b |
+| **A category** (e.g., low/medium/high) | `ForecasterRecursiveClassifier`. It handles one series: with several, fit one classifier per series |
+
+## Step 2a: Single Series
+
+| Scenario | Forecaster | Why |
+|----------|------------|-----|
+| **A model trained on your data** | `ForecasterRecursive` | One model, recursive multi-step. Works with any sklearn-compatible estimator (LightGBM, XGBoost, CatBoost, RandomForest, etc.). Supports lags, window features, calendar features, exog, differentiation, transformers, weight functions, and all probabilistic prediction methods (bootstrapping, conformal, quantiles, distributions) |
+| **A pre-trained model, no training** | `ForecasterFoundation` | Wraps pre-trained foundation models. `fit()` only stores the recent history as context. Strong accuracy without any tuning, also with a short history; needs its own backend (PyTorch for Chronos-2) and more compute to predict. Use `autogluon/chronos-2-small` (Apache-2.0) unless there is a reason not to: the weights of TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL and Timestral have licenses that restrict commercial use. See the `foundation-forecasting` skill |
+| **Horizon-dependent patterns** (e.g., predicting at 1h vs 24h requires different relationships) | `ForecasterDirect` | Trains one independent model per step: no error propagation. Better when the predictive relationship changes significantly across the forecast horizon. Requires `steps` at init; parallelizable with `n_jobs` |
+| **Statistical reference** | `ForecasterStats` | Wraps ARIMA, SARIMAX, ETS, ARAR. For a monthly or quarterly series it is a strong reference: it often beats an untuned ML model. On daily data it added nothing in our tests |
+| **Naive baseline** | `ForecasterEquivalentDate` | Predicts using equivalent past dates (e.g., same weekday last week). Every comparison needs it. See the `baseline-forecasting` skill |
+
+## Step 2b: Multiple Series
+
+| Scenario | Forecaster | Why |
+|----------|------------|-----|
+| **One model trained on all your series** | `ForecasterRecursiveMultiSeries` | One global model learns cross-series patterns. Supports DataFrame or dict input (dict allows series with different date ranges). Encoding options: `'ordinal'` (default), `'ordinal_category'`, `'onehot'`, `None`. Supports per-series transformers, per-series differentiation, series_weights |
+| **A pre-trained model, no training** | `ForecasterFoundation` | Forecasts every series with the same pre-trained model. `fit()` only stores context. Native quantile intervals. Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, TFC-T0, Nori, TS-ICL, Timestral and TiRex-2 support exog; TimesFM 2.5 and Moirai-2 do not. Same license note as in Step 2a. See the `foundation-forecasting` skill |
+| **Other series are features for one target** | `ForecasterDirectMultiVariate` | All series become input features to predict a single `level`. Per-series lags via dict (`{'sales': [1,7], 'price': [1]}`). One model per step: no error propagation |
+| **Naive baseline** | `ForecasterEquivalentDate` | It takes one series: backtest one per series and average the metric. See the `baseline-forecasting` skill |
+
+`ForecasterRnn` (Keras RNN/LSTM/GRU, one model for all steps and levels, conformal
+intervals only, requires keras) is also available: see the `deep-learning-forecasting` skill.
 
 ## Decision Flowchart
 
 ```
-How many series?
+What is the target?
 │
-├─► 1 series
-│   │
-│   ├─► Is it a classification problem? ──► Yes ──► ForecasterRecursiveClassifier
-│   │
-│   └─► Regression (continuous target)
-│       │
-│       ├─► Does the forecast relationship change across the horizon?
-│       │   ├─► No / Unsure ──► ForecasterRecursive  ← START HERE
-│       │   └─► Yes (step-specific patterns) ──► ForecasterDirect
-│       │
-│       └─► Compare with baselines:
-│           ├─► ForecasterStats (Auto-ARIMA, ETS) as statistical benchmark
-│           └─► ForecasterEquivalentDate as naive benchmark
+├─► A category ──► ForecasterRecursiveClassifier (one per series)
+│                  Baseline: the category one season before (y.shift(season))
 │
-└─► Multiple series
+└─► A number
     │
-    ├─► Want to forecast ALL series (global model)?
-    │   └─► ForecasterRecursiveMultiSeries  ← START HERE
+    ├─► 1 series ──► compare, with the same TimeSeriesFold:
+    │   ├─► ForecasterRecursive (LightGBM): the model you train
+    │   │   └─► Step-specific patterns across the horizon? ──► ForecasterDirect
+    │   ├─► ForecasterFoundation (Chronos-2): no training
+    │   ├─► ForecasterEquivalentDate: seasonal baseline
+    │   └─► Monthly or quarterly data? ──► add ForecasterStats (ARIMA, ETS)
     │
-    ├─► Want to use other series AS FEATURES for one target?
-    │   └─► ForecasterDirectMultiVariate
-    │
-    └─► Need deep learning for very complex patterns?
-        └─► ForecasterRnn
-
-Zero-shot / no training data / cold-start (single or multi-series)?
-    └─► ForecasterFoundation (Chronos-2 / TimesFM 2.5/3.0 / Moirai-2 / TabICL / TabPFN-TS / TFC-T0 / Nori / TS-ICL / Timestral / TiRex-2)
+    └─► Several series
+        │
+        ├─► Forecast ALL series ──► compare, with the same TimeSeriesFold:
+        │   ├─► ForecasterRecursiveMultiSeries (LightGBM): the model you train
+        │   ├─► ForecasterFoundation (Chronos-2): no training
+        │   └─► ForecasterEquivalentDate, one per series: seasonal baseline
+        │
+        └─► Use other series AS FEATURES for one target
+            └─► ForecasterDirectMultiVariate
 ```
 
 ## Key Comparisons
@@ -858,60 +912,73 @@ Zero-shot / no training data / cold-start (single or multi-series)?
 | Per-series lags | No (same lags for all) | Yes (dict: `{'sales': [1,7], 'price': [1]}`) |
 | Series weights | Yes (`series_weights` param) | No |
 | Per-series transformers | Yes (`transformer_series` dict) | Yes (`transformer_series` dict) |
-| Per-series differentiation | Yes (`differentiation` dict) | Yes (via `differentiator_` per series) |
+| Differentiation | Per series (`differentiation` as int or dict) | Same order for all series (`differentiation` is an int) |
 
 ### ML Forecasters vs Statistical Models
 
 | Aspect | ML Forecasters | ForecasterStats |
 |--------|---------------|-----------------|
-| **Primary role** | Main forecasting tools | Comparison baseline |
-| Best for | Medium-to-large datasets, complex patterns, many exogenous features | Short series, interpretability, parametric intervals |
+| **Primary role** | The model you train and shape | Reference to compare against |
+| Best for | Complex patterns, many exogenous features, several series | One monthly or quarterly series, interpretability, parametric intervals |
 | Estimators | Any sklearn-compatible (LightGBM, XGBoost, RF, etc.) | Arima, Sarimax, Ets, Arar |
 | Lags / window features | Full support (`lags`, `RollingFeatures`) | No (model handles its own structure) |
 | Differentiation | Built-in (`differentiation` param) | Handled within model (e.g., ARIMA `d` parameter) |
 | Exogenous variables | Full support | Arima, Sarimax and Arar (not Ets) |
-| Prediction intervals | Bootstrapping (binned residuals) + conformal | Built-in parametric |
+| Prediction intervals | Bootstrapping (binned residuals) + conformal | Built-in parametric (`predict_interval` with `interval` or `alpha`) |
 | Tuning | `grid_search_forecaster`, `random_search_forecaster`, `bayesian_search_forecaster` | `grid_search_stats`, `random_search_stats` |
 | Backtesting | `backtesting_forecaster` / `backtesting_forecaster_multiseries` | `backtesting_stats` |
+| Missing values in the series | Yes (NaN-tolerant estimator or `dropna_from_series=True`) | No (`ValueError`) |
 | Feature selection | `select_features` / `select_features_multiseries` | Not applicable |
 
 ## Feature Support Matrix
 
 | Feature | Recursive | Direct | RecursiveMultiSeries | DirectMultiVariate | Foundation | Rnn | Stats | EquivalentDate | Classifier |
 |---------|:---------:|:------:|:-------------------:|:-----------------:|:----------:|:---:|:-----:|:--------------:|:----------:|
-| Lags | ✓ | ✓ | ✓ | ✓ (per-series dict) | — (context window) | ✓ | — | — | ✓ |
-| Window features (`RollingFeatures`) | ✓ | ✓ | ✓ | ✓ | — | — | — | — | ✓ |
-| Exogenous variables | ✓ | ✓ | ✓ | ✓ | ✓ (model-dependent) | ✓ | Arima, Sarimax, Arar | — | ✓ |
-| Differentiation | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | — | Within model | — | — |
-| Transformer y/series | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | — | ✓ | ✓ | — | — |
-| Transformer exog | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | — | ✓ |
-| Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | — | — | — | — | ✓ |
-| Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
-| Conformal intervals | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | — |
-| Binned residuals | ✓ | ✓ | ✓ | ✓ | — | ✓ | — | ✓ | — |
-| Quantile predictions | ✓ | ✓ | ✓ | ✓ | ✓ (native) | — | — | — | — |
-| Distribution fitting | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
-| Class probabilities | — | — | — | — | — | — | — | — | ✓ |
-| Feature importances | ✓ | ✓ | ✓ | ✓ | — | — | — | — | — |
+| Lags | ✓ | ✓ | ✓ | ✓ (per-series dict) | ✗ (context window) | ✓ | ✗ | ✗ | ✓ |
+| Window features (`RollingFeatures`) | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Calendar features (`calendar_features`) | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Exogenous variables | ✓ | ✓ | ✓ | ✓ | ✓ (model-dependent) | ✓ | Arima, Sarimax, Arar | ✗ | ✓ |
+| Missing values in the series | ✓ | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✓ |
+| Differentiation | ✓ | ✓ | ✓ (per-series) | ✓ (same order for all) | ✗ | ✗ | Within model | ✗ | ✗ |
+| Transformer y/series | ✓ | ✓ | ✓ (per-series) | ✓ (per-series) | ✗ | ✓ | ✓ | ✗ | ✗ |
+| Transformer exog | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✓ | ✗ | ✓ |
+| Weight function | ✓ | ✓ | ✓ (per-series) | ✓ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Bootstrapping intervals | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Conformal intervals | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ | ✗ |
+| Binned residuals | ✓ | ✓ | ✓ | ✓ | ✗ | ✓ | ✗ | ✓ | ✗ |
+| Parametric intervals (from the model) | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ | ✗ | ✗ |
+| Quantile predictions | ✓ | ✓ | ✓ | ✓ | ✓ (native, also `predict_interval`) | ✗ | ✗ | ✗ | ✗ |
+| Distribution fitting | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✗ | ✗ | ✗ |
+| Class probabilities | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✗ | ✓ |
+| Feature importances | ✓ | ✓ | ✓ | ✓ | ✗ | ✗ | ✓ (model parameters) | ✗ | ✓ |
 
-> **Legend:** ✓ = supported, — = not supported/not applicable.
+> **Legend:** ✓ = supported, ✗ = not supported or not applicable. Missing values:
+> the ML forecasters need an estimator that accepts NaN (LightGBM, CatBoost,
+> HistGradientBoosting) or `dropna_from_series=True`.
 
 ## Measured Comparison
+
+The figures behind the two-candidate rule are in the table of "Where to start"
+above. Their limits: the LightGBM of the study is untuned or lightly tuned. A
+model with features built from knowledge of the problem can still win on a
+given dataset, and accuracy is not the only criterion (explainability, cost at
+scale, dependencies).
 
 The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) evaluates the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM with the same backtesting on three datasets: one series with exogenous variables, a short monthly series and 50 daily series that share the same patterns. Use it to show users how each family behaves (accuracy, interval coverage and computation time) and as a template to compare candidates on their own data with the same `TimeSeriesFold`.
 
 ## Next Steps
 
-Once you have chosen a forecaster, follow these steps to get started:
+Once the first comparison runs, work on the model you train:
 
-1. **Define your problem**: 1 series → `ForecasterRecursive`; multiple series → `ForecasterRecursiveMultiSeries`
-2. **Choose an estimator**: LightGBM (`LGBMRegressor`) is the best starting point — fast, handles categoricals, good defaults
-3. **Add features**: Use `RollingFeatures` (rolling mean, std, min, max) and `CalendarFeatures` or `create_calendar_features` as exogenous variables
-4. **Handle non-stationarity**: Use the `differentiation` parameter instead of manual differencing
-5. **Evaluate with backtesting**: `backtesting_forecaster` + `TimeSeriesFold` for realistic multi-step evaluation
-6. **Tune hyperparameters**: `bayesian_search_forecaster` (Optuna-based) — can include `lags` in the search space
-7. **Add prediction intervals**: `predict_interval(method='bootstrapping', use_binned_residuals=True)` for uncertainty quantification
-8. **Compare with baselines**: Use `ForecasterStats` (Auto-ARIMA: `Arima(order=None)`) and `ForecasterEquivalentDate` to verify the ML model adds value
+1. **Define your problem**: 1 series: `ForecasterRecursive`; several series: `ForecasterRecursiveMultiSeries`; in both cases next to `ForecasterFoundation` and a baseline
+2. **Choose an estimator**: LightGBM (`LGBMRegressor`) is the usual ML candidate: fast, handles categoricals and missing values. Untuned, it does not always beat the seasonal naive, so check it against the baseline
+3. **Add features**: `RollingFeatures` (rolling mean, std, min, max) in `window_features` and `CalendarFeatures` in `calendar_features` (no manual exog needed for the calendar)
+4. **Exogenous variables**: ML forecasters need the future values of `exog` at predict time, so use only variables known in advance (holidays, prices, weather forecasts). Chronos-2 also accepts variables known only up to today; in our tests they gave no consistent gain
+5. **Handle non-stationarity**: Use the `differentiation` parameter instead of manual differencing
+6. **Evaluate with backtesting**: `backtesting_forecaster` + `TimeSeriesFold` for realistic multi-step evaluation
+7. **Tune hyperparameters**: `bayesian_search_forecaster` (Optuna-based), which can include `lags` in the search space
+8. **Add prediction intervals**: `predict_interval(method='conformal')` or `method='bootstrapping'`. Both use in-sample residuals by default, which tend to give intervals that are too narrow: store out-of-sample residuals with `set_out_sample_residuals` and pass `use_in_sample_residuals=False`. See the `prediction-intervals` skill
+9. **Keep the references**: `ForecasterEquivalentDate` always (one per series with several series; for a categorical target, the category one season before, `y.shift(season)`), and for monthly or quarterly data `ForecasterStats` with automatic ARIMA, `Arima(order=None, seasonal_order=None, m=12)`: without `m` it does not search seasonal terms
 
 ================================================================================
 # SKILL: autocorrelation-and-lag-selection
@@ -2085,15 +2152,18 @@ selected_lags, selected_wf, selected_exog, selected_cal = select_features(
 
 Use this workflow when you have **one time series** and want to predict its future values.
 
-- **ForecasterRecursive**: Default choice. Uses its own predictions as inputs for multi-step forecasting. Works with any sklearn-compatible regressor.
+- **ForecasterRecursive**: Default choice of the two. Uses its own predictions as inputs for multi-step forecasting. Works with any sklearn-compatible regressor.
 - **ForecasterDirect**: Trains one model per forecast step. Better when the relationship between lags and target changes across the horizon.
+
+These are the models you train on your data. On a new problem, do not evaluate one alone: compare it with a foundation model (`ForecasterFoundation` with Chronos-2, no training) and a seasonal baseline (`ForecasterEquivalentDate`) on the same folds. See the `choosing-a-forecaster` skill.
 
 ### Related skills
 
-- **Prerequisite**: `choosing-a-forecaster` (decide between Recursive and Direct based on the data)
+- **Prerequisite**: `choosing-a-forecaster` (the first comparison for a new problem, and Recursive or Direct)
 - **Prerequisite**: `autocorrelation-and-lag-selection` (pick the `lags` argument from ACF/PACF analysis)
 - **Prerequisite**: `feature-engineering` (assemble the rolling, calendar, and exogenous features)
 - **Alongside**: `baseline-forecasting` (establish a naive reference to benchmark the model against)
+- **Alongside**: `foundation-forecasting` (the pre-trained candidate to compare the trained model with)
 - **Next**: `hyperparameter-optimization` (tune the forecaster once a baseline is trained)
 - **Next**: `prediction-intervals` (add bootstrap or conformal intervals on top of the point forecasts)
 
@@ -2219,12 +2289,16 @@ predictions = forecaster.predict(exog=exog_test)
 
 ## When to Use
 
-- **ForecasterRecursiveMultiSeries**: A single global model learns patterns across many series. Each series is predicted independently but the model shares parameters. Best default for multi-series.
+- **ForecasterRecursiveMultiSeries**: A single global model learns patterns across many series. Each series is predicted independently but the model shares parameters. Best default of the two.
 - **ForecasterDirectMultiVariate**: Uses values from multiple series as input features to predict one target series. Use when series are strongly correlated and influence each other.
+
+These are the models you train on your data. On a new problem, do not evaluate one alone: compare it with a foundation model (`ForecasterFoundation` with Chronos-2, no training) and a seasonal baseline per series (`ForecasterEquivalentDate`) on the same folds. See the `choosing-a-forecaster` skill.
 
 ### Related skills
 
-- **Prerequisite**: `choosing-a-forecaster` (decide between MultiSeries, MultiVariate, Rnn, or Foundation for multi-series problems)
+- **Prerequisite**: `choosing-a-forecaster` (the first comparison for a new problem, and MultiSeries or MultiVariate)
+- **Alongside**: `foundation-forecasting` (the pre-trained candidate to compare the trained model with)
+- **Alongside**: `baseline-forecasting` (one naive baseline per series, with the metric averaged)
 - **Prerequisite**: `autocorrelation-and-lag-selection` (analyse representative series to inform the shared `lags` argument)
 - **Prerequisite**: `feature-engineering` (build per-series exogenous and rolling features)
 - **Next**: `hyperparameter-optimization` (tune the global model across series)
@@ -2387,8 +2461,9 @@ Foundation models are **pre-trained on massive corpora** — `fit()` does not tr
 
 ### Related skills
 
-- **Prerequisite**: `choosing-a-forecaster` (decide whether a zero-shot model fits the problem at all)
+- **Prerequisite**: `choosing-a-forecaster` (the first comparison for a new problem: a model you train, a foundation model and a baseline)
 - **Alongside**: `baseline-forecasting` (compare the zero-shot model against a naive rule with MASE)
+- **Alongside**: `forecasting-single-series` / `forecasting-multiple-series` (the trained candidate to compare it with)
 - **Next**: `hyperparameter-optimization` (tune `context_length` with `bayesian_search_foundation`)
 - **Next**: `metric-selection` (probabilistic metrics for the native quantile output)
 
@@ -2399,7 +2474,7 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | Rule | Symptom | Recovery |
 |------|---------|----------|
 | `fit()` stores context only; it never trains the model | Expecting training to happen or weights to update | Treat the model as pre-trained; evaluate with `backtesting_foundation` |
-| `cv.refit` and `cv.fixed_train_size` are overridden by `backtesting_foundation` | `IgnoredArgumentWarning` when `refit=True` or `fixed_train_size=False` | Leave them at their defaults; the context window expands per fold either way |
+| `cv.refit` and `cv.fixed_train_size` are overridden by `backtesting_foundation` | `IgnoredArgumentWarning` when `refit=True` or `fixed_train_size=False` | Evaluating it alone: leave them at their defaults. Comparing it with trained models: share their `cv` (`refit=True, fixed_train_size=False`) and pass `suppress_warnings=True`. The context window expands per fold either way |
 | Only Chronos-2, TimesFM 3.0, TabICL, TabPFN-TS, T0, Nori, TS-ICL, Timestral, and TiRex-2 use `exog`; TimesFM 2.5 and Moirai-2 ignore it | `IgnoredArgumentWarning`, forecast made without `exog` | Pick an exog-capable adapter when covariates matter |
 | TimesFM (2.5 and 3.0), Moirai-2 and TiRex-2 restrict quantiles to `[0.1, 0.2, ..., 0.9]`; TS-ICL to a 0.01 grid; Timestral to 21 levels (`0.01`, `0.05`, `0.1`, ..., `0.95`, `0.99`) | Requested quantile rejected or unsupported | Request only supported quantiles, or use an adapter allowing any quantile in (0, 1) |
 | Each backend library must be installed separately | `ModuleNotFoundError` / `ImportError` on first use | `pip install` the matching backend (see Installation) |
@@ -2539,6 +2614,8 @@ For TimesFM (2.5 and 3.0), Moirai-2 and TiRex-2, requested quantiles must be a s
 
 The adapter is resolved automatically from the `model_id` prefix — no need to import adapter classes directly.
 
+For a first comparison, use `autogluon/chronos-2-small`: Apache-2.0, small enough for a CPU and the model measured against LightGBM in the `choosing-a-forecaster` skill. The other models are not part of that measurement.
+
 To check what a model supports before installing its backend or loading its weights, use `get_model_info` (one `model_id`) or `list_adapters` (one entry per adapter, or a DataFrame with `as_frame=True`). Both return a frozen `FoundationModelInfo` read from the adapter classes, so it always matches the installed skforecast version; prefer it over hard-coding the table above.
 
 ```python
@@ -2582,6 +2659,13 @@ metric, predictions = backtesting_foundation(
 # metric columns: levels, mean_absolute_error, coverage, interval_width, n_evaluated
 # predictions columns: level, fold, step, y_true, q_0.1, q_0.5, q_0.9
 ```
+
+To compare with a model you train (`backtesting_forecaster`) or a statistical model
+(`backtesting_stats`), pass the same `cv` to the three functions, with
+`refit=True, fixed_train_size=False`: the foundation model always forecasts from the
+history up to each fold, so the trained model must be refitted in each fold to use the
+same data. `backtesting_foundation` then warns that those arguments do not apply to it;
+pass `suppress_warnings=True`.
 
 The metrics (and `n_evaluated`) use `q_0.5` as the point forecast. With two quantiles, optionally
 with the median (`[0.1, 0.9]` or `[0.1, 0.5, 0.9]`), `metric` also reports the
@@ -2965,12 +3049,13 @@ Use this skill to build a **simple, explainable baseline** with
 beats it. A baseline predicts each future step from an equivalent past date
 (e.g. same weekday last week), optionally aggregating several past occurrences.
 
-Always establish a baseline **before** trusting an ML model: if the ML forecaster
-cannot beat the naive baseline, the added complexity is not justified.
+Always establish a baseline **before** trusting a model, machine learning or
+foundation: if it cannot beat the naive baseline, the added complexity is not
+justified.
 
 ### Related skills
 
-- **Prerequisite**: `choosing-a-forecaster` (decide whether a baseline or an ML model fits the problem)
+- **Prerequisite**: `choosing-a-forecaster` (the first comparison: LightGBM, Chronos-2 and this baseline)
 - **Alongside**: `forecasting-single-series` (train the ML model you are benchmarking against)
 - **Next**: `metric-selection` (use MASE to compare the model against the naive baseline)
 - **Next**: `hyperparameter-optimization` (route: baselines are tuned with `grid_search_equivalent_date`, not the generic search)
@@ -3075,6 +3160,40 @@ metric_baseline, _ = backtesting_forecaster(
 
 See `metric-selection` for why MASE is the natural yardstick against a naive
 baseline.
+
+## Several series and categorical targets
+
+`ForecasterEquivalentDate` takes one numeric series. With **several series**,
+backtest one baseline per series with the same `cv` and average the metric:
+
+```python
+import pandas as pd
+
+# series: dict with one pandas Series per series
+metric_baseline = pd.concat([
+    backtesting_forecaster(
+        forecaster    = ForecasterEquivalentDate(offset=7),
+        y             = y_i,
+        cv            = cv,
+        metric        = "mean_absolute_scaled_error",
+        show_progress = False,
+    )[0]
+    for y_i in series.values()
+])["mean_absolute_scaled_error"].mean()
+```
+
+With a **categorical target** (`ForecasterRecursiveClassifier`), the baseline is a
+seasonal rule: the category observed one season before. Compare it on the dates
+the classifier was backtested on, with `steps` no longer than the season so that
+the rule only uses values known when the forecast is made:
+
+```python
+from sklearn.metrics import balanced_accuracy_score
+
+# predictions: second output of backtesting_forecaster for the classifier
+rule = y.shift(7).loc[predictions.index]
+metric_rule = balanced_accuracy_score(y.loc[predictions.index], rule)
+```
 
 ## Selecting a configuration
 
@@ -3791,6 +3910,7 @@ by_step = predictions.assign(
 | Retrain monthly (with daily forecasts, steps=7) | `refit=4` (every 4 folds × 7 steps ≈ monthly) |
 | Retrain at each month end and forecast the whole next month (daily data) | `steps=31`, `fold_stride=1`, `skip_folds` = folds not starting on day 1, `refit=True` (see example below) |
 | Never retrain / train once, evaluate across time | `refit=False` (`fixed_train_size` has no effect without refit) |
+| Compare model families (a model you train, a statistical model, a foundation model) | The same `cv` for all, with `refit=True, fixed_train_size=False`. `backtesting_stats` refits every estimator except `Sarimax` in each fold and `backtesting_foundation` always forecasts from the history up to the fold: with `refit=False` only the trained model would forecast from old data. Pass `suppress_warnings=True` to `backtesting_foundation`, which warns that `refit` does not apply to it |
 
 ### Data freshness vs volume
 
@@ -5274,16 +5394,16 @@ forecaster.predict_dist(
 ## When to Use
 
 Use statistical models when:
-- The series is short (< 200 observations)
+- You have one monthly or quarterly series: a classic statistical model (ARIMA, ETS) is a strong reference there and often beats an untuned ML model
 - Interpretability is important (ARIMA coefficients, ETS components)
 - You need built-in prediction intervals without residual bootstrapping
-- As a baseline to compare against ML models
+- As a reference to compare against ML and foundation models
 
 ### Related skills
 
 - **Prerequisite**: `autocorrelation-and-lag-selection` (read ACF/PACF to identify ARIMA orders `p`, `d`, `q` before fitting)
 - **Alongside**: `baseline-forecasting` (the other benchmark family: naive equivalent-date baselines)
-- **Next**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals via the `interval_method` argument)
+- **Next**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals: `predict_interval` with `interval` or `alpha`)
 - **Next**: `hyperparameter-optimization` (tune ARIMA `order` / `seasonal_order` via grid search)
 
 ## Stop Conditions
@@ -5296,13 +5416,14 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | `Arima` takes a 3-tuple `seasonal_order=(P, D, Q)` plus `m`; `Sarimax` takes a 4-tuple `(P, D, Q, m)` | Wrong model order or `TypeError` | Use `Arima(order=(p,d,q), seasonal_order=(P,D,Q), m=12)` |
 | `Ets` uses `model='AAA'` + `m`, not `error=` / `trend=` / `seasonal=` | Deprecated-argument error | Use `Ets(model='AAA', m=12)` (A/M/N/Z per position) |
 | Seasonal models require `m` | Seasonality silently ignored | Pass `m=<seasonal period>` to `Arima` / `Ets` |
+| `Ets` only fits seasonal models with `m <= 24` | With `m=52` (weekly data), the automatic selection fits a non-seasonal model and raises an `IgnoredArgumentWarning`; a seasonal `model` raises a `ValueError` | Use `Arima` or `Arar` for long seasonal periods, or `Ets(m=52, seasonal=False)` for a non-seasonal model without the warning |
 
 ## Available Models
 
 | Model | Class | Description |
 |-------|-------|-------------|
 | **ARIMA** | `Arima` | AutoRegressive Integrated Moving Average |
-| **Auto-ARIMA** | `Arima(order=None)` | Automatic order selection |
+| **Auto-ARIMA** | `Arima(order=None)` or `Arima(order=None, seasonal_order=None, m=...)` | Automatic order selection: non-seasonal with `order=None` alone (`m=1`), seasonal with `seasonal_order=None` and `m`. Any other mix of `None` and a tuple (`Arima(order=None, m=12)`, `Arima(order=(1, 1, 1), seasonal_order=None)`) raises a `ValueError` |
 | **SARIMAX** | `Sarimax` | ARIMA with exogenous variables (seasonal) |
 | **ETS** | `Ets` | Exponential Smoothing (Error-Trend-Seasonal) |
 | **ARAR** | `Arar` | Autoregressive model with memory shortening |
@@ -5415,7 +5536,8 @@ predictions = forecaster.predict(steps=12)
 cv = TimeSeriesFold(
     steps=12,
     initial_train_size=len(data) - 60,
-    refit=False,
+    refit=True,  # Arima, Ets and Arar are refitted in every fold: with False, it is
+                 # set to True with an IgnoredArgumentWarning (only Sarimax accepts it)
 )
 
 metric, predictions_bt = backtesting_stats(
@@ -5449,7 +5571,7 @@ predictions = forecaster.predict(steps=12)
 ## Common Mistakes
 
 1. **Using deprecated `Ets(error=, trend=, seasonal=)` syntax**: Use `Ets(model='AAA', m=12)` with a model string instead.
-2. **Forgetting `m` parameter**: ARIMA and ETS seasonal models require `m` (seasonal period).
+2. **Forgetting `m` parameter**: ARIMA and ETS seasonal models require `m` (seasonal period). `Ets` only fits seasonal models with `m <= 24`: with a longer period (weekly data, `m=52`) the automatic selection is non-seasonal.
 3. **Not using `backtesting_stats`**: Use `backtesting_stats()` for statistical models, NOT `backtesting_forecaster()`.
 4. **Using grid_search_forecaster for stats**: Use `grid_search_stats()` or `random_search_stats()` instead.
 5. **Passing `seasonal_order=(1,1,1,12)` to `Arima`**: `Arima` uses a 3-tuple `seasonal_order=(P,D,Q)` plus a separate `m=12` parameter. The 4-tuple `(P,D,Q,s)` format is only for `Sarimax`.
@@ -5546,7 +5668,7 @@ Arima(
 | Mode | How to activate | Description |
 |------|----------------|-------------|
 | **Manual** | `order=(p,d,q)` | User specifies exact order |
-| **Auto** | `order=None` | Automatic order selection via stepwise algorithm |
+| **Auto** | `order=None` (non-seasonal, with the default `seasonal_order` and `m=1`) or `order=None, seasonal_order=None, m=...` (seasonal) | Automatic order selection via stepwise algorithm. The selection chooses both orders: any other mix of `None` and a tuple raises a `ValueError` |
 
 After fitting (auto mode), the selected model is available in
 `forecaster.estimators_[0].best_params_`: `order`, `seasonal_order`, `m`,

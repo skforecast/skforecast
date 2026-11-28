@@ -1,0 +1,9 @@
+# Only the files the page reads are committed.
+# The study writes the rest here (one CSV per case, controls, detail, versions):
+# see the README of the folder above.
+*
+!.gitignore
+!rules_cells.csv
+!rules_runs.csv
+!rules_tuned.csv
+!extra_classification.csv

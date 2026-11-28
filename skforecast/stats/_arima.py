@@ -19,6 +19,67 @@ from ._utils import check_is_fitted, check_memory_reduced, check_level
 from ..exceptions import IgnoredArgumentWarning
 
 
+def _check_auto_orders(
+    order: tuple | None,
+    seasonal_order: tuple | None,
+    m: int
+) -> None:
+    """
+    Check that `order`, `seasonal_order` and `m` ask for a model that the
+    automatic selection can fit.
+
+    The automatic selection chooses the orders of the whole model: it cannot
+    keep a given order while it selects the other. It has two forms:
+    `order=None` with `seasonal_order=(0, 0, 0)` and `m=1` (non-seasonal
+    model) and `order=None` with `seasonal_order=None` (seasonal model when
+    `m > 1`). Any other combination of None and a tuple raises an error instead
+    of fitting a model that is not the one requested.
+
+    Parameters
+    ----------
+    order : tuple, None
+        The (p, d, q) order of the non-seasonal component.
+    seasonal_order : tuple, None
+        The (P, D, Q) order of the seasonal component.
+    m : int
+        Seasonal period.
+
+    Returns
+    -------
+    None
+
+    """
+
+    if (order is None) == (seasonal_order is None):
+        return
+
+    if order is not None:
+        raise ValueError(
+            f"`seasonal_order=None` selects the model automatically and "
+            f"cannot keep `order` = {tuple(order)}. For a model without a "
+            f"seasonal component, use `seasonal_order=(0, 0, 0)` (the "
+            f"default). To select both orders automatically, set `order=None` "
+            f"too."
+        )
+
+    if tuple(seasonal_order) != (0, 0, 0):
+        raise ValueError(
+            f"`order=None` cannot be combined with `seasonal_order` = "
+            f"{tuple(seasonal_order)}. The automatic selection chooses both "
+            f"orders and cannot keep a given `seasonal_order`. Set "
+            f"`seasonal_order=None` to select both, or pass `order` as a tuple "
+            f"to fit a given model."
+        )
+
+    if m > 1:
+        raise ValueError(
+            f"`order=None` with `seasonal_order` = (0, 0, 0) selects a "
+            f"non-seasonal model, but `m` = {m} indicates seasonal data. Set "
+            f"`seasonal_order=None` to select the seasonal order too, or "
+            f"`m=1` for a non-seasonal model."
+        )
+
+
 class Arima(BaseEstimator, RegressorMixin):
     """
     Scikit-learn style wrapper for the ARIMA (AutoRegressive Integrated Moving Average)
@@ -37,14 +98,19 @@ class Arima(BaseEstimator, RegressorMixin):
         - p: AR order (number of lag observations)
         - d: Degree of differencing (number of times to difference the series)
         - q: MA order (size of moving average window)
-        If None, the order will be automatically selected using auto_arima during fitting.
+        If None, the model is selected automatically with auto_arima during
+        fitting, in one of two forms: with `seasonal_order=(0, 0, 0)` and `m=1`
+        (the defaults), a non-seasonal model; with `seasonal_order=None` and `m`
+        set to the seasonal period, a seasonal model. Any other combination of
+        None and a tuple raises a `ValueError`, since the selection cannot keep
+        a given order.
     seasonal_order : tuple of int or None, default (0, 0, 0)
         The (P, D, Q) order of the seasonal component:
         - P: Seasonal AR order
         - D: Seasonal differencing order
         - Q: Seasonal MA order
-        If None, the seasonal order will be automatically selected using auto_arima during
-        fitting.
+        If None, the seasonal order is selected automatically, together with
+        `order`: it requires `order=None`.
     m : int, default 1
         Seasonal period (e.g., 12 for monthly data with yearly seasonality, 
         4 for quarterly data). Set to 1 for non-seasonal models.
@@ -377,6 +443,7 @@ class Arima(BaseEstimator, RegressorMixin):
             )
         if not isinstance(m, int) or m < 1:
             raise ValueError("`m` must be a positive integer (seasonal period).")
+        _check_auto_orders(order=order, seasonal_order=seasonal_order, m=m)
         
         self.order                = order
         self.seasonal_order       = seasonal_order
@@ -1093,6 +1160,12 @@ class Arima(BaseEstimator, RegressorMixin):
                 raise ValueError(
                     f"Invalid parameter '{key}'. Valid parameters are: {valid_params}"
                 )
+
+        _check_auto_orders(
+            order          = params.get('order', self.order),
+            seasonal_order = params.get('seasonal_order', self.seasonal_order),
+            m              = params.get('m', self.m)
+        )
 
         for key, value in params.items():
             setattr(self, key, value)

@@ -140,6 +140,8 @@ All forecasters share the same API for training, prediction, backtesting and pro
 [ForecasterRecursiveClassifier]: https://skforecast.org/latest/user_guides/autoregressive-classification-forecasting.html
 [ForecasterEquivalentDate]: https://skforecast.org/latest/user_guides/forecasting-baseline.html
 
+Not sure which one to use? Answer four questions in [Which forecaster should I use?](https://skforecast.org/latest/quick-start/choose-a-forecaster.html) and get the forecasters to compare first, with a script that runs as it is.
+
 
 ## Documentation
 
@@ -149,6 +151,7 @@ The full documentation is available at **https://skforecast.org**.
 |:----------------------------------------|:----|
 | :book: [Introduction to forecasting]    | Forecasting concepts and how to choose a forecaster |
 | :rocket: [Quick start]                  | Install skforecast and train your first model |
+| :compass: [Choose a forecaster]         | Four questions about your data and a script that runs as it is |
 | :hammer_and_wrench: [User guides]       | Detailed guides on every feature |
 | :mortar_board: [Examples and tutorials] | Practical examples, in English, Spanish and Chinese |
 | :question: [FAQ and tips]               | Answers and tips about forecasting |
@@ -157,6 +160,7 @@ The full documentation is available at **https://skforecast.org**.
 
 [Introduction to forecasting]: https://skforecast.org/latest/introduction-forecasting/introduction-forecasting.html
 [Quick start]: https://skforecast.org/latest/quick-start/quick-start-skforecast.html
+[Choose a forecaster]: https://skforecast.org/latest/quick-start/choose-a-forecaster.html
 [User guides]: https://skforecast.org/latest/user_guides/table-of-contents.html
 [Examples and tutorials]: https://skforecast.org/latest/examples/examples_english.html
 [FAQ and tips]: https://skforecast.org/latest/faq/table-of-contents.html

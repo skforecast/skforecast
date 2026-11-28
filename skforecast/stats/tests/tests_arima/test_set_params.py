@@ -253,3 +253,31 @@ def test_set_params_to_auto_mode():
     
     assert model.is_auto is True
     assert model.estimator_name_ == "AutoArima()"
+
+
+def test_set_params_ValueError_when_the_new_orders_are_not_accepted():
+    """
+    Test that set_params raises the errors of the initialization, and leaves
+    the parameters as they were, when the new values would mix None with an
+    order that the automatic selection cannot keep.
+    """
+    model = Arima(order=(1, 0, 0), seasonal_order=(1, 1, 1), m=12)
+
+    msg = re.escape("`order=None` cannot be combined with `seasonal_order` = (1, 1, 1).")
+    with pytest.raises(ValueError, match=msg):
+        model.set_params(order=None)
+
+    assert model.order == (1, 0, 0)
+    assert model.seasonal_order == (1, 1, 1)
+    assert model.is_auto is False
+
+    model.set_params(order=None, seasonal_order=None)
+
+    assert model.is_auto is True
+
+    model = Arima(order=None)
+    msg = re.escape("but `m` = 12 indicates seasonal data.")
+    with pytest.raises(ValueError, match=msg):
+        model.set_params(m=12)
+
+    assert model.m == 1

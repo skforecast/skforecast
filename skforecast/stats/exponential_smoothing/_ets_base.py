@@ -16,6 +16,7 @@ from scipy.stats import norm, jarque_bera, shapiro
 import warnings
 import math
 
+from ...exceptions import IgnoredArgumentWarning
 from ...utils import check_optional_dependency
 from ..transformations import box_cox_lambda
 
@@ -35,6 +36,10 @@ except ModuleNotFoundError as error:
 # R's forecast::ets.
 PARAM_LOWER = np.array([1e-4, 1e-4, 1e-4, 0.8])
 PARAM_UPPER = np.array([0.9999, 0.9999, 0.9999, 0.98])
+
+# Value of the objective function where the model is not valid (parameters out
+# of bounds, or a model that is not defined for the states it goes through).
+ETS_PENALTY = 1e10
 
 ERROR_TYPES = {"N": 0, "A": 1, "M": 2}
 TREND_TYPES = {"N": 0, "A": 1, "M": 2}
@@ -370,20 +375,32 @@ def _ets_step(
     alpha: float, 
     beta: float, 
     gamma: float, 
-    phi: float
+    phi: float,
+    check_positive: bool
 ) -> Tuple:  # pragma: no cover
     """
     Perform one step of the ETS state space model update and forecasting.
 
     The seasonal states `s` are updated in place (no copy per step).
 
+    Parameters
+    ----------
+    check_positive : bool
+        If `True`, the step is also not valid when a multiplicative
+        seasonality has a non-positive level or seasonal state, or a
+        multiplicative error has a non-positive forecast. These models are
+        only defined for positive values: the errors are relative to the
+        forecast and the seasonal states divide the observations. It is used
+        when the model is fitted; a simulated path may leave that region.
+
     Returns
     -------
     l_new, b_new, yhat, e : float
         Updated level and trend, one-step-ahead forecast and error.
     valid : bool
-        False when a multiplicative trend has a non-positive level or trend,
-        in which case the other values are meaningless.
+        False when a multiplicative trend has a non-positive level or trend
+        (or the conditions of `check_positive` are not met), in which case
+        the other values are meaningless.
     """
     TOL = 1e-10
 
@@ -403,7 +420,12 @@ def _ets_step(
     elif season == 1:
         yhat = q + s[m - 1]
     else:
+        if check_positive and (q <= 0 or s[m - 1] <= 0):
+            return l, b, 0.0, 0.0, False
         yhat = q * s[m - 1]
+
+    if check_positive and error == 2 and yhat <= 0:
+        return l, b, 0.0, 0.0, False
 
     if abs(yhat) < TOL:
         yhat = TOL
@@ -463,8 +485,13 @@ def _ets_likelihood(y: NDArray[np.float64], init_states: NDArray[np.float64],
     sum_log_yhat = 0.0
 
     for i in range(n):
+        # NOTE: A model with a multiplicative error or seasonality whose level
+        # or forecasts are not positive is not a valid fit. Without this check
+        # its likelihood is finite and can even be the best one, because the
+        # term `log(abs(yhat))` rewards the forecasts close to zero, and the
+        # fitted model predicts values of any magnitude and sign.
         l, b, yhat, e, valid = _ets_step(
-            l, b, s, y[i], m, error, trend, season, alpha, beta, gamma, phi
+            l, b, s, y[i], m, error, trend, season, alpha, beta, gamma, phi, True
         )
 
         if not valid:
@@ -525,7 +552,36 @@ def fourier(x: NDArray[np.float64], period: int, K: int, h: Optional[int] = None
     return _fourier_jit(len(x), period, K, h_val)
 
 
-def init_states(y: NDArray[np.float64], config: ETSConfig) -> NDArray[np.float64]:
+def init_states(
+    y: NDArray[np.float64],
+    config: ETSConfig,
+    trend_init: str = "start"
+) -> NDArray[np.float64]:
+    """
+    Starting values of the initial states for the optimizer.
+
+    Parameters
+    ----------
+    y : NDArray[np.float64]
+        Time series observations.
+    config : ETSConfig
+        Model configuration.
+    trend_init : str, default 'start'
+        How the initial level and trend are obtained from the seasonally
+        adjusted series:
+
+        - `'start'`: linear regression on its first observations (as R's
+        forecast::ets).
+        - `'whole'`: linear regression on all its observations.
+        - `'flat'`: mean of its first observations and no trend.
+
+        Ignored in models without trend.
+
+    Returns
+    -------
+    NDArray[np.float64]
+        Initial level, trend (if any) and seasonal states (all but one).
+    """
     n = len(y)
     m = config.m
     trendtype = config.trend
@@ -579,6 +635,12 @@ def init_states(y: NDArray[np.float64], config: ETSConfig) -> NDArray[np.float64
     if trendtype == "N":
         l0 = np.mean(y_sa[:maxn])
         return np.concatenate([[l0], init_seas])
+    if trend_init == "flat":
+        l0 = np.mean(y_sa[:maxn])
+        b0 = 0.0 if trendtype == "A" else 1.0
+        return np.concatenate([[l0, b0], init_seas])
+    if trend_init == "whole":
+        maxn = len(y_sa)
     X = np.column_stack([
         np.ones(maxn),
         np.arange(1, maxn + 1)
@@ -745,7 +807,7 @@ def _ets_objective_jit(x: NDArray[np.float64],
     float
         Log-likelihood (or penalty if parameters invalid)
     """
-    PENALTY = 1e10
+    PENALTY = ETS_PENALTY
 
     # Bounds checking for parameters
     for i in range(len(x)):
@@ -1039,15 +1101,17 @@ def _optimize_ets(
     pos_beta: int,
     pos_gamma: int,
     alpha_free: bool,
-    obj_args: Tuple
+    obj_args: Tuple,
+    extra_starts: Optional[list] = None
 ) -> Tuple[NDArray[np.float64], float]:
     """
     Minimize the ETS objective.
 
     L-BFGS-B (with the gradient computed in compiled code) is run from the
-    starting values `x0` and, when alpha is estimated, from the starting
-    points of `ETS_STARTS`. The best solution is refined with
-    Nelder-Mead, restarted while it improves by more than a relative 1e-6.
+    starting values `x0`, from `extra_starts` and, when alpha is estimated,
+    from the starting points of `ETS_STARTS`. The best solution is refined
+    with Nelder-Mead, restarted while it improves by more than a relative
+    1e-6.
 
     Parameters
     ----------
@@ -1062,6 +1126,8 @@ def _optimize_ets(
         Whether alpha is estimated (first element of `x0`).
     obj_args : tuple
         Arguments of `_ets_objective_jit` after the parameter vector.
+    extra_starts : list, default None
+        Other starting values, with the same layout as `x0`.
 
     Returns
     -------
@@ -1091,6 +1157,8 @@ def _optimize_ets(
                     if pos >= 0:
                         u_start[pos] = fraction_start
             starts.append(u_start)
+    for x_start in extra_starts or []:
+        starts.append(_ets_x_to_u(x_start, pos_beta, pos_gamma))
 
     best_u, best_f = u0, np.inf
     for u_start in starts:
@@ -1223,15 +1291,11 @@ def ets(y: NDArray[np.float64],
                 f"specify all three components."
             )
 
-    # Handle ZZZ with high frequency by calling auto_ets
+    # NOTE: With m > 24, `auto_ets` only considers non-seasonal models and
+    # warns about it.
     if model == "ZZZ":
-        if m > 24:
-            warnings.warn(
-                f"Frequency too high (m={m} > 24). Using auto_ets to select non-seasonal model. "
-                f"Try stlf() if you need seasonal forecasts."
-            )
         return auto_ets(
-            y_original, m=m, seasonal=m <= 24, trend=None, damped=damped,
+            y_original, m=m, seasonal=True, trend=None, damped=damped,
             ic="aicc", allow_multiplicative=True,
             allow_multiplicative_trend=False,
             lambda_param=lambda_param, lambda_auto=lambda_auto,
@@ -1428,8 +1492,23 @@ def ets(y: NDArray[np.float64],
         check_usual, check_admissible,
     )
     x0 = np.concatenate([par_values[par_free], init_state_vec])
-    x_opt, _ = _optimize_ets(
-        x0, lower, upper, pos_beta, pos_gamma, bool(par_free[0]), obj_args
+    # NOTE: When alpha is estimated, the starting points of `ETS_STARTS` let
+    # the level follow the series, whatever the initial states. With a fixed
+    # alpha (a model refitted with the smoothing parameters of a previous
+    # fit, as `freeze_params` does in backtesting) the only start would be
+    # the trend of the first observations, and with small smoothing
+    # parameters that trend is extrapolated to the whole series: the search
+    # can start, and stay, where the model is not valid. The initial states
+    # are also searched from the trend of the whole series and from no trend.
+    extra_starts = []
+    if not par_free[0] and has_trend:
+        for trend_init in ("whole", "flat"):
+            extra_starts.append(np.concatenate([
+                par_values[par_free], init_states(y, config, trend_init=trend_init)
+            ]))
+    x_opt, f_opt = _optimize_ets(
+        x0, lower, upper, pos_beta, pos_gamma, bool(par_free[0]), obj_args,
+        extra_starts
     )
 
     values = par_values.copy()
@@ -1453,6 +1532,16 @@ def ets(y: NDArray[np.float64],
         raise ValueError(
             f"No value of the estimated smoothing parameters satisfies the "
             f"'{bounds}' bounds with the fixed {fixed}."
+        )
+    # NOTE: The objective is the penalty at every point visited: the fit is
+    # refused instead of returning the starting point as a fitted model (in
+    # `auto_ets`, the candidate is skipped).
+    if not f_opt < ETS_PENALTY:
+        raise ValueError(
+            f"The ETS model '{model}' could not be fitted: no parameters and "
+            f"initial states were found for which the model is valid (inside "
+            f"the '{bounds}' bounds and, with a multiplicative error or "
+            f"seasonality, with positive level and forecasts)."
         )
     full_x = np.concatenate([values[present], x_opt[n_free:]])
     fitted_params = ETSParams.from_vector(full_x, config)
@@ -1806,7 +1895,7 @@ def _simulate_ets_jit(
                 y_new = fc * (1.0 + errors[i, t])
             simulations[i, t] = y_new
             l, b, _, _, valid = _ets_step(
-                l, b, s, y_new, m, error, trend, season, alpha, beta, gamma, phi
+                l, b, s, y_new, m, error, trend, season, alpha, beta, gamma, phi, False
             )
             if not valid:
                 break
@@ -1972,6 +2061,15 @@ def auto_ets(
         season_types = ["N"]
     elif m > 24:
         season_types = ["N"]
+        warnings.warn(
+            f"The seasonal period `m` = {m} is greater than 24: ETS models are "
+            f"only fitted with a seasonal component when `m` <= 24, so only "
+            f"non-seasonal models are considered and the seasonality of the "
+            f"series is not modeled. Use `seasonal=False` to select a "
+            f"non-seasonal model without this warning, or a model that "
+            f"supports long seasonal periods, such as `Arima` or `Arar`.",
+            IgnoredArgumentWarning
+        )
         if verbose:
             print(f"Frequency too high (m={m} > 24), trying non-seasonal models only")
     elif n < m:

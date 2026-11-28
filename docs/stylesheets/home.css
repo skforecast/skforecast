@@ -824,6 +824,74 @@ Components
   border-top: 3px solid var(--orange);
 }
 
+/* Entry to the forecaster finder (quick-start/choose-a-forecaster.md) */
+.sk-home .hero-hint {
+  margin-top: 16px;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.sk-home .hero-hint a {
+  color: var(--orange-ink);
+  font-weight: 600;
+}
+.sk-home .finder-teaser {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 20px 32px;
+  align-items: center;
+  margin-top: 24px;
+  padding: 22px 24px;
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--orange);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.sk-home .finder-teaser h3 {
+  font-family: var(--display);
+  font-size: 20px;
+  color: var(--heading);
+  margin: 0;
+}
+.sk-home .finder-teaser p {
+  margin: 6px 0 0;
+  font-size: 15px;
+  color: var(--ink-2);
+  max-width: 56ch;
+}
+.sk-home .finder-teaser .ask {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+}
+.sk-home .finder-teaser .ask > span {
+  flex-basis: 100%;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--heading);
+}
+.sk-home .finder-teaser .btn {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 16px;
+}
+.sk-home .finder-teaser .btn small {
+  font-family: var(--body);
+  font-weight: 400;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.sk-home .finder-teaser .btn:hover {
+  border-color: var(--orange);
+}
+@media (max-width: 860px) {
+  .sk-home .finder-teaser {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .sk-home .code-sec {
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);

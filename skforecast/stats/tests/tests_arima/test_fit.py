@@ -534,6 +534,21 @@ def test_arima_fit_returns_self():
     assert model.model_ is not None
 
 
+def test_arima_fit_auto_arima_with_default_seasonal_order_selects_a_non_seasonal_model():
+    """
+    Test that `order=None` with the default `seasonal_order` and `m` selects
+    a non-seasonal model, the same as with `seasonal_order=None` and `m=1`.
+    """
+    y = air_passengers
+
+    model = Arima(order=None).fit(y, suppress_warnings=True)
+    model_both_none = Arima(order=None, seasonal_order=None).fit(y, suppress_warnings=True)
+
+    assert model.best_params_['seasonal_order'] == (0, 0, 0)
+    assert model.best_params_['m'] == 1
+    assert model.best_params_ == model_both_none.best_params_
+
+
 def test_arima_fit_auto_arima_air_passengers_data():
     """
     Test fit works correctly with auto ARIMA mode when applied to

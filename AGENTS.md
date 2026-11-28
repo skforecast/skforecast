@@ -161,13 +161,13 @@ skforecast/
 | ForecasterDirect | Single series, direct multi-step forecasting |
 | ForecasterRecursiveMultiSeries | Multiple series forecasting (global model) |
 | ForecasterDirectMultiVariate | Multivariate forecasting (multiple series as features) |
+| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2) |
 | ForecasterRnn | Deep learning (RNN/LSTM) forecasting |
 | ForecasterStats | Statistical models (ARIMA, SARIMAX, ETS, ARAR) |
-| ForecasterFoundation | Zero-shot forecasting with pre-trained foundation models (Chronos-2, TimesFM 2.5/3.0, Moirai-2, TabICL, TabPFN-TS, TFC-T0, Synthefy Nori, TS-ICL, Timestral, TiRex-2) |
 | ForecasterRecursiveClassifier | Classification-based forecasting |
 | ForecasterEquivalentDate | Baseline forecaster using equivalent past dates |
 
-To choose between model families, compare them on the same folds: each family has its own backtesting function (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats`, `backtesting_foundation`), and passing the same `TimeSeriesFold` to all of them makes the results comparable. The scaled metrics (`mean_absolute_scaled_error`, `root_mean_squared_scaled_error`) scale each error with the one-step naive forecast over the observations before its forecast origin, the same for every forecaster. The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) does this for the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM on three datasets, reporting MASE, interval coverage and computation time.
+For a new problem, compare two forecasters against a seasonal baseline (`ForecasterEquivalentDate`): a gradient boosting forecaster (`ForecasterRecursive`, or `ForecasterRecursiveMultiSeries` for several series, with LightGBM), which you train and shape with your own variables, and a foundation model (`ForecasterFoundation` with Chronos-2), which needs no training and is usually the more accurate of the two before any tuning. To choose between model families, compare them on the same folds: each family has its own backtesting function (`backtesting_forecaster`, `backtesting_forecaster_multiseries`, `backtesting_stats`, `backtesting_foundation`), and passing the same `TimeSeriesFold(refit=True, fixed_train_size=False)` to all of them makes the results comparable: every model then uses all the data before each fold (`backtesting_stats` refits every estimator except `Sarimax` in each fold and `backtesting_foundation` always forecasts from the history up to the fold, so with `refit=False` only the machine learning model would forecast from old data). `backtesting_foundation` warns that `refit` does not apply to it: pass `suppress_warnings=True`. The scaled metrics (`mean_absolute_scaled_error`, `root_mean_squared_scaled_error`) scale each error with the one-step naive forecast over the observations before its forecast origin, the same for every forecaster. The user guide [Comparing forecasting models](https://skforecast.org/latest/user_guides/comparing-forecasting-models.html) does this for the seasonal naive, Ridge, LightGBM, Chronos-2, AutoARIMA, AutoETS and an LSTM on three datasets, reporting MASE, interval coverage and computation time.
 
 ## Basic Usage Example
 
@@ -621,7 +621,7 @@ Key points:
 - `fit()` only stores the last `context_length` observations and metadata. It does **not** train the model.
 - The index must have a frequency (`data.asfreq(...)`), same requirement as other skforecast forecasters.
 - `predict(..., context=...)` lets you override the stored context (used internally by backtesting).
-- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. It deep-copies `cv` and forces `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained.
+- Use `backtesting_foundation` (not `backtesting_forecaster`) to evaluate a `ForecasterFoundation`. It deep-copies `cv` and forces `refit=True`, `fixed_train_size=False`, so the context window expands with each fold up to `context_length`; no weights are ever trained. Passing a `cv` with `refit=True` or `fixed_train_size=False` raises an `IgnoredArgumentWarning` that only says so: when the same `cv` is shared with trained models to compare them, pass `suppress_warnings=True`.
 - Use `bayesian_search_foundation` (not `bayesian_search_forecaster`) to tune inference-time parameters such as `context_length`. Only `TimeSeriesFold` is supported.
 - Loading a model whose weights are released under a license that restricts commercial use (TimesFM 3.0, Moirai-2, TabPFN-TS, TS-ICL, Timestral) raises a `LicenseWarning` naming the license and a link to the model card; review the link, since terms vary (e.g. TabPFN-TS permits commercial use under an enterprise license; Timestral grants no rights to companies above USD 20 million of monthly revenue). Absence of the warning does not guarantee a model's license is unrestricted. Suppress it like any other skforecast warning (`suppress_warnings=True` or `warnings.simplefilter`).
 - At predict time, the columns of the future `exog` are validated per series against the historical exog (the one passed to `fit`, or `context_exog`). A future column with no historical values raises a `ValueError`. A historical column with no future values is a past-only covariate: used as such when `forecaster.supports_past_only_covariates` is `True` (Chronos-2, TS-ICL, TimesFM 3.0, Timestral, TiRex-2), ignored with an `IgnoredArgumentWarning` otherwise (TabICL, TabPFN-TS, TFC-T0, Nori): the forecast is then the same as without that column.
@@ -810,11 +810,12 @@ show_datasets_info()
 3. **Scale data**: Use `transformer_y` for better model performance
 4. **Use backtesting**: Always validate with realistic train/test splits
 5. **Consider differentiation**: For non-stationary series, use `differentiation` parameter
-6. **Start simple**: Begin with ForecasterRecursive before trying complex models
+6. **Start with a comparison**: a seasonal baseline (`ForecasterEquivalentDate`), LightGBM (`ForecasterRecursive`) and Chronos-2 (`ForecasterFoundation`), with the same `TimeSeriesFold(refit=True, fixed_train_size=False)`. [Which forecaster should I use?](https://skforecast.org/latest/quick-start/choose-a-forecaster.html) gives a script that runs as it is
 
 ## Documentation
 
 - Quick Start: https://skforecast.org/latest/quick-start/quick-start-skforecast.html
+- Which forecaster should I use? (the forecasters to compare first, with a script): https://skforecast.org/latest/quick-start/choose-a-forecaster.html
 - User Guides: https://skforecast.org/latest/user_guides/table-of-contents.html
 - API Reference: https://skforecast.org/latest/api/forecasterrecursive.html
 - Examples: https://skforecast.org/latest/examples/examples_english.html

@@ -42,6 +42,10 @@ user_guides/table-of-contents.md:
     user_guides/forecasting-statistical-models.ipynb: Forecasting with statistical models
     user_guides/autocorrelation-and-lag-selection.ipynb: Autocorrelation analysis and lag selection
     user_guides/migrate-from-prophet.ipynb: Migrating from Prophet to skforecast
+  extra_links:
+    Choosing a model:
+      - title: "Which forecaster should I use? Four questions and a script that runs"
+        url: quick-start/choose-a-forecaster.md
 
 faq/table-of-contents.md:
   nav: FAQ and Tips
@@ -56,6 +60,8 @@ faq/table-of-contents.md:
     faq/pandas-2-and-pandas-3.md: "pandas 2 and pandas 3: differences in skforecast"
   extra_links:
     Forecasting Tips:
+      - title: Which forecaster should I use?
+        url: quick-start/choose-a-forecaster.md
       - title: "Forecasting time series with trend: differentiation"
         url: user_guides/time-series-differentiation.ipynb
       - title: "Forecasting time series with trend: tree based models"

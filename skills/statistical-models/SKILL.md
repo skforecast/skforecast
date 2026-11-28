@@ -12,16 +12,16 @@ description: >
 ## When to Use
 
 Use statistical models when:
-- The series is short (< 200 observations)
+- You have one monthly or quarterly series: a classic statistical model (ARIMA, ETS) is a strong reference there and often beats an untuned ML model
 - Interpretability is important (ARIMA coefficients, ETS components)
 - You need built-in prediction intervals without residual bootstrapping
-- As a baseline to compare against ML models
+- As a reference to compare against ML and foundation models
 
 ### Related skills
 
 - **Prerequisite**: `autocorrelation-and-lag-selection` (read ACF/PACF to identify ARIMA orders `p`, `d`, `q` before fitting)
 - **Alongside**: `baseline-forecasting` (the other benchmark family: naive equivalent-date baselines)
-- **Next**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals via the `interval_method` argument)
+- **Next**: `prediction-intervals` (`ForecasterStats` provides built-in parametric intervals: `predict_interval` with `interval` or `alpha`)
 - **Next**: `hyperparameter-optimization` (tune ARIMA `order` / `seasonal_order` via grid search)
 
 ## Stop Conditions
@@ -34,13 +34,14 @@ Scan before writing code. Each row lists a rule, the symptom when it is broken, 
 | `Arima` takes a 3-tuple `seasonal_order=(P, D, Q)` plus `m`; `Sarimax` takes a 4-tuple `(P, D, Q, m)` | Wrong model order or `TypeError` | Use `Arima(order=(p,d,q), seasonal_order=(P,D,Q), m=12)` |
 | `Ets` uses `model='AAA'` + `m`, not `error=` / `trend=` / `seasonal=` | Deprecated-argument error | Use `Ets(model='AAA', m=12)` (A/M/N/Z per position) |
 | Seasonal models require `m` | Seasonality silently ignored | Pass `m=<seasonal period>` to `Arima` / `Ets` |
+| `Ets` only fits seasonal models with `m <= 24` | With `m=52` (weekly data), the automatic selection fits a non-seasonal model and raises an `IgnoredArgumentWarning`; a seasonal `model` raises a `ValueError` | Use `Arima` or `Arar` for long seasonal periods, or `Ets(m=52, seasonal=False)` for a non-seasonal model without the warning |
 
 ## Available Models
 
 | Model | Class | Description |
 |-------|-------|-------------|
 | **ARIMA** | `Arima` | AutoRegressive Integrated Moving Average |
-| **Auto-ARIMA** | `Arima(order=None)` | Automatic order selection |
+| **Auto-ARIMA** | `Arima(order=None)` or `Arima(order=None, seasonal_order=None, m=...)` | Automatic order selection: non-seasonal with `order=None` alone (`m=1`), seasonal with `seasonal_order=None` and `m`. Any other mix of `None` and a tuple (`Arima(order=None, m=12)`, `Arima(order=(1, 1, 1), seasonal_order=None)`) raises a `ValueError` |
 | **SARIMAX** | `Sarimax` | ARIMA with exogenous variables (seasonal) |
 | **ETS** | `Ets` | Exponential Smoothing (Error-Trend-Seasonal) |
 | **ARAR** | `Arar` | Autoregressive model with memory shortening |
@@ -153,7 +154,8 @@ predictions = forecaster.predict(steps=12)
 cv = TimeSeriesFold(
     steps=12,
     initial_train_size=len(data) - 60,
-    refit=False,
+    refit=True,  # Arima, Ets and Arar are refitted in every fold: with False, it is
+                 # set to True with an IgnoredArgumentWarning (only Sarimax accepts it)
 )
 
 metric, predictions_bt = backtesting_stats(
@@ -187,7 +189,7 @@ predictions = forecaster.predict(steps=12)
 ## Common Mistakes
 
 1. **Using deprecated `Ets(error=, trend=, seasonal=)` syntax**: Use `Ets(model='AAA', m=12)` with a model string instead.
-2. **Forgetting `m` parameter**: ARIMA and ETS seasonal models require `m` (seasonal period).
+2. **Forgetting `m` parameter**: ARIMA and ETS seasonal models require `m` (seasonal period). `Ets` only fits seasonal models with `m <= 24`: with a longer period (weekly data, `m=52`) the automatic selection is non-seasonal.
 3. **Not using `backtesting_stats`**: Use `backtesting_stats()` for statistical models, NOT `backtesting_forecaster()`.
 4. **Using grid_search_forecaster for stats**: Use `grid_search_stats()` or `random_search_stats()` instead.
 5. **Passing `seasonal_order=(1,1,1,12)` to `Arima`**: `Arima` uses a 3-tuple `seasonal_order=(P,D,Q)` plus a separate `m=12` parameter. The 4-tuple `(P,D,Q,s)` format is only for `Sarimax`.

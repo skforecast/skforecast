@@ -2500,3 +2500,48 @@ def test_backtesting_stats_PicklingError_explained_when_joblib_cannot_write_temp
             show_progress     = False,
             suppress_warnings = True
         )
+
+
+@pytest.mark.parametrize(
+    "seed",
+    [32, 44, 57],
+    ids=lambda seed: f'seed: {seed}'
+)
+def test_output_backtesting_stats_auto_ets_freeze_params_predictions_in_range(seed):
+    """
+    Test that backtesting_stats with an automatic Ets and freeze_params=True
+    (the default) returns predictions in the range of the series in all the
+    folds. The refits with the smoothing parameters of the first fit returned
+    negative predictions, of the order of -1e10 with some seeds, from the
+    second fold on.
+    """
+    rng = np.random.default_rng(seed)
+    t = np.arange(80)
+    y = pd.Series(
+        (100 - 0.3 * t)
+        * np.tile([1.2, 0.9, 0.85, 1.05], 20)
+        * (1 + rng.normal(0, 0.15, 80)),
+        index = pd.date_range("2000-01-01", periods=80, freq="QS"),
+        name  = "y"
+    )
+    forecaster = ForecasterStats(estimator=Ets(m=4))
+    cv = TimeSeriesFold(
+             steps              = 4,
+             initial_train_size = 68,
+             refit              = True,
+             fixed_train_size   = False
+         )
+
+    metric, predictions = backtesting_stats(
+                              forecaster    = forecaster,
+                              y             = y,
+                              cv            = cv,
+                              metric        = "mean_absolute_error",
+                              freeze_params = True,
+                              n_jobs        = 1,
+                              show_progress = False
+                          )
+
+    assert predictions["pred"].min() > 0.5 * y.min()
+    assert predictions["pred"].max() < 1.5 * y.max()
+    assert metric["mean_absolute_error"].iloc[0] < 20
