@@ -2,8 +2,9 @@
 
 ## 1. Estado
 
-- **Implementado el 2026-11-28 (fases 0, 1 y 2), en la rama `docs/forecaster-finder`, sin
-  PR todavía.** D9 y D10 aceptadas: dos candidatos con papeles distintos ("Compare two
+- **Implementado el 2026-11-28 (fases 0, 1 y 2), en la rama `docs/forecaster-finder`: PR
+  [#1550](https://github.com/skforecast/skforecast/pull/1550) contra `0.28.x`, con la
+  rama base ya fusionada.** D9 y D10 aceptadas: dos candidatos con papeles distintos ("Compare two
   forecasters: LightGBM and Chronos-2") y página en la pestaña *Quick start*. Queda la fase
   3 (medición) y lo de 7.5.
 - Este documento conserva el análisis y las decisiones. La descripción de lo construido está

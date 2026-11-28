@@ -22,9 +22,9 @@ The main changes in this release are:
 
 + <span class="badge text-bg-enhancement">Enhancement</span> Performance improvements in `predict` and backtesting of <code>[ForecasterRecursiveMultiSeries]</code>, with the same results. ([#1530](https://github.com/skforecast/skforecast/pull/1530))
 
-+ <span class="badge text-bg-fix">Fix</span> <code>[backtesting_stats]</code> with an automatic <code>[Ets]</code> and `freeze_params=True` (the default) could return predictions of the order of -1e10 from the second fold on in some seasonal series. An <code>[Ets]</code> model whose level or forecasts are not positive is no longer accepted when its error or seasonality is multiplicative.
++ <span class="badge text-bg-fix">Fix</span> <code>[backtesting_stats]</code> with an automatic <code>[Ets]</code> and `freeze_params=True` (the default) could return predictions of the order of -1e10 from the second fold on in some seasonal series. An <code>[Ets]</code> model whose level or forecasts are not positive is no longer accepted when its error or seasonality is multiplicative. ([#1550](https://github.com/skforecast/skforecast/pull/1550))
 
-+ <span class="badge text-bg-docs">Docs</span> New page [Which forecaster should I use?](../quick-start/choose-a-forecaster.md): four questions about your data give the forecasters to compare first, the baseline to compare them with and a script that runs as it is.
++ <span class="badge text-bg-docs">Docs</span> New page [Which forecaster should I use?](../quick-start/choose-a-forecaster.md): four questions about your data give the forecasters to compare first, the baseline to compare them with and a script that runs as it is. ([#1550](https://github.com/skforecast/skforecast/pull/1550))
 
 !!! warning "Before upgrading"
 
@@ -86,7 +86,7 @@ The main changes in this release are:
 
 + New page [pandas 2 and pandas 3](../faq/pandas-2-and-pandas-3.md) in the FAQ with the differences that pandas 3 brings to skforecast (text dtype, dates in microseconds, time zones, read-only arrays, saving forecasters) and how to write code that works with both versions. ([#1510](https://github.com/skforecast/skforecast/pull/1510))
 
-+ New page [Which forecaster should I use?](../quick-start/choose-a-forecaster.md) in the Quick start. Four questions about the data (a number or a category, one series or several, its frequency and whether any variable is known in advance) give the forecasters to compare first, the baseline and a script that runs as it is. Its rules come from a study on 26 public datasets.
++ New page [Which forecaster should I use?](../quick-start/choose-a-forecaster.md) in the Quick start. Four questions about the data (a number or a category, one series or several, its frequency and whether any variable is known in advance) give the forecasters to compare first, the baseline and a script that runs as it is. Its rules come from a study on 26 public datasets. ([#1550](https://github.com/skforecast/skforecast/pull/1550))
 
 + New page [How forecasters create the training matrices](../faq/how-forecasters-create-training-matrices.md) in the FAQ: how each forecaster builds `X_train` and `y_train` from the lags, window features, exogenous variables and calendar features, what the estimator receives (numpy array or DataFrame) and how it handles missing values and categorical features. ([#1549](https://github.com/skforecast/skforecast/pull/1549))
 
@@ -116,9 +116,9 @@ The main changes in this release are:
 
 + The error raised by <code>[PopulationDriftDetector]</code> when `chunk_size` is not a valid pandas frequency shows the value and the error of pandas, which names the alias to use when the one given was removed (with pandas 3, `'ME'` instead of `'M'`). ([#1510](https://github.com/skforecast/skforecast/pull/1510))
 
-+ <code>[Ets]</code> with automatic selection raises an `IgnoredArgumentWarning` when the seasonal period `m` is greater than 24 (for example, `m=52` with weekly data): only non-seasonal models are considered, which was done without any warning. Use `seasonal=False` to select a non-seasonal model without the warning.
++ <code>[Ets]</code> with automatic selection raises an `IgnoredArgumentWarning` when the seasonal period `m` is greater than 24 (for example, `m=52` with weekly data): only non-seasonal models are considered, which was done without any warning. Use `seasonal=False` to select a non-seasonal model without the warning. ([#1550](https://github.com/skforecast/skforecast/pull/1550))
 
-+ <code>[Arima]</code> with automatic selection accepts only its two forms: `order=None` alone (non-seasonal, `m=1`) and `order=None, seasonal_order=None` (seasonal, with `m`). Mixing `None` with a tuple raises a `ValueError`: the tuple was not respected (`Arima(order=(3, 0, 2), seasonal_order=None)` selected `p` and `q` anyway, and `Arima(order=None, m=12)` selected seasonal terms without seasonal differencing).
++ <code>[Arima]</code> with automatic selection accepts only its two forms: `order=None` alone (non-seasonal, `m=1`) and `order=None, seasonal_order=None` (seasonal, with `m`). Mixing `None` with a tuple raises a `ValueError`: the tuple was not respected (`Arima(order=(3, 0, 2), seasonal_order=None)` selected `p` and `q` anyway, and `Arima(order=None, m=12)` selected seasonal terms without seasonal differencing). ([#1550](https://github.com/skforecast/skforecast/pull/1550))
 
 
 **Fixed**
@@ -169,7 +169,7 @@ The main changes in this release are:
 
 + `set_params` of <code>[ForecasterRnn]</code> always raised `TypeError: Cannot clone object`, so the hyperparameter searches (for example <code>[grid_search_forecaster_multiseries]</code>) with a `param_grid` skipped every candidate and returned no results. It now compiles the model with the given parameters, keeps those not passed (for example, the loss) and resets the weights to the initial ones. ([#1515](https://github.com/skforecast/skforecast/pull/1515))
 
-+ Fixed an issue in <code>[Ets]</code> where a model with a multiplicative error or seasonality could be fitted with a level or forecasts that were not positive, and predict values of any sign and magnitude. It happened mostly when a model was refitted with the smoothing parameters of a previous fit, as <code>[backtesting_stats]</code> does with `freeze_params=True` (the default) and an automatic `Ets`: some folds returned predictions of the order of -1e10.
++ Fixed an issue in <code>[Ets]</code> where a model with a multiplicative error or seasonality could be fitted with a level or forecasts that were not positive, and predict values of any sign and magnitude. It happened mostly when a model was refitted with the smoothing parameters of a previous fit, as <code>[backtesting_stats]</code> does with `freeze_params=True` (the default) and an automatic `Ets`: some folds returned predictions of the order of -1e10. ([#1550](https://github.com/skforecast/skforecast/pull/1550))
 
 
 
