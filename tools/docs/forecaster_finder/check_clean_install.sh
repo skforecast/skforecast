@@ -20,19 +20,15 @@ work="$(mktemp -d)"
 venv="${VENV:-$work/venv}"
 script="$work/script.py"
 
-# The script as "Run it in Google Colab" copies it: with its sample data
+# The script as the page gives it: it includes its sample data
 python -I - "$key" "$script" "$here" <<'PY'
 import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, sys.argv[3])
-import finder
-
 data = json.loads((Path(sys.argv[3]).parents[2] / "docs/javascripts/finder-data.json").read_text())
 combo = data["combos"][sys.argv[1]]
-code = data["snippets"][combo["snippet"]]
-Path(sys.argv[2]).write_text(finder.with_sample(combo["sample"], code))
+Path(sys.argv[2]).write_text(data["snippets"][combo["snippet"]])
 PY
 install="$(grep -m1 '^# pip install' "$script" | sed 's/^# //')"
 

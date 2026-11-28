@@ -39,9 +39,15 @@ benchmarks/forecaster_finder/            # The study the rules rest on (see its 
   example settings per frequency (`FREQ`), the rules (`decide`), the answer box
   for any set of answers, complete or not (`blocks`), the sentences shown with
   each result (`REASON`) and the code templates (`render`).
+- Every script includes its data block (`data_block`): sample data, so that it
+  runs as it is, with comments that say how to load a CSV file instead and a
+  check that stops with a clear message when the data has no dates, no
+  frequency or no values. What the page shows, what "Copy script" copies and
+  what is tested are the same text.
 - `build.py` renders the script of each of the 36 combinations of answers and
-  runs it after its sample data in an empty namespace, as pasted into a new
-  notebook. It fails if a script raises an error or any warning, if a line is
+  runs it in an empty namespace, as pasted into a new notebook, followed by
+  the lines of "Forecast with the model you keep" (`forecast_snippet`). It
+  fails if a script raises an error or any warning, if a line is
   longer than 88 characters, if a linked user guide does not exist or if the
   results of the study stop supporting a sentence (`evidence()`). Only then it
   writes the generated files.
@@ -83,6 +89,15 @@ The script order is deliberate: baseline, LightGBM, ARIMA and Chronos-2 last,
 each result printed as soon as it is computed. Chronos-2 downloads its weights
 from Hugging Face on the first run; if that fails, the reader already has the
 other results.
+
+The error of the scripts is the mean absolute error, in the units of the
+reader's data: the script compares models on the same data, so it needs no
+scaled metric. The study compares across datasets and uses the MASE.
+
+`dev/forecaster_finder/user_review/INFORME.md` is the report of a review of
+the page as a user would use it (five people with their own CSV files). Read
+it before changing the questions, the data block or the texts: most of what
+is there comes from what failed in that review.
 
 
 ## Checks

@@ -787,6 +787,35 @@ No hecho, a propósito: widget de feedback de Material en todo el sitio (el sele
 su propio "Was this useful?") y parámetros UTM en los enlaces salientes (ningún otro enlace
 de la documentación los usa).
 
+### 7.6 Revisión como usuario y lo que se cambió (2026-11-28)
+
+Otra sesión usó la página como cinco personas distintas, con sus propios CSV, sin leer el
+código (`user_review/INFORME.md`, con capturas). Veredicto: no enseñarla aún, porque el
+botón principal copiaba un script sin datos. Decidido con el usuario: el script lleva sus
+datos, el error pasa de MASE a MAE y se añade la predicción al final, plegada.
+
+| Hallazgo | Qué se hizo |
+|:--|:--|
+| B1. "Copy script" copiaba un script sin datos (`NameError`) | El script incluye su bloque de datos: lo que se ve, lo que se copia y lo que se prueba es el mismo texto. Comprobado copiando desde el navegador y ejecutando lo copiado con skforecast 0.27.0 de PyPI |
+| B2, B3. Errores engañosos al cargar un CSV | El bloque de datos explica `read_csv` (`index_col`, `parse_dates`, `dayfirst`), qué significa la frecuencia (`"MS"` frente a `"ME"`, `"W"` frente a `"W-MON"`) y el formato largo con `pivot`; una comprobación corta con un mensaje claro si la serie queda sin fechas, sin frecuencia o vacía. Probados los tres fallos del informe |
+| C1. No predice y la MASE no se entiende | Error en MAE, en las unidades del usuario, y sección plegada "Forecast with the model you keep" con las líneas que entrenan cada modelo y predicen (ejecutadas en cada generación) |
+| C2. "Something else" | Comentario con ejemplos (cada 15 minutos: `season = 96`) y frase de datos mínimos propia |
+| C3. Varias series | Formato largo en el bloque de datos y nota de que `exog` puede ser un dict por serie |
+| C4, C7. Clasificación | Notas propias (sin Chronos-2 ni PyTorch), sugerencia de predecir el número cuando las categorías salen de una lectura, y enlace a la guía de clasificación |
+| C5. "Four questions" y contador | El contador empieza en "0 of 4" |
+| C6. El `¶` borraba las respuestas | La URL solo se reescribe cuando el usuario contesta, y las respuestas se recuerdan mientras se sigue en la página; "Example script" ya no es un encabezado oculto |
+| C8. 26 frente a 33 | Explicado en el texto, con el aviso de que Chronos-2 puede haber visto datos públicos |
+| C10. 5,8 GB | El consejo de PyTorch para CPU va en la cabecera del script |
+| C11. Código cortado en móvil | Las líneas largas se desplazan dentro de la ventana; comprobado a 360 y 400 px |
+| C12, C13 | Aviso de que el fichero y las columnas del mensaje son de ejemplo; `to_string()` en la tabla de skforecast-ai |
+| M1, M2, M3, M7 | "Start over" vuelve a la primera pregunta con el foco; "Copied" en el botón pulsado; "No" enlaza a abrir una incidencia; el script se ve entero, sin scroll interno, con la línea de `pip` antes de los imports |
+| D4, D5, D7 | Textos corregidos; aviso sin JavaScript a ancho completo; el número de series se conserva al cambiar de tipo de objetivo |
+
+Sin tocar: C9 (la búsqueda del sitio no encuentra la página; parece general del sitio, sin
+comprobar), M4 (barras de progreso y aviso de Hugging Face en la salida), M5 (con menos datos
+de los indicados el script no avisa), M6 (al contestar la cuarta pregunta en escritorio el
+titular queda fuera de la vista) y los detalles D1 a D3 y D8 a D11.
+
 ### 7.4 Comprobaciones antes de publicar (estado del 2026-11-28)
 
 | # | Qué | Estado | Resultado |

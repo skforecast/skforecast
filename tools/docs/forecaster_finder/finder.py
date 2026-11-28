@@ -55,7 +55,7 @@ ROWS = [
                 "skforecast calls them exogenous variables.",
         "options": [
             ("yes", "Yes", "Holidays, planned promotions, prices, weather forecasts"),
-            ("no", "No", "Also if you only know them up to today, like sensor readings"),
+            ("no", "No", "Choose this too if you only know them up to today, like sensor readings"),
         ],
     },
 ]
@@ -84,8 +84,21 @@ FREQ = {
                       season_text="same quarter the year before", min_history=24, history_text="6 years"),
 }
 # "Something else": the daily settings, marked as values to edit
-FREQ["other"] = dict(FREQ["daily"], season_text="step one season before", edit=True,
+FREQ["other"] = dict(FREQ["daily"], season_text="value one season before", edit=True,
                      history_text=None)
+
+ALIAS_NOTE = {
+    "hourly": '"h" is one value per hour.',
+    "daily": '"D" is one value per day.',
+    "weekly": '"W" is one value per week, dated on Sundays ("W-MON" if yours are dated on\n'
+              "# Mondays).",
+    "monthly": '"MS" is one value per month, dated on its first day ("ME" if yours are dated\n'
+               "# on the last day).",
+    "quarterly": '"QS" is one value per quarter, dated on its first day ("QE" if yours are\n'
+                 "# dated on the last day).",
+    "other": 'Write the frequency of your data instead of "D": "15min", "YS" (one value per\n'
+             "# year)...",
+}
 
 ML = "ml"
 FM = "foundation"
@@ -117,18 +130,26 @@ REASON = {
                 "beat the simple rule, so keep the rule as your baseline.",
 }
 
-NOTES = [
-    "Need to explain the forecast? LightGBM gives feature importances "
-    "(`forecaster.get_feature_importances()`); foundation models do not.",
-    "The first run downloads the weights of Chronos-2 (about 110 MB) from Hugging Face and "
-    "takes a little longer. If your network blocks Hugging Face, that last block of the "
-    "script fails: the results of the other models are already printed.",
-    "On Linux, `pip` installs PyTorch with its GPU libraries (several GB). For a CPU only "
-    "install, first run `pip install torch --index-url https://download.pytorch.org/whl/cpu`.",
-    "Forecasting many series often? Chronos-2 needs PyTorch and, at scale, a GPU.",
-    "Chronos-2 is Apache-2.0. Other foundation models in skforecast have licenses that "
-    "restrict commercial use.",
-]
+NOTES = {
+    "number": [
+        "Need to explain the forecast? LightGBM gives feature importances "
+        "(`forecaster.get_feature_importances()`); foundation models do not.",
+        "The first run downloads the weights of Chronos-2 (about 110 MB) from Hugging Face and "
+        "takes a little longer. If your network blocks Hugging Face, that last block of the "
+        "script fails: the results of the other models are already printed.",
+        "Forecasting many series often? Chronos-2 needs PyTorch and, at scale, a GPU.",
+        "Chronos-2 is Apache-2.0. Other foundation models in skforecast have licenses that "
+        "restrict commercial use.",
+    ],
+    "category": [
+        "The classifier learns from the past categories. If the categories come from a "
+        "number (a level, a reading), you can also forecast the number and turn the forecast "
+        "into a category: choose `A number` in the first question.",
+        "Need to explain the forecast? The classifier gives feature importances "
+        "(`forecaster.get_feature_importances()`).",
+        "The script needs only skforecast and LightGBM: no PyTorch and no downloads.",
+    ],
+}
 
 
 # User guide of each skforecast class shown in the answer box (paths of the docs)
@@ -142,6 +163,12 @@ GUIDES = {
 }
 EXOG_GUIDE = "user_guides/exogenous-variables.html"
 COMPARE_GUIDE = "user_guides/comparing-forecasting-models.html"
+# Where to go after the script: (text of the link, page)
+NEXT = {
+    "number": ("compare more model families the same way", COMPARE_GUIDE),
+    "category": ("more about forecasting categories",
+                 "user_guides/autoregressive-classification-forecasting.html"),
+}
 
 # Notebook with an install cell and a cell to paste the script into, written by
 # build.py next to this file. The link works once the file is on that branch.
@@ -271,7 +298,7 @@ def ai_snippet(a: dict) -> str | None:
         args += ", confirm_cost=True"
     lines += [
         f"result = ForecastingAssistant().compare({args})  # same data and cv as above",
-        "print(result.results)  # ranking of the models it tried",
+        "print(result.results.to_string())  # ranking of the models it tried",
     ]
     return "\n".join(lines) + "\n"
 
@@ -281,7 +308,8 @@ def agent_message(a: dict) -> str | None:
     if a["target"] == "category":
         return None
     f = FREQ[a["freq"]]
-    horizon = f"the next {f['steps']} {f['unit']}" if not f.get("edit") else "the next periods"
+    horizon = (f"the next {f['steps']} {f['unit']}" if not f.get("edit")
+               else f"the next {f['steps']} values")
     what = ("each series of data/my_data.csv" if a["series"] == "several"
             else "the column sales of data/my_data.csv")
     extra = (" The columns promotion and price are known in advance: use them as exogenous "
@@ -306,30 +334,72 @@ def all_partial_answers():
     return combos
 
 
-def sample_block(a: dict, n: int | None = None) -> str:
+DATA = "# Data " + "-" * 73
+
+
+def data_block(a: dict, n: int | None = None) -> str:
     """
-    Code that creates sample data for the answers `a` (the objects that the
-    script expects: `y` or `series`, and `exog`), so that the script runs in an
-    empty notebook. build.py runs every snippet with exactly this data.
+    Block of the script that defines the data: `y` or `series`, and `exog`.
+
+    It creates sample data, so that the script runs as it is in an empty
+    notebook (build.py runs every script like this), and its comments say how
+    to load a CSV file instead, what the frequency means and which shape the
+    data must have. It ends with a check that stops with a clear message when
+    the data has no dates, no frequency or no values: the usual results of
+    loading a file with the wrong arguments.
     """
     f = FREQ[a["freq"]]
     n = n or SAMPLE_LENGTH[a["freq"]]
+    alias = f["alias"]
+    category = a["target"] == "category"
+    several = a.get("series") == "several"
+    exog = a["extra"] == "yes"
+
     lines = [
-        "# Sample data so that the script runs here. Replace this block with your own data.",
-        "import numpy as np",
-        "import pandas as pd",
-        "",
-        f'index = pd.date_range("2018-01-01", periods={n}, freq="{f["alias"]}")',
+        DATA,
+        "# Sample data so that the script runs as it is. To use your own data, replace",
+    ]
+    if several:
+        lines += [
+            "# this block. For a CSV file with one row per date and store (columns date,",
+            "# store and sales):",
+            '#     data = pd.read_csv("my_data.csv", parse_dates=["date"])',
+            f'#     wide = data.pivot(index="date", columns="store", values="sales").asfreq("{alias}")',
+            "#     series = {name: wide[name] for name in wide.columns}",
+        ]
+        if exog:
+            lines += [
+                "# exog: a DataFrame with the dates as index and the variables you know in",
+                "# advance, or a dict with one DataFrame per series if they differ between them.",
+            ]
+    else:
+        column = "level" if category else "sales"
+        what = "categories" if category else "values"
+        lines += [
+            f"# this block. For a CSV file with a column of dates and a column of {what}:",
+            '#     data = pd.read_csv("my_data.csv", index_col="date", parse_dates=True)',
+            f'#     y = data["{column}"].asfreq("{alias}")',
+        ]
+        if exog:
+            lines.append(f'#     exog = data[["promotion", "price"]].asfreq("{alias}")'
+                         "  # known in advance")
+    lines += [
+        f"# {ALIAS_NOTE[a['freq']]} If the values turn into NaN after `asfreq`, the",
+        "# dates of the file do not match that frequency. If the dates are written as",
+        "# day/month/year, add `dayfirst=True` to `read_csv`.",
+        f'index = pd.date_range("2018-01-01", periods={n}, freq="{alias}")',
         "rng = np.random.default_rng(123)",
         "t = np.arange(len(index))",
         f"pattern = 0.02 * t + 10 * np.sin(2 * np.pi * t / {f['season']})",
     ]
-    if a["extra"] == "yes":
+    if exog:
         lines += [
-            'exog = pd.DataFrame({"promotion": rng.integers(0, 2, len(index)).astype(float)}, index=index)',
+            "exog = pd.DataFrame(",
+            '    {"promotion": rng.integers(0, 2, len(index)).astype(float)}, index=index',
+            ")",
             'pattern = pattern + 3 * exog["promotion"].to_numpy()',
         ]
-    if a["target"] == "category":
+    if category:
         lines += [
             "values = pd.Series(100 + pattern + rng.normal(0, 1, len(index)), index=index)",
             "y = pd.cut(",
@@ -337,16 +407,36 @@ def sample_block(a: dict, n: int | None = None) -> str:
             '    labels=["low", "medium", "high"],',
             ").astype(str)",
         ]
-    elif a.get("series") == "several":
+    elif several:
         lines += [
             "series = {",
-            '    f"item_{i}": pd.Series(50 + 10 * i + pattern + rng.normal(0, 1, len(index)), index=index)',
+            '    f"item_{i}": pd.Series(',
+            "        50 + 10 * i + pattern + rng.normal(0, 1, len(index)), index=index",
+            "    )",
             "    for i in range(5)",
             "}",
         ]
     else:
-        lines.append('y = pd.Series(100 + pattern + rng.normal(0, 1, len(index)), index=index, name="sales")')
-    return "\n".join(lines) + "\n"
+        lines += [
+            "y = pd.Series(",
+            '    100 + pattern + rng.normal(0, 1, len(index)), index=index, name="sales"',
+            ")",
+        ]
+    # Stop with a clear message if the data is not what the models need
+    if several:
+        lines += [
+            "for name, s in series.items():",
+            "    dated = isinstance(s.index, pd.DatetimeIndex) and s.index.freq is not None",
+            "    if not dated or s.isna().all():",
+            '        raise ValueError(f"The series {name} needs dates with a frequency, and values.")',
+        ]
+    else:
+        lines += [
+            "dated = isinstance(y.index, pd.DatetimeIndex) and y.index.freq is not None",
+            "if not dated or y.isna().all():",
+            '    raise ValueError("`y` needs dates with a frequency, and values: see above.")',
+        ]
+    return "\n".join(lines)
 
 
 SAMPLE_LENGTH = {"hourly": 24 * 60, "daily": 730, "weekly": 52 * 5, "monthly": 180,
@@ -400,8 +490,11 @@ def prompt(a: dict, leaf: dict, code: str) -> str:
         f"the models I should try first with the same backtesting. Help me adapt it to my "
         f"data.\n"
         f"- First ask me for a sample of my data and how far ahead I need to forecast.\n"
-        f"- Change only how the data is loaded and the settings marked as examples (steps, "
-        f"season, lags). Keep the models and the comparison as they are until the script runs.\n"
+        f"- Change only the data block and the settings marked as examples (steps, season, "
+        f"lags, calendar features). Keep the models and the comparison as they are until the "
+        f"script runs.\n"
+        f"- When it runs, explain the errors it prints and show me how to forecast with the "
+        f"model that I keep.\n"
         f"- If you need the skforecast API, use https://skforecast.org/latest/llms-full.txt.\n\n"
         f"```python\n{code}```\n"
     )
@@ -448,28 +541,38 @@ def _cv(f: dict, length: str) -> list:
 
 
 INSTALL = "# pip install {skforecast} {packages}"
+# PyTorch for CPU only: pip installs the CUDA packages by default on Linux
+INSTALL_CPU = (
+    "# Linux without a GPU? Install PyTorch for CPU first (about 4 GB less):\n"
+    "#     pip install torch --index-url https://download.pytorch.org/whl/cpu"
+)
 SETTINGS = "# Example settings so that the script runs: they are not tuned."
 METRIC = (
-    "# Error of each model: lower is better. Keep a model only if it beats the baseline.\n"
-    'metric = "mean_absolute_scaled_error"'
+    "# Error of each model: the mean absolute error, in the units of your data{mean}.\n"
+    "# Lower is better: keep a model only if it beats the baseline.\n"
+    'metric = "mean_absolute_error"'
+)
+METRIC_SEVERAL = (
+    "# Error of each model: the mean absolute error, in the units of your data,\n"
+    "# averaged over the series. Lower is better: keep a model only if it beats the\n"
+    "# baseline.\n"
+    'metric = "mean_absolute_error"'
+)
+OTHER_FREQUENCY = (
+    "# Edit them for your data. With one value every 15 minutes and a daily pattern,\n"
+    "# season = 96 and steps = 96 forecast one day; with yearly data, season = 1."
 )
 
 
-def with_sample(sample: str, code: str) -> str:
+def render(a: dict, leaf: dict, n: int | None = None) -> str:
     """
-    The script preceded by its sample data, as "Run it in Google Colab"
-    copies it: the install line stays first, then the sample data block, then
-    the rest of the script. build.py runs every script exactly like this.
+    Python script with the models of the leaf, ready to copy. It includes its
+    data (data_block), so it runs as it is. `n` is the length of the sample
+    data (default: a comfortable history; check_snippets.py uses the minimum).
     """
-    first, rest = code.split("\n", 1)
-    return f"{first}\n{sample}\n{rest}"
-
-
-def render(a: dict, leaf: dict) -> str:
-    """Python script with the models of the leaf, ready to copy."""
     f = FREQ[a["freq"]]
     if leaf["leaf"] == "category":
-        return render_classification(a, f)
+        return render_classification(a, f, n)
 
     several = a["series"] == "several"
     use_exog = a["extra"] == "yes"
@@ -477,8 +580,6 @@ def render(a: dict, leaf: dict) -> str:
            "skforecast.recursive": {"ForecasterEquivalentDate"}}
     data = "series" if several else "y"
     exog_arg = ", exog=exog" if use_exog else ""
-    freq_note = ("a DatetimeIndex with a frequency" if f.get("edit")
-                 else f'a DatetimeIndex, freq="{f["alias"]}"')
 
     def show(label):
         # Error of a backtest as a number; with several series, the mean of the series
@@ -491,26 +592,15 @@ def render(a: dict, leaf: dict) -> str:
         line = f"error, _ = {function}({args})"
         return line if len(line) <= 88 else f"error, _ = {function}(\n    {args}\n)"
 
-    head = [SETTINGS]
-    if several:
-        head.append("# series: dict of pandas Series, one per series,")
-        head.append(f"#         each with {freq_note},")
-        head.append("#         e.g. series = {name: data[name] for name in data.columns}")
-        length = "len(next(iter(series.values())))"
-    else:
-        head.append(f"# y: pandas Series with {freq_note},")
-        head.append(f'#    e.g. y = data["sales"].asfreq("{f["alias"]}")')
-        length = "len(y)"
-    if use_exog:
-        head.append("# exog: DataFrame with the same index and the values you know in advance")
+    head = [SETTINGS] + ([OTHER_FREQUENCY] if f.get("edit") else [])
+    length = "len(next(iter(series.values())))" if several else "len(y)"
     head += _steps_season(f, f["steps"], "the baseline repeats the")
     head += _cv(f, length)
-    head.append(METRIC)
-    blocks = ["\n".join(head)]
+    head.append(METRIC_SEVERAL if several else METRIC.format(mean=""))
+    blocks = [data_block(a, n), "\n".join(head)]
 
     # 1. Baseline
     if several:
-        imp["pandas"] = True
         blocks.append(
             f"# 1. Baseline: {f['season_text']}, one per series\n"
             f"error = pd.concat([\n"
@@ -530,7 +620,7 @@ def render(a: dict, leaf: dict) -> str:
             + show("Baseline")
         )
 
-    for n, cand in enumerate(leaf["order"], start=2):
+    for k, cand in enumerate(leaf["order"], start=2):
         if cand == ML:
             imp.setdefault("lightgbm", set()).add("LGBMRegressor")
             imp["skforecast.preprocessing"] = {"CalendarFeatures"}
@@ -550,7 +640,7 @@ def render(a: dict, leaf: dict) -> str:
             parts += ["exog"] if use_exog else []
             what = ", ".join(parts[:-1]) + " and " + parts[-1]
             blocks.append(
-                f"# {n}. Machine learning: LightGBM with {what}\n"
+                f"# {k}. Machine learning: LightGBM with {what}\n"
                 f"forecaster = {cls}(\n"
                 f"    estimator=LGBMRegressor(min_child_samples=5, random_state=123, verbose=-1),\n"
                 f"    lags={f['lags']},{_edit(f)}\n{win}"
@@ -564,7 +654,7 @@ def render(a: dict, leaf: dict) -> str:
             imp["skforecast.stats"] = {"Arima"}
             imp["skforecast.model_selection"].add("backtesting_stats")
             blocks.append(
-                f"# {n}. Statistical reference: ARIMA with automatic order selection\n"
+                f"# {k}. Statistical reference: ARIMA with automatic order selection\n"
                 f"arima = ForecasterStats(estimator=Arima(order=None, seasonal_order=None, m=season))\n"
                 f"error, _ = backtesting_stats(\n"
                 f"    arima, y=y, cv=cv, metric=metric,\n"
@@ -577,12 +667,12 @@ def render(a: dict, leaf: dict) -> str:
             imp["skforecast.model_selection"].add("backtesting_foundation")
             what = " with the same exog" if use_exog else ""
             blocks.append(
-                f"# {n}. Foundation model: Chronos-2{what}, no training\n"
+                f"# {k}. Foundation model: Chronos-2{what}, no training\n"
                 f"# (the first run downloads its weights)\n"
                 f'chronos = ForecasterFoundation(estimator=FoundationModel("autogluon/chronos-2-small"))\n'
                 f"error, _ = backtesting_foundation(\n"
                 f"    chronos, series={data}{exog_arg}, cv=cv, metric=metric,\n"
-                f"    suppress_warnings=True,  # `refit` does not apply: it only sees the data before\n"
+                f"    suppress_warnings=True,  # Chronos-2 is not trained: `refit` has no effect on it\n"
                 f")\n"
                 + show("Chronos-2")
             )
@@ -590,36 +680,35 @@ def render(a: dict, leaf: dict) -> str:
     # ARIMA needs statsmodels, an optional dependency of skforecast (extra `stats`)
     install = INSTALL.format(skforecast='"skforecast[stats]"' if leaf["stats"] else "skforecast",
                              packages="lightgbm chronos-forecasting")
-    pandas = "import pandas as pd\n" if imp.pop("pandas", False) else ""
-    return install + "\n" + pandas + _imports(imp) + "\n\n" + "\n\n".join(blocks) + "\n"
+    return (install + "\n" + INSTALL_CPU + "\nimport numpy as np\nimport pandas as pd\n"
+            + _imports(imp) + "\n\n" + "\n\n".join(blocks) + "\n")
 
 
-def render_classification(a, f):
+def render_classification(a, f, n=None):
     # No more than one season ahead, so that the seasonal rule only uses known values
     steps = min(f["steps"], f["season"])
     exog = a["extra"] == "yes"
     exog_arg = ", exog=exog" if exog else ""
-    freq_note = ("a DatetimeIndex with a frequency" if f.get("edit")
-                 else f'a DatetimeIndex, freq="{f["alias"]}"')
     lines = [
         INSTALL.format(skforecast="skforecast", packages="lightgbm"),
+        "import numpy as np",
+        "import pandas as pd",
         "from lightgbm import LGBMClassifier",
         "from skforecast.model_selection import TimeSeriesFold, backtesting_forecaster",
         "from skforecast.recursive import ForecasterRecursiveClassifier",
         "from sklearn.metrics import balanced_accuracy_score",
         "",
+        data_block(a, n),
+        "",
         SETTINGS,
-        '# y: pandas Series of categories ("low", "medium", "high")',
-        f"#    with {freq_note}",
     ]
-    if exog:
-        lines.append("# exog: DataFrame with the same index and the values you know in advance")
+    lines += [OTHER_FREQUENCY] if f.get("edit") else []
     lines += _steps_season(f, steps, "the rule repeats the category of the",
                            " (no more than one season)")
     lines += _cv(f, "len(y)")
     lines += [
-        "# How often each one is right: higher is better. Keep the classifier only if it",
-        "# beats the rule.",
+        "# How often each one is right (balanced accuracy, from 0 to 1): higher is better.",
+        "# Keep the classifier only if it beats the rule.",
         "",
         "# 1. Machine learning classifier",
         "forecaster = ForecasterRecursiveClassifier(",
@@ -636,6 +725,52 @@ def render_classification(a, f):
         'print(f"Rule:       {balanced_accuracy_score(y.loc[pred.index], rule):.3f}")',
     ]
     return "\n".join(lines) + "\n"
+
+
+def forecast_snippet(a: dict, leaf: dict) -> str:
+    """
+    Lines that continue the script: they train each model on all the data and
+    forecast the next periods. With variables known in advance, the forecast
+    needs their values for the dates to forecast: the lines create sample
+    ones. build.py runs these lines after every script.
+    """
+    category = a["target"] == "category"
+    several = a.get("series") == "several"
+    exog = a["extra"] == "yes"
+    fit_exog, pred_exog = (", exog=exog", ", exog=exog_future") if exog else ("", "")
+    lines = ["# Train on all your data and forecast the next periods with the model you keep"]
+    if exog:
+        index = "next(iter(series.values())).index" if several else "y.index"
+        lines += [
+            "# exog_future: your known variables for the dates to forecast (sample values here)",
+            f"index = {index}",
+            "dates = pd.date_range(index[-1], periods=steps + 1, freq=index.freq)[1:]",
+            'exog_future = pd.DataFrame({"promotion": 0.0}, index=dates)',
+        ]
+    data = "series=series" if several else "y=y"
+    name = "the classifier" if category else "LightGBM"
+    lines += [
+        f"forecaster.fit({data}{fit_exog})  # {name}",
+        f"print(forecaster.predict(steps=steps{pred_exog}))",
+    ]
+    if not category:
+        if leaf["stats"]:
+            lines += ["arima.fit(y=y, suppress_warnings=True)  # ARIMA",
+                      "print(arima.predict(steps=steps))"]
+        lines += [
+            f"chronos.fit(series={'series' if several else 'y'}{fit_exog})  # Chronos-2",
+            f"print(chronos.predict(steps=steps{pred_exog}))",
+        ]
+    return "\n".join(lines) + "\n"
+
+
+def needs(a: dict) -> str:
+    """Sentence under the script: the history it needs."""
+    f = FREQ[a["freq"]]
+    if f.get("edit"):
+        return (f"Needs at least {f['min_history']} values with these example settings: "
+                "edit them for your data.")
+    return f"Needs at least {f['min_history']} values ({f['history_text']})."
 
 
 def all_answers():

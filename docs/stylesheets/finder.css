@@ -100,12 +100,17 @@ Frame: questions on the left, answer and script on the right
   font-size: 0.8rem;
   line-height: 1.55;
   text-align: left;
+  scroll-margin-top: 6rem;  /* Below the sticky header when "Start over" scrolls to it */
 }
 
 .md-typeset .sk-finder[data-state="loading"],
 .md-typeset .sk-finder[data-state="error"] {
   display: block;
   color: var(--ink-2);
+}
+
+.sk-finder noscript {
+  grid-column: 1 / -1;
 }
 
 @media (min-width: 60em) {
@@ -514,8 +519,9 @@ Script
   tab-size: 4;
 }
 
+/* The whole script is shown: no box with its own scroll inside the page */
 .md-typeset .sk-finder .skf-window pre {
-  max-height: 26rem;
+  max-height: none;
 }
 
 .md-typeset .sk-finder .skf-window pre.waiting {
@@ -523,26 +529,31 @@ Script
   color: var(--code-dim);
 }
 
+/* Long lines scroll sideways inside the window: they are never wrapped or cut */
 .md-typeset .sk-finder .skf-window code,
 .md-typeset .sk-finder .skf-mini code {
+  display: inline-block;
+  min-width: 100%;
   padding: 0;
   border-radius: 0;
   background: none;
   box-shadow: none;
   color: inherit;
   font-size: inherit;
+  white-space: pre;
   word-break: normal;
+  overflow-wrap: normal;
 }
 
+/* Line of the script that folds the imports */
 .md-typeset .sk-finder .skf-fold {
-  display: block;
-  width: 100%;
-  padding: 5px 14px;
-  border: 0;
-  border-bottom: 1px solid var(--code-line);
+  display: inline-block;
+  padding: 0 8px;
+  border: 1px solid var(--code-line);
+  border-radius: 4px;
   background: #101c30;
   color: var(--code-dim);
-  font: 13px var(--mono);
+  font: inherit;
   text-align: left;
 }
 
@@ -618,6 +629,16 @@ Script
   border-color: var(--orange);
   background: var(--orange);
   color: var(--btn-ink);
+}
+
+.md-typeset .sk-finder .skf-btn.copied,
+.md-typeset .sk-finder .skf-bar button.copied {
+  border-color: var(--good);
+  color: var(--good);
+}
+
+.md-typeset .sk-finder .skf-btn.primary.copied {
+  background: var(--surface);
 }
 
 .sk-finder .skf-status {

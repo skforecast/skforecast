@@ -9,8 +9,9 @@ Generate everything the forecaster finder publishes from its single source
 - The rules block of skills/choosing-a-forecaster/SKILL.md.
 - first_comparison.ipynb, the notebook that "Run it in Google Colab" opens.
 
-Before writing, every distinct script is run after its sample data in an
-empty namespace, as pasted into a new notebook. The build fails if a script
+Before writing, every distinct script (it includes its sample data) is run in
+an empty namespace, as pasted into a new notebook, followed by the lines that
+forecast with each model. The build fails if a script
 raises an error or any warning, if a line is longer than 88 characters, if a
 sentence shown with a result is no longer supported by the study or if a
 linked user guide does not exist.
@@ -55,17 +56,16 @@ MAX_LINE = 88
 DATA_WARNINGS = {"UserWarning: y_pred contains classes not in y_true"}
 
 
-def run(code, a, n=None, after=""):
+def run(code, after=""):
     """
-    Run a script with its sample data (finder.with_sample) in an empty
-    namespace, as in a new notebook, followed by `after` (the lines of
-    skforecast-ai, which continue the script). Returns (error, warnings).
+    Run a script in an empty namespace, as in a new notebook, followed by
+    `after` (lines that continue the script: the forecast, or skforecast-ai).
+    Returns (error, warnings).
     """
-    source = finder.with_sample(finder.sample_block(a, n), code) + "\n" + after
     with warnings.catch_warnings(record=True) as caught:
         warnings.simplefilter("always")
         try:
-            exec(compile(source, "script", "exec"), {})
+            exec(compile(code + "\n" + after, "script", "exec"), {})
             error = None
         except Exception:
             error = traceback.format_exc(limit=2).strip().splitlines()[-1][:200]
@@ -133,8 +133,11 @@ def evidence_markdown(facts):
     s, t = facts["stats"], facts["search"]
     return (
         f"Each model was run with the same backtesting on {facts['datasets']} public datasets, "
-        "with every model using all the data before each test period. The error is the MASE, "
-        "and each dataset counts once.\n\n"
+        "with every model using all the data before each test period. The error is the MASE "
+        "(the mean absolute error, scaled so that datasets can be compared), and each dataset "
+        "counts once in each row. Some datasets appear in more than one row, with and without "
+        f"their known variables or with one and several series, so the rows add up to "
+        f"{sum(r['datasets'] for r in facts['table'])} cases.\n\n"
         "| Your data | Datasets | Chronos-2 had the lower error | LightGBM had the lower error "
         "| LightGBM did worse than the baseline |\n"
         "|:--|--:|--:|--:|--:|\n"
@@ -260,8 +263,8 @@ def notebook():
                  "1. Run the first cell to install the libraries (about a minute).\n"
                  "2. Paste the script you copied from the skforecast documentation into the "
                  "second cell and run it.\n\n"
-                 "The script comes with sample data, so it runs as it is. To use your own "
-                 "data, replace the block marked as sample data.\n\n"
+                 "The script includes sample data, so it runs as it is. To use your own "
+                 "data, replace its data block.\n\n"
                  f"Get a script: {SITE}quick-start/choose-a-forecaster.html"),
             cell("code", '%pip install -q "skforecast[stats]" lightgbm chronos-forecasting'),
             cell("code", "# Paste your script here (Ctrl+V or Cmd+V) and run this cell\n"),
@@ -277,7 +280,8 @@ def page_data(facts):
         code = finder.render(a, leaf)
         sid = scripts.setdefault(code, {"id": f"s{len(scripts)}", "answers": a})["id"]
         combos[key(a)] = {
-            "why": finder.reasons(leaf), "snippet": sid, "sample": finder.sample_block(a),
+            "why": finder.reasons(leaf), "snippet": sid, "needs": finder.needs(a),
+            "forecast": finder.forecast_snippet(a, leaf),
             # The prompt is completed on the page with the script
             "prompt": finder.prompt(a, leaf, code).split("```python")[0],
             "skforecast_ai": finder.ai_snippet(a), "agent": finder.agent_message(a),
@@ -286,9 +290,7 @@ def page_data(facts):
         "rows": finder.ROWS, "notes": finder.NOTES,
         "intro": finder.INTRO.format(datasets=facts["datasets"]),
         "script_steps": finder.SCRIPT_STEPS, "colab": finder.COLAB,
-        "compare_guide": finder.COMPARE_GUIDE,
-        "min_history": {k: [v["min_history"], v.get("history_text")]
-                        for k, v in finder.FREQ.items()},
+        "next": finder.NEXT,
         "partial": {key(a): finder.blocks(a) for a in finder.all_partial_answers()},
         "combos": combos,
         "snippets": {info["id"]: code for code, info in scripts.items()},
@@ -316,7 +318,8 @@ def static_checks(facts, scripts):
     problems = [f"sentence not supported by the study: {k}"
                 for k, ok in facts["checks"].items() if not ok]
     docs = ROOT / "docs"
-    for guide in [*finder.GUIDES.values(), finder.EXOG_GUIDE, finder.COMPARE_GUIDE]:
+    for guide in [*finder.GUIDES.values(), finder.EXOG_GUIDE,
+                  *(page for _, page in finder.NEXT.values())]:
         if not any((docs / guide).with_suffix(ext).exists() for ext in (".ipynb", ".md")):
             problems.append(f"user guide that does not exist: {guide}")
     for code, info in scripts.items():
@@ -324,8 +327,9 @@ def static_checks(facts, scripts):
             compile(code, "script", "exec")
         except SyntaxError as exc:
             problems.append(f"{info['id']}: {exc}")
+        forecast = finder.forecast_snippet(info["answers"], finder.decide(info["answers"]))
         problems += [f"{info['id']}: line longer than {MAX_LINE} characters: {line}"
-                     for line in code.splitlines() if len(line) > MAX_LINE]
+                     for line in (code + forecast).splitlines() if len(line) > MAX_LINE]
     return problems
 
 
@@ -340,7 +344,7 @@ def run_ai(scripts):
             continue
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            error, _ = run(code, info["answers"], after=after)
+            error, _ = run(code, after=after)
         print("skforecast-ai", info["id"], error or "ok", json.dumps(info["answers"]), flush=True)
         if error:
             failed.append(f"{info['id']} with skforecast-ai: {error}")
@@ -369,7 +373,8 @@ def main(argv):
         print(f"{len(scripts)} distinct scripts", flush=True)
         for code, info in scripts.items():
             start = time.perf_counter()
-            error, seen = run(code, info["answers"])
+            a = info["answers"]
+            error, seen = run(code, after=finder.forecast_snippet(a, finder.decide(a)))
             status = "ok" if error is None and not seen else (error or "; ".join(seen))
             print(info["id"], status, f"{time.perf_counter() - start:.1f} s",
                   json.dumps(info["answers"]), flush=True)

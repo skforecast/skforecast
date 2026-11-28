@@ -27,11 +27,11 @@ for target, series in [("number", "one"), ("number", "several"), ("category", No
         a = {"target": target, "freq": freq, "extra": "no"}
         if series:
             a["series"] = series
-        code = finder.render(a, finder.decide(a))
         status = {}
         for fraction in FRACTIONS:
+            code = finder.render(a, finder.decide(a), n=int(f["min_history"] * fraction))
             with contextlib.redirect_stdout(io.StringIO()):
-                error, seen = build.run(code, a, int(f["min_history"] * fraction))
+                error, seen = build.run(code)
             status[fraction] = "ok" if error is None and not seen else (error or seen[0])[:60]
         passes = status[1.0] == "ok" and status[1.5] == "ok"
         failed += not passes
