@@ -27,7 +27,7 @@ Dónde está cada cosa:
 | `docs/javascripts/finder-data.json` | Generado: los 105 estados posibles y los 36 scripts |
 | `tools/docs/forecaster_finder/` | Fuente única (`finder.py`), generador (`build.py`), comprobaciones y README |
 | `benchmarks/forecaster_finder/` | El estudio (`study.py`, `cases.py`, `cases_d4.py`, `rules.py`), sus resultados y README |
-| `.github/workflows/forecaster-finder.yml` | CI: ficheros generados al día y todos los scripts ejecutados (también cada semana) |
+| `.github/workflows/forecaster-finder.yml` | CI: ficheros generados al día y todos los scripts ejecutados, en las PR que tocan el finder |
 | `dev/forecaster_finder/PLAN.md`, `REVISION.md` | Este plan y la revisión independiente |
 | `dev/forecaster_finder/benchmark/` | Restos de la versión 1 (ML congelado): resúmenes, sus CSV y la reproducción del fallo de `Ets`. No se citan en ninguna página |
 
@@ -741,7 +741,7 @@ Hecho:
 | 0 | Estudio en `benchmarks/forecaster_finder/` con README y versiones fijadas | `benchmarks/forecaster_finder/` |
 | 0 | Correcciones 1 a 15 de la sección 5 y posicionamiento de 6.9 | `skills/choosing-a-forecaster`, `statistical-models`, `baseline-forecasting`, `tools/ai/llms-base.txt` y la frase de *Comparing forecasting models* |
 | 1 | Fuente única, generador con `--check`, página que funciona sin JavaScript, bloque de reglas de la skill generado | `tools/docs/forecaster_finder/`, la página y la skill |
-| 1 | CI: ficheros generados al día, los 36 scripts ejecutados con avisos como errores y con su historia mínima; también cada semana | `.github/workflows/forecaster-finder.yml` |
+| 1 | CI: ficheros generados al día, los 36 scripts ejecutados con avisos como errores y con su historia mínima; solo en las PR que tocan el finder (sin ejecución semanal, decisión del 2026-11-28) | `.github/workflows/forecaster-finder.yml` |
 | 2 | Selector: 4 filas, recuadro de respuesta, script progresivo, copiar, Colab, skforecast-ai, asistentes, teclado, pantallas estrechas, tema oscuro, eventos con consentimiento | `docs/javascripts/finder.js`, `finder.css` |
 | 2 | Las respuestas viajan en la URL (`#answers=number-one-daily-no`): se comparten y sobreviven a ir a una guía y volver | `finder.js` |
 

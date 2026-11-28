@@ -7,23 +7,15 @@ name: Forecaster Finder
 # history the page promises. See tools/docs/forecaster_finder/README.md.
 #
 # The packages are installed as the scripts tell the reader to install them
-# (their versions are not pinned), so the weekly run also catches a release of
-# LightGBM, chronos-forecasting or pandas that breaks a script.
+# (their versions are not pinned).
 #
-# The weekly run checks the default branch, which holds the scripts of the
-# published documentation: the ones readers copy. It does not check out any
-# other branch, so no code from outside the default branch runs with its
-# permissions and caches. Pull requests run it when they touch the finder, its
-# study or the code of the foundation models, and the manual trigger runs it
-# on the branch selected in the Actions tab.
+# It runs on the pull requests that touch the finder or its study, and the
+# manual trigger runs it on the branch selected in the Actions tab.
 
 permissions:
   contents: read
 
 on:
-  schedule:
-    # Every Monday at 07:00 UTC
-    - cron: '0 7 * * 1'
   workflow_dispatch:  # Allow manual trigger
   pull_request:
     branches:
@@ -35,7 +27,6 @@ on:
       - 'docs/javascripts/finder-data.json'
       - 'skills/choosing-a-forecaster/SKILL.md'
       - 'benchmarks/forecaster_finder/results/**'
-      - 'skforecast/foundation/**'
       - '.github/workflows/forecaster-finder.yml'
 
 concurrency:
