@@ -153,6 +153,7 @@ nav:
       - Benchmarking skforecast: faq/skforecast-benchmark.ipynb
       - Parallelization in skforecast: faq/parallelization-skforecast.ipynb
       - Profiling skforecast: faq/profiling-skforecast.ipynb
+      - How training matrices are built: faq/how-forecasters-create-training-matrices.md
     - Dependencies:
       - pandas 2 and pandas 3: faq/pandas-2-and-pandas-3.md
 
@@ -178,6 +179,9 @@ extra_javascript:
   - vendor/katex/katex.min.js
   - vendor/katex/auto-render.min.js
   - javascripts/katex.js
+  # Mermaid diagrams: the loader fetches docs/vendor/mermaid (update it with
+  # tools/docs/vendor_mermaid.py) only on the pages that have a diagram
+  - javascripts/mermaid.js
 
 hooks:
   # Renders the Examples pages from tools/docs/hooks/examples.yml
@@ -243,6 +247,9 @@ plugins:
   # - Plotly and the MathJax 2 it brings (outputs of faq/skforecast-benchmark):
   #   Plotly's script tag has an integrity hash that the rewritten local copy
   #   would fail, and MathJax 2 loads its extensions from its CDN at runtime.
+  # - Mermaid.js of Material's own diagram integration, which is not used (see
+  #   pymdownx.superfences): a 3.5 MB copy in every version that nothing loads.
+  #   The diagrams use docs/vendor/mermaid.
   - privacy:
       assets_exclude:
         - cdn.plot.ly/*
@@ -251,6 +258,7 @@ plugins:
         - static.pepy.tech/*
         - zenodo.org/badge/*
         - www.repostatus.org/*
+        - unpkg.com/mermaid@*
 
 theme:
   name: material
@@ -341,7 +349,15 @@ markdown_extensions:
       # templates (for example, the team cards: --8<-- "team.html")
       base_path: [docs/overrides/partials]
       check_paths: true
-  - pymdownx.superfences
+  # Mermaid diagrams in ```mermaid fences, drawn by javascripts/mermaid.js. The
+  # class is not "mermaid" on purpose: Material's own integration would load
+  # Mermaid.js from a URL that the privacy plugin rewrites to the root of
+  # site_url, which the versioned site (latest/, 0.28.0/...) does not have.
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: skf-mermaid
+          format: !!python/name:pymdownx.superfences.fence_div_format
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
