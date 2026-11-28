@@ -70,8 +70,7 @@ with knowledge of the problem.
 | `cases_d4.py` | 20 more cases, to reach six or more datasets per type of data |
 | `study.py` | The study: runs the models on the cases and writes one CSV per case |
 | `rules.py` | Evidence per rule: reads the CSV files and writes `rules_runs.csv`, `rules_cells.csv`, `rules_stats.csv` and `rules_tuned.csv` |
-| `recount.py` | Effect of the protocol on the 15 original cases (frozen LightGBM against refitted, by run and by dataset) |
-| `results/` | Committed: the files the page reads (`rules_cells.csv`, `rules_runs.csv`, `rules_tuned.csv`, `extra_classification.csv`) and the versions (`environment*.json`). Written by the study and ignored by git: one CSV per case (`d4_` for the added cases), controls (`extra_*`), per-series and per-fold errors (`detail/`) |
+| `results/` | Committed: the files the page reads (`rules_cells.csv`, `rules_runs.csv`, `rules_tuned.csv`, `extra_classification.csv`). Written by the study and ignored by git: one CSV per case (`d4_` for the added cases), controls (`extra_*`), per-series and per-fold errors (`detail/`) and the versions of each run (`environment*.json`) |
 
 
 ## Reproduce

@@ -28,8 +28,8 @@ Dónde está cada cosa:
 | `tools/docs/forecaster_finder/` | Fuente única (`finder.py`), generador (`build.py`), comprobaciones y README |
 | `benchmarks/forecaster_finder/` | El estudio (`study.py`, `cases.py`, `cases_d4.py`, `rules.py`), sus resultados y README |
 | `.github/workflows/forecaster-finder.yml` | CI: ficheros generados al día y todos los scripts ejecutados, en las PR que tocan el finder |
-| `dev/forecaster_finder/PLAN.md`, `REVISION.md` | Este plan y la revisión independiente |
-| `dev/forecaster_finder/repro_ets_freeze_params.py` | Reproducción del fallo de `Ets` (BUG-ets-freeze-params). El resto de `benchmark/` (versión 1), los informes y capturas de `user_review/` y los resultados por caso del estudio se borraron el 2026-11-28: en `benchmarks/forecaster_finder/results/` quedan solo los 4 CSV que lee la página y las versiones |
+| `dev/forecaster_finder/PLAN.md` | Este plan. La revisión independiente (`REVISION.md`, citada más abajo) se borró el 2026-11-28: está en `58e09f9:dev/forecaster_finder/REVISION.md` |
+| Borrado el 2026-11-28 | La versión 1 del estudio (`benchmark/`), la reproducción del fallo de `Ets`, los informes y capturas de `user_review/`, `recount.py` y los resultados por caso del estudio: en `benchmarks/forecaster_finder/results/` quedan solo los 4 CSV que lee la página |
 
 Entorno de las cifras: Python 3.12.3, skforecast 0.28.0, numpy 2.5.5, pandas 3.1.1,
 scikit-learn 1.9.1, scipy 1.18.1, numba 0.68.1, LightGBM 4.7.0, PyTorch 2.15.0 (CPU),
